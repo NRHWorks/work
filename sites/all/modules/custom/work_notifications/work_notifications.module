@@ -1,0 +1,45 @@
+<?php
+
+define('NOTIFICATIONS_FROM', 'nathan@nrhworks.com');
+
+function work_notifications_node_presave($node) {
+    if ($node->type == 'project') {
+      if (!isset($node->nid)) {
+        $client = node_load($node->field_client['und'][0]['nid']);
+        _new_project($client, $node);
+      }
+    }
+}
+
+function _new_project($client, $project) {
+  $users = array();
+
+  foreach ($client->field_users['und'] as $u) {
+    $user = user_load($u['uid']);
+    $users[$user->name] = $user->mail;
+  }
+  
+  foreach ($client->field_admins['und'] as $u) {
+    $user = user_load($u['uid']);
+    $users[$user->name] = $user->mail;
+  }
+
+  $subject = "new project  => {$project->title}";
+  $message = "A new project: <strong>{$project->title}</strong> has been added for client: 
+              <strong><a href='http://work.nrhworks.com/" . drupal_get_path_alias('node/' . $client->nid) . "'>" . $client->title . "</a></strong>";
+
+  $params = array(
+    'subject' => $subject,
+    'body' => $message,
+  );
+
+  foreach ($users as $u => $e) {
+    $to = "$u <$e>";
+    drupal_mail('work_notifications', 'new_project', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+  }
+}
+
+function work_notifications_mail($key, &$message, $params) {
+  $message['subject'] = 'NRH Work\'s Work: ' . $params['subject'];
+  $message['body'] = array($params['body']);
+}

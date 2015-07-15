@@ -1,0 +1,370 @@
+#page {
+  background-color: #FFF !important;
+  background-image: url(../images/graph.png) !important;
+}
+
+#main-wrapper {
+  background-color: transparent !important;
+}
+
+* {
+  font-family: "verdana", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+}
+
+h1 {
+  font-family: Futura, "Trebuchet MS", Arial, sans-serif !important;
+}
+
+ul#main-menu-links li.active a {
+  background-color: #FFF;
+}
+
+ul#main-menu-links li a {
+  background-color: #DDD;
+}
+
+th {
+  padding-left: 5px !important;
+}
+
+.page-node-edit .form-wrapper {
+  float: none !important;
+}
+
+input.init, textarea.init {
+  color: #999;
+  border: 1px solid #999;
+  border-radius: 3px;
+}
+
+input.active, textarea.active {
+  color: #000;
+  border: 1px solid #555;
+  border-radius: 3px;
+}
+
+input[type=submit] {
+  background-color: #d61111;
+  color: #FFF;
+  font-weight: bold;
+  padding: 7px 10px;
+  border-radius: 3px;
+  border: 0px;
+}
+
+#content .section {
+  margin-bottom: 50px;
+}
+
+#views-preview-wrapper,
+.views-displays {
+  background-color: #FFF;
+}
+
+.page-landing .client-title a {
+  font-size: 1.25em;
+  color: #FFF;
+  font-weight: bold;
+}
+
+.page-landing .client-title {
+  padding: 10px;
+  background-color: #cf3535;
+  border-bottom: 1px solid #DDD;
+}
+
+.page-landing .view-landing > .view-content > .views-row {
+  border: 1px solid #DDD;
+  margin-bottom: 10px;
+  background-color: #FFF;
+}
+
+.page-landing .view-landing > .view-content > .views-row > .views-field-view {
+  padding: 10px;
+}
+
+.page-landing .project-title a {
+  color: #000;
+  font-weight: bold;
+}
+
+#task-left {
+  width: 50%;
+  padding: 10px;
+  float: left;
+  border-right: 1px solid #CCC;
+  box-sizing:border-box;
+  font-size: 12px;
+}
+
+#task-right {
+  width: 50%;
+  padding: 10px;
+  float: left;
+  font-size: 12px;
+  box-sizing:border-box;
+
+  -webkit-box-shadow: -5px 0px 5px -3px #CCC;
+  box-shadow: -5px 0px 5px -3px #CCC;
+}
+
+#task-right .tabs {
+  margin-top: -35px;
+  margin-left: -7px;
+}
+
+#task-right .right-wrapper {
+  display: none;
+}
+
+#task-right #comments-wrapper {
+  display: block;
+}
+
+.node-type-task .section > div.tabs {
+  width: 40%;
+  margin-bottom: -11px;
+  height: 28px;
+}
+
+.node-type-task:not(.page-node-edit) #block-system-main > .content {
+  background-color: #FFF;
+  border: 1px solid #CCC;
+}
+
+.half {
+  width: 50%;
+  float: left;
+}
+
+.clear {
+  clear: both;
+  width: 100%;
+}
+
+.field-name-field-users .field-item {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+.field-type-taxonomy-term-reference .field-label {
+  font-size: 12px !important;
+  font-weight: bold !important;   
+}
+
+.field-type-taxonomy-term-reference ul.links li {
+  font-size: 12px !important;
+}
+
+.todo-check {
+  width: 25px;
+  float: left;
+  clear: both;
+}
+
+.todo-item {
+  margin-top: 10px;
+}
+
+.gray,
+.field-name-field-time > .field-label,
+.field-name-field-schedule > .field-label,
+.field-name-field-to-do > .field-label {
+  background-color: #ededed;
+  padding: 10px;
+  margin-left: -10px;
+  margin-right: -10px;
+  border-top: 1px solid #CCC;
+  border-bottom: 1px solid #CCC;
+  font-weight: bold;
+}
+
+.todo-done {
+  text-decoration: line-through;
+}
+
+#node-status-div {
+  position: absolute;
+  border: 1px solid #CCC;
+  background-color: #FFF;
+  padding: 10px;
+  display: none;
+
+  top: 100px;
+  left: 296px;
+  height: 200px; 
+ 
+  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
+  box-shadow: 5px 5px 5px -3px #CCC;
+}
+
+#node-status-div a {
+  width: 150px;
+  display: block;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.field-collection-item-field-schedule .field {
+  float: left;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+.field-collection-item-field-schedule .field-item {
+  float: left;
+  margin-right: 10px;
+}
+
+.field-collection-item-field-schedule .field-name-field-user {
+  width: 100px;
+}
+
+.field-collection-item-field-schedule .field-name-field-date {
+  font-weight: bold;
+}
+
+#node-schedule-div {
+  position: absolute;
+  border: 1px solid #CCC;
+  background-color: #FFF;
+  padding: 10px;
+  display: none;
+
+  height: 45px;  
+  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
+  box-shadow: 5px 5px 5px -3px #CCC;
+}
+
+a#schedule-time {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.field-collection-item-field-time .field-name-field-user {
+  float: left;
+  margin-right: 10px;
+  width: 100px;
+}
+
+.field-collection-item-field-time .field-name-field-date {
+  float: left;
+  font-weight: bold;
+}
+
+.field-collection-item-field-time .field-name-field-hours {
+  float: right;
+  margin-right: 20px;
+}
+
+.field-collection-item-field-time .field-name-field-description {
+  clear: both;
+  margin-left: 30px;
+  font-size: 12px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #DDD;
+  width: 400px;
+}
+
+#node-record-div {
+  position: absolute;
+  border: 1px solid #CCC;
+  background-color: #FFF;
+  padding: 10px;
+  display: none;
+  width: 415px;
+  
+  height: 100px;  
+  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
+  box-shadow: 5px 5px 5px -3px #CCC;
+}
+
+a#record-time {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.field-name-field-estimate {
+  float: right;
+  margin-right: 20px;
+}
+
+.field-name-field-credentials .field-label,
+.field-name-field-assets .field-label,
+.field-name-field-resources .field-label {
+  text-align: right;
+  width: 100px;
+}
+
+.field-name-field-credentials .field-item,
+.field-name-field-assets .field-item,
+.field-name-field-resources .field-item {
+  margin-bottom: 5px;
+}
+
+.field-name-field-comments > .field-items >  .field-item,
+.field-name-field-credentials > .field-items >  .field-item,
+.field-name-field-assets > .field-items >  .field-item,
+.field-name-field-resources > .field-items >  .field-item {
+  border-bottom: 1px dashed #DDD;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.field-name-field-comments .field-name-field-title {
+  font-weight: bold;
+}
+
+.field-name-field-comments .field-name-field-date-time {
+  float: left;
+  margin-right: 20px;
+  font-size:12px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.field-name-field-comments .field-name-field-user {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.field-name-field-comments .field-name-field-comment-description {
+  font-size: 12px;
+}
+
+#add-comment {
+  font-weight: bold;
+}
+
+#comment-subject, #comment-body {
+  width: 400px;
+}
+
+#node-add-comment {
+  position: absolute;
+  border: 1px solid #CCC;
+  background-color: #FFF;
+  padding: 10px 20px;
+  display: none;
+  width: 415px;
+  bottom: 75px; 
+  height: 280px;  
+  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
+  box-shadow: 5px 5px 5px -3px #CCC;
+}
+
+.field-name-field-comment-description {
+  display: none;
+}
+
+.field-name-field-comments > .field-items >  .field-item:last-child .field-name-field-comment-description {
+  display: block;
+}
+
+.comment-show-hide {
+  font-size: 12px;
+  float: right;
+  margin-right: 20px;
+}

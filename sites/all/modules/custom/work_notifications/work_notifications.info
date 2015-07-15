@@ -1,0 +1,6 @@
+name = Work Notifications
+description = Sets up all emails getting delivered from the system.
+core = 7.x
+package = NHR Works
+
+version = 7.x-1.0

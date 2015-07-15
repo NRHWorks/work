@@ -1,0 +1,211 @@
+<?php
+
+function work_task_menu() {
+  $items['tasks/estimate/%'] = array(
+    'title' => 'estimate',
+    'page callback' => 'work_task_estimate',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-todo/%'] = array(
+    'title' => 'update todo',
+    'page callback' => 'work_task_update_todo',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-status/%/%'] = array(
+    'title' => 'update todo',
+    'page callback' => 'work_task_update_status',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-schedule/add'] = array(
+    'title' => 'update schedule',
+    'page callback' => 'work_task_update_schedule',
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-schedule/delete/%/%'] = array(
+    'title' => 'update schedule',
+    'page callback' => 'work_task_update_schedule_delete',
+    'page arguments' => array(3, 4),
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-time/add'] = array(
+    'title' => 'update schedule',
+    'page callback' => 'work_task_update_time',
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-time/delete/%/%'] = array(
+    'title' => 'update time',
+    'page callback' => 'work_task_update_time_delete',
+    'page arguments' => array(3, 4),
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-comment/add'] = array(
+    'title' => 'update schedule',
+    'page callback' => 'work_task_update_comment',
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+function work_task_estimate($nid) {
+  $node = node_load($nid);
+
+  $content = node_view($node);
+
+  print render($content['field_estimate']);
+}
+
+function work_task_update_time_delete($nid, $fcid) {
+  entity_delete_multiple('field_collection_item', array($fcid));
+
+  $node = node_load($nid);
+
+  foreach ($node->field_time['und'] as $k => $s) {
+    if ($s['value'] == $fcid) {
+      unset($node->field_time['und'][$k]);
+    }
+  }
+
+  node_save($node);
+  
+  $content = node_view($node);
+  print render($content['field_time']);
+}
+
+function work_task_update_time() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_time';
+  $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));  
+ 
+  global $user;
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $fc['field_hours']['und'][0]['value'] = $data['hours'];
+  $fc['field_description']['und'][0]['value'] = $data['description'];
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $content = node_view($node);
+  print render($content['field_time']);
+}
+
+function work_task_update_schedule_delete($nid, $fcid) {
+  entity_delete_multiple('field_collection_item', array($fcid));
+
+  $node = node_load($nid);
+
+  foreach ($node->field_schedule['und'] as $k => $s) {
+    if ($s['value'] == $fcid) {
+      unset($node->field_schedule['und'][$k]);
+    }
+  }
+
+  node_save($node);
+  
+  $content = node_view($node);
+  print render($content['field_schedule']);
+}
+
+function work_task_update_schedule() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_schedule';
+  $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));  
+ 
+  foreach ($data['time'] as $t) {
+    $fc['field_schedule_time']['und'][]['value'] = $t;  
+  } 
+  
+  global $user;
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $content = node_view($node);
+  print render($content['field_schedule']);
+}
+
+function work_task_update_status($nid, $tid) {
+  $node = node_load($nid);
+
+  $node->field_status['und'][0]['tid'] = $tid;
+
+  node_save($node);
+}
+
+
+function work_task_update_todo($id) {
+
+  $collection = entity_load('field_collection_item', array($id));
+  $todo = array_pop($collection);
+
+  if ($todo->field_todo_status['und'][0]['value'] == 1) {
+    $todo->field_todo_status['und'][0]['value'] = 0;
+  } else {
+    $todo->field_todo_status['und'][0]['value'] = 1;
+  }
+
+  global $user;
+  $todo->field_user['und'][0]['uid'] = $user->uid;
+
+  entity_save('field_collection_item', $todo);
+}
+
+function work_task_update_comment() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_comments';
+
+
+  global $user;
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');  
+ 
+
+  $fc['field_title']['und'][0]['value'] = $data['title'];
+  $fc['field_comment_description']['und'][0]['value'] = $data['description'];
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $content = node_view($node);
+  print render($content['field_comments']);
+}
