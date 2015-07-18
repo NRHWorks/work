@@ -1,7 +1,5 @@
 <?php
 
-print '@@@@@XXX@@@@@';
-
 define('NOTIFICATIONS_FROM', 'nathan@nrhworks.com');
 
 function work_notifications_node_presave($node) {
