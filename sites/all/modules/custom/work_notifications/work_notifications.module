@@ -1,6 +1,6 @@
 <?php
 
-print '@@@@@';
+print '@@@@@XXX@@@@@';
 
 define('NOTIFICATIONS_FROM', 'nathan@nrhworks.com');
 
