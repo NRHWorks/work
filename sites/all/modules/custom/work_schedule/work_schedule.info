@@ -1,6 +1,6 @@
 name = Work Schedule
 description = Sets up schedule pages.
 core = 7.x
-package = NHR Works
+package = NRH Works
 
 version = 7.x-1.0

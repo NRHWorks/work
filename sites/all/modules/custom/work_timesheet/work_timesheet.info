@@ -1,0 +1,6 @@
+name = Work Timesheet
+description = Sets up timesheet pages.
+core = 7.x
+package = NRH Works
+
+version = 7.x-1.0

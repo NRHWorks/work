@@ -1,0 +1,34 @@
+<?php
+
+function work_timesheet_menu() {
+  $items['timesheet'] = array(
+    'title' => 'Timesheet',
+    'page callback' => 'work_timesheet',
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+function work_timesheet() {
+  global $user;
+
+  $results = db_query("select n.nid, n.title, ft.field_time_value, u.`field_user_uid`, d.field_date_value, h.field_hours_value, fd.field_description_value from node n
+    inner join field_data_field_time ft on n.nid = ft.entity_id
+    inner join field_data_field_user u on u.entity_id = ft.field_time_value
+    inner join field_data_field_date d on d.entity_id = ft.field_time_value
+    inner join field_data_field_hours h on h.entity_id = ft.field_time_value
+    inner join field_data_field_description fd on fd.entity_id = ft.field_time_value
+    where n.type = 'task';", array(':uid' => $user->uid));
+  $timesheet_data = array();
+  //$date = array();
+  foreach ($results as $r) {
+    //print '<pre>'; print_r($r);
+    $uid = $r -> field_user_uid;
+    $date = $r -> field_date_value;
+    $hours = $r -> field_hours_value;
+    $timesheet_data[$uid][$date] = $hours;
+  }
+  //print '<pre>'; print_r($timesheet_data);
+  //return theme('timesheet', array('tasks' => $results));
+}

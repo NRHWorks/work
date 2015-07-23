@@ -1,11 +1,11 @@
 <?php
-  $project_data = array();
+  $time_data = array();
   foreach ($tasks as $date => $times) {
     foreach ($times as $time => $clients) {
       foreach ($clients as $client => $projects) {
         foreach ($projects as $project => $ts) {
           foreach ($ts as $t => $tu) {
-            $project_data[$client][$project][] = $t;
+            $time_data[$user][$date][] = $t;
           }
         }
       }
