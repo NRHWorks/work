@@ -23,10 +23,12 @@ function work_timesheet_theme($existing, $type, $theme, $path) {
 
 function work_timesheet() {
   global $user;
-  $start_date = null;
-  $end_date = null;
   $group_by = null;
   $parameters = drupal_get_query_parameters();
+  if() {
+    $start_date = date("Y-m-00 00:00:00");
+    $end_date = date("Y-m-32 00:00:00");
+  }
   $header = array('task', 'price', 'hours', 'total');
   $table = theme('table', array('header'=> $header, 'rows' => work_timesheet_get_date($start_date, $end_date, $group_by)));
   return theme('timesheet', array('table' => $table));

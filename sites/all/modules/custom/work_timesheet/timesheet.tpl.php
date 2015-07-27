@@ -12,5 +12,4 @@
    </div>
    </form>
 <?php
-   $parameters = drupal_get_query_parameters();
    print $table; 
