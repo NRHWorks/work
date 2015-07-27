@@ -13,5 +13,4 @@
    </form>
 <?php
    $parameters = drupal_get_query_parameters();
-   print $parameters; 
-   //print $table; 
+   print $table; 

@@ -33,16 +33,8 @@ function work_timesheet() {
     where n.type = 'task';");
   $rows = array();
   foreach ($results as $r) {
-    //print '<pre>'; print_r($r);
-    //$uid = $r->field_user_uid;
-    //$date = $r->field_date_value;
-    //$project = $r->title;
-    //$hours = $r->field_hours_value;
-    //$timesheet_data[$uid][$date][] = $project;
-    //$timesheet_data[$uid][$date][] = $hours;
     $rows[] = array($r->title, 20, $r->field_hours_value, (20 * $r->field_hours_value));
   }
-  //print '<pre>'; print_r($rows);
   $header = array('task', 'price', 'hours', 'total');
   $table = theme('table', array('header'=> $header, 'rows' => $rows));
   return theme('timesheet', array('table' => $table));
