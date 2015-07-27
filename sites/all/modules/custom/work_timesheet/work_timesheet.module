@@ -23,19 +23,26 @@ function work_timesheet_theme($existing, $type, $theme, $path) {
 
 function work_timesheet() {
   global $user;
+  $start_date = null;
+  $end_date = null;
+  $group_by = null;
+  $parameters = drupal_get_query_parameters();
+  $header = array('task', 'price', 'hours', 'total');
+  $table = theme('table', array('header'=> $header, 'rows' => work_timesheet_get_date($start_date, $end_date, $group_by)));
+  return theme('timesheet', array('table' => $table));
+}
 
+function work_timesheet_get_date($start_date, $end_date, $group_by) {
   $results = db_query("select n.nid, n.title, ft.field_time_value, u.`field_user_uid`, d.field_date_value, h.field_hours_value, fd.field_description_value from node n
     inner join field_data_field_time ft on n.nid = ft.entity_id
     left outer join field_data_field_user u on u.entity_id = ft.field_time_value
     left outer join field_data_field_date d on d.entity_id = ft.field_time_value
     left outer join field_data_field_hours h on h.entity_id = ft.field_time_value
     left outer join field_data_field_description fd on fd.entity_id = ft.field_time_value
-    where n.type = 'task';");
+    here n.type = 'task';");
   $rows = array();
   foreach ($results as $r) {
     $rows[] = array($r->title, 20, $r->field_hours_value, (20 * $r->field_hours_value));
   }
-  $header = array('task', 'price', 'hours', 'total');
-  $table = theme('table', array('header'=> $header, 'rows' => $rows));
-  return theme('timesheet', array('table' => $table));
+  return $rows;
 }
