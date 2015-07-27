@@ -15,6 +15,7 @@ function work_timesheet_theme($existing, $type, $theme, $path) {
   $theme['timesheet'] = array(
     'template' => 'timesheet',
     'path' => drupal_get_path('module', 'work_timesheet'),
+    'variables' => array('table' => null),
    );
 
   return $theme;
