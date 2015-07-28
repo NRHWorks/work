@@ -24,24 +24,41 @@ function work_timesheet_theme($existing, $type, $theme, $path) {
 function work_timesheet() {
   global $user;
   $group_by = null;
-  $parameters = drupal_get_query_parameters();
-  if() {
+  $params = drupal_get_query_parameters();
+  if(!isset($params['start_date']) && !isset($params['end_date'])) {
     $start_date = date("Y-m-00 00:00:00");
     $end_date = date("Y-m-32 00:00:00");
   }
+  //var_dump($params); exit;
   $header = array('task', 'price', 'hours', 'total');
   $table = theme('table', array('header'=> $header, 'rows' => work_timesheet_get_date($start_date, $end_date, $group_by)));
   return theme('timesheet', array('table' => $table));
 }
 
 function work_timesheet_get_date($start_date, $end_date, $group_by) {
-  $results = db_query("select n.nid, n.title, ft.field_time_value, u.`field_user_uid`, d.field_date_value, h.field_hours_value, fd.field_description_value from node n
-    inner join field_data_field_time ft on n.nid = ft.entity_id
-    left outer join field_data_field_user u on u.entity_id = ft.field_time_value
-    left outer join field_data_field_date d on d.entity_id = ft.field_time_value
-    left outer join field_data_field_hours h on h.entity_id = ft.field_time_value
-    left outer join field_data_field_description fd on fd.entity_id = ft.field_time_value
-    here n.type = 'task';");
+  global $user;
+//  $results = db_query("select n.nid, n.title, ft.field_time_value, u.`field_user_uid`, d.field_date_value, h.field_hours_value, fd.field_description_value from node n
+//    inner join field_data_field_time ft on n.nid = ft.entity_id
+//    left outer join field_data_field_user u on u.entity_id = ft.field_time_value
+//    left outer join field_data_field_date d on d.entity_id = ft.field_time_value
+//    left outer join field_data_field_hours h on h.entity_id = ft.field_time_value
+//    left outer join field_data_field_description fd on fd.entity_id = ft.field_time_value
+//    where n.type = 'task';");
+  $query = db_select('node', 'n');
+  $query->addField('n', array('nid', 'title'))
+        ->addField('ft', 'field_time_value')
+        ->addField('u', "'field_user_uid'")
+        ->addField('d', 'field_date_value')
+        ->addField('h', 'field_hours_value')
+        ->addField('fd', 'field_data_field_description')
+        ->join('field_data_field_time', 'ft', 'n.nid = ft.entity_id')
+        ->leftJoin('field_data_field_user', 'u', 'u.entity_id = ft.field_time_value')
+        ->leftJoin('field_data_field_date', 'd', 'd.entity_id = ft.field_time_value')
+        ->leftJoin('field_data_field_hours', 'h', 'h.entity_id = ft.field_time_value')
+        ->leftJoin('field_data_field_description', 'fd', 'fd.entity_id = ft.field_time_value')
+        ->condition('n.type', 'task');
+  print $query; exit;      
+
   $rows = array();
   foreach ($results as $r) {
     $rows[] = array($r->title, 20, $r->field_hours_value, (20 * $r->field_hours_value));
