@@ -37,27 +37,22 @@ function work_timesheet() {
 
 function work_timesheet_get_date($start_date, $end_date, $group_by) {
   global $user;
-//  $results = db_query("select n.nid, n.title, ft.field_time_value, u.`field_user_uid`, d.field_date_value, h.field_hours_value, fd.field_description_value from node n
-//    inner join field_data_field_time ft on n.nid = ft.entity_id
-//    left outer join field_data_field_user u on u.entity_id = ft.field_time_value
-//    left outer join field_data_field_date d on d.entity_id = ft.field_time_value
-//    left outer join field_data_field_hours h on h.entity_id = ft.field_time_value
-//    left outer join field_data_field_description fd on fd.entity_id = ft.field_time_value
-//    where n.type = 'task';");
   $query = db_select('node', 'n');
-  $query->addField('n', array('nid', 'title'))
-        ->addField('ft', 'field_time_value')
-        ->addField('u', "'field_user_uid'")
-        ->addField('d', 'field_date_value')
-        ->addField('h', 'field_hours_value')
-        ->addField('fd', 'field_data_field_description')
-        ->join('field_data_field_time', 'ft', 'n.nid = ft.entity_id')
-        ->leftJoin('field_data_field_user', 'u', 'u.entity_id = ft.field_time_value')
-        ->leftJoin('field_data_field_date', 'd', 'd.entity_id = ft.field_time_value')
-        ->leftJoin('field_data_field_hours', 'h', 'h.entity_id = ft.field_time_value')
-        ->leftJoin('field_data_field_description', 'fd', 'fd.entity_id = ft.field_time_value')
-        ->condition('n.type', 'task');
-  print $query; exit;      
+  $query->addField('n', 'nid');
+  $query->addField('n', 'title');
+  $query->addField('ft', 'field_time_value');
+  $query->addField('u', "'field_user_uid'");
+  $query->addField('d', 'field_date_value');
+  $query->addField('h', 'field_hours_value');
+  $query->addField('fd', 'field_description_value');
+  $query->join('field_data_field_time', 'ft', 'n.nid = ft.entity_id');
+  $query->leftJoin('field_data_field_user', 'u', 'u.entity_id = ft.field_time_value');
+  $query->leftJoin('field_data_field_date', 'd', 'd.entity_id = ft.field_time_value');
+  $query->leftJoin('field_data_field_hours', 'h', 'h.entity_id = ft.field_time_value');
+  $query->leftJoin('field_data_field_description', 'fd', 'fd.entity_id = ft.field_time_value');
+  $query->condition('n.type', 'task');
+  $results = $query->execute();
+  //print '<pre>'; print_r($results); exit;      
 
   $rows = array();
   foreach ($results as $r) {
