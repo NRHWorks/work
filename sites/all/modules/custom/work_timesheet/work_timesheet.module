@@ -27,7 +27,7 @@ function work_timesheet() {
   $params = drupal_get_query_parameters();
   if(!isset($params["start_date"]) && !isset($params["end_date"])) {
     $start_date = date("Y-m-00 00:00:00");
-    $end_date = date("Y-m-32 23:59:59");
+    $end_date = date("Y-m-t 23:59:59");
   } else {
     $start_date = date('Y-m-d 00:00:00',strtotime($params["start_date"]));
     $end_date = date('Y-m-d 23:59:59',strtotime($params["end_date"]));
@@ -49,11 +49,15 @@ function work_timesheet_get_date($start_date, $end_date, $group_by) {
   $query->addField('d', 'field_date_value');
   $query->addField('h', 'field_hours_value');
   $query->addField('fd', 'field_description_value');
+  $query->addField('p', 'field_pay_rate_value');
+  $query->addField('p', 'field_bill_rate_value');
   $query->join('field_data_field_time', 'ft', 'n.nid = ft.entity_id');
   $query->leftJoin('field_data_field_user', 'u', 'u.entity_id = ft.field_time_value');
   $query->leftJoin('field_data_field_date', 'd', 'd.entity_id = ft.field_time_value');
   $query->leftJoin('field_data_field_hours', 'h', 'h.entity_id = ft.field_time_value');
   $query->leftJoin('field_data_field_description', 'fd', 'fd.entity_id = ft.field_time_value');
+  $query->innerJoin('field_data_field_task_project', 'tp', 'tp.entity_id = n.nid');
+  $query->innerJoin('node', 'np', 'np.nid = tp.field_task_project_nid');
   $query->condition('n.type', 'task');
   $query->condition('d.field_date_value', array($start_date, $end_date), 'BETWEEN');
   //$query->condition('d.field_date_value', $end_date, '<=');
