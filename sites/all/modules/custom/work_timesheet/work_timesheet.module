@@ -25,11 +25,15 @@ function work_timesheet() {
   global $user;
   $group_by = null;
   $params = drupal_get_query_parameters();
-  if(!isset($params['start_date']) && !isset($params['end_date'])) {
+  if(!isset($params["start"]) && !isset($params["end"])) {
     $start_date = date("Y-m-00 00:00:00");
     $end_date = date("Y-m-32 00:00:00");
+  } else {
+    $start_date = date('Y-m-d 00:00:00',strtotime($params["start"]));
+    $end_date = date('Y-m-d 24:00:00',strtotime($params["end"]));
   }
-  //var_dump($params); exit;
+  //var_dump($params);
+  //print_r($start_date); print_r($end_date); exit;
   $header = array('task', 'price', 'hours', 'total');
   $table = theme('table', array('header'=> $header, 'rows' => work_timesheet_get_date($start_date, $end_date, $group_by)));
   return theme('timesheet', array('table' => $table));
