@@ -55,6 +55,8 @@ function work_timesheet_get_date($start_date, $end_date, $group_by) {
   $query->leftJoin('field_data_field_hours', 'h', 'h.entity_id = ft.field_time_value');
   $query->leftJoin('field_data_field_description', 'fd', 'fd.entity_id = ft.field_time_value');
   $query->condition('n.type', 'task');
+  $query->condition('field_date_value', array($start_date, $end_date), 'BETWEEN');
+  //$query->condition('d.field_date_value', $end_date, '<=');
   $results = $query->execute();
   //print '<pre>'; print_r($results); exit;      
 
