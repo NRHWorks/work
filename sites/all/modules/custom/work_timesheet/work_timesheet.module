@@ -25,12 +25,12 @@ function work_timesheet() {
   global $user;
   $group_by = null;
   $params = drupal_get_query_parameters();
-  if(!isset($params["start"]) && !isset($params["end"])) {
+  if(!isset($params["start_date"]) && !isset($params["end_date"])) {
     $start_date = date("Y-m-00 00:00:00");
     $end_date = date("Y-m-32 00:00:00");
   } else {
-    $start_date = date('Y-m-d 00:00:00',strtotime($params["start"]));
-    $end_date = date('Y-m-d 24:00:00',strtotime($params["end"]));
+    $start_date = date('Y-m-d 00:00:00',strtotime($params["start_date"]));
+    $end_date = date('Y-m-d 24:00:00',strtotime($params["end_date"]));
   }
   //var_dump($params);
   //print_r($start_date); print_r($end_date); exit;

@@ -8,7 +8,7 @@
       <input type="text" id="end_date" />
    </div>
    <div class="button">
-       <button type="submit">Generate Report</button>
+       <input type="submit" value="Generate Report" />
    </div>
    </form>
 <?php
