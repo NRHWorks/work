@@ -34,7 +34,7 @@ function work_timesheet() {
   }
   //var_dump($params);
   //print_r($start_date); print_r($end_date); exit;
-  $header = array('task', 'price', 'hours', 'total');
+  $header = array('Task', 'Bill Rate', 'Pay Rate', 'Hours', 'Total Billed', 'Total Payed', 'Difference');
   $table = theme('table', array('header'=> $header, 'rows' => work_timesheet_get_date($start_date, $end_date, $group_by)));
   return theme('timesheet', array('table' => $table));
 }
@@ -70,11 +70,25 @@ function work_timesheet_get_date($start_date, $end_date, $group_by) {
   $results = $query->execute();
 
   $rows = array();
-  foreach ($results as $r) {
-    
-    print '<pre>'; print_r($r); exit;
+  $total_hours = 0;
+  $total_billed = 0;
+  $total_paid = 0;
+  $total_difference = 0;
 
-    $rows[] = array($r->title, 20, $r->field_hours_value, (20 * $r->field_hours_value));
+  foreach ($results as $r) { 
+    //print '<pre>'; print_r($r); exit;
+    $hours = $r->field_hours_value;
+    $billed = $r->bill_rate;
+    $paid = $r->pay_rate;
+    $billed_hours = ($hours * $billed);
+    $paid_hours = ($hours * $paid);
+    $difference = ($billed_hours - $paid_hours);
+    $rows[] = array($r->title, $billed, $paid, $hours, $billed_hours, $paid_hours, $difference);
+    $total_hours += $hours;
+    $total_billed += $billed_hours;
+    $total_paid += $paid_hours;
+    $total_difference += $difference;
   }
+  $rows[] = array('Totals', '','', $total_hours, $total_billed, $total_paid, $total_difference);
   return $rows;
 }
