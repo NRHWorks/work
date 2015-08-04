@@ -32,21 +32,19 @@ function work_timesheet() {
     $start_date = date('Y-m-d 00:00:00',strtotime($params["start_date"]));
     $end_date = date('Y-m-d 23:59:59',strtotime($params["end_date"]));
   }
+  $data = work_timesheet_query_database($start_date, $end_date, $group_by);
   //var_dump($params);
   //print_r($start_date); print_r($end_date); exit;
-  //$header = array('Task', 'Bill Rate', 'Pay Rate', 'Hours', 'Total Billed', 'Total Payed', 'Difference');
   if (in_array('administrator', $user->roles)) {
     $header = array('Client', 'Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
-    $user_type = 'admin';
+    $rows = build_rows_admin($data;
   } elseif (in_array('Developer', $user->roles)) {
     $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
-    $user_type = 'dev';
+    $rows = build_rows_dev($data;
   } elseif (in_array('Client', $user->roles)) {
     $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Amount Due');
-    $user_type = 'client';
+    $rows = build_rows_client($data;
   }
-  $data = work_timesheet_query_database($start_date, $end_date, $group_by, $user_type);
-  $rows = build_rows($data, $user_type);
   $table = theme('table', array('header'=> $header, 'rows' => $rows));
   return theme('timesheet', array('table' => $table));
 }
@@ -81,63 +79,58 @@ function work_timesheet_query_database($start_date, $end_date, $group_by) {
   return $results;
 }
 
-function build_rows($results, $user_type) {
-
+function build_rows_admin($results) {
   $rows = array();
-
-  switch ($user_type) {
-    case 'admin':
-      $total_hours = 0;
-      $total_billed = 0;
-      $total_paid = 0;
-      $total_difference = 0;
-      foreach ($results as $r) { 
-        //print '<pre>'; print_r($r); exit;
-        $hours = $r->field_hours_value;
-        $billed = $r->bill_rate;
-        $paid = $r->pay_rate;
-        $billed_hours = ($hours * $billed);
-        $paid_hours = ($hours * $paid);
-        $difference = ($billed_hours - $paid_hours);
-        $developer = null;
-        $client = null;
-        $rows[] = array($r->client, $r->project, $r->dev, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
-        $total_hours += $hours;
-        $total_billed += $billed_hours;
-        $total_paid += $paid_hours;
-        $total_difference += $difference;
-      }
-      $rows[] = array('', '', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference);
-      break;
-
-      case 'client':
-        $total_hours = 0;
-        $total_billed = 0;
-        foreach ($results as $r) { 
-          $hours = $r->field_hours_value;
-          $billed = $r->bill_rate;
-          $billed_hours = ($hours * $billed);
-          $developer = null;
-          $rows[] = array($r->project, $r->dev, $r->title, $r->field_date_value, $hours, $billed_hours);
-          $total_hours += $hours;
-          $total_billed += $billed_hours;
-        }
-        $rows[] = array('', '', '', '', $total_hours, $total_billed);
-        break;
-
-      case 'dev':
-        $total_hours = 0;
-        $total_paid = 0;
-        foreach ($results as $r) { 
-          $hours = $r->field_hours_value;
-          $paid = $r->pay_rate;
-          $paid_hours = ($hours * $paid);
-          $rows[] = array($r->project, $r->title, $r->field_date_value, $hours, $paid_hours);
-          $total_hours += $hours;
-          $total_paid += $paid_hours;
-      }
-      $rows[] = array('', '', '', '', $total_hours, $total_paid);
-      break;
+  $total_hours = 0;
+  $total_billed = 0;
+  $total_paid = 0;
+  $total_difference = 0;
+  foreach ($results as $r) {       
+    $hours = $r->field_hours_value;
+    $billed = $r->bill_rate;
+    $paid = $r->pay_rate;
+    $billed_hours = ($hours * $billed);
+    $paid_hours = ($hours * $paid);
+    $difference = ($billed_hours - $paid_hours);
+    $developer = null;
+    $client = null;
+    $rows[] = array($r->client, $r->project, $r->dev, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+    $total_hours += $hours;
+    $total_billed += $billed_hours;
+    $total_paid += $paid_hours;
+    $total_difference += $difference;
   }
+  $rows[] = array('', '', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference);
+  return $rows;
+}
+
+function build_rows_client($results) {
+  $total_hours = 0;
+  $total_billed = 0;
+  foreach ($results as $r) { 
+    $hours = $r->field_hours_value;
+    $billed = $r->bill_rate;
+    $billed_hours = ($hours * $billed);
+    $developer = null;
+    $rows[] = array($r->project, $r->dev, $r->title, $r->field_date_value, $hours, $billed_hours);
+    $total_hours += $hours;
+    $total_billed += $billed_hours;
+  }
+  $rows[] = array('', '', '', '', $total_hours, $total_billed);
+  return $rows;
+}
+
+function build_rows_dev($results) {
+  $total_hours = 0;
+  $total_paid = 0;
+  foreach ($results as $r) { 
+    $hours = $r->field_hours_value;
+    $paid = $r->pay_rate;
+    $paid_hours = ($hours * $paid);
+    $rows[] = array($r->project, $r->title, $r->field_date_value, $hours, $paid_hours);
+    $total_hours += $hours;
+    $total_paid += $paid_hours;
+  }
+  $rows[] = array('', '', '', '', $total_hours, $total_paid);
   return $rows;
 }
