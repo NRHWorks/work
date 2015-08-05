@@ -37,13 +37,13 @@ function work_timesheet() {
   //print_r($start_date); print_r($end_date); exit;
   if (in_array('administrator', $user->roles)) {
     $header = array('Client', 'Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
-    $rows = build_rows_admin($data;
+    $rows = build_rows_admin($data);
   } elseif (in_array('Developer', $user->roles)) {
     $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
-    $rows = build_rows_dev($data;
+    $rows = build_rows_dev($data);
   } elseif (in_array('Client', $user->roles)) {
     $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Amount Due');
-    $rows = build_rows_client($data;
+    $rows = build_rows_client($data);
   }
   $table = theme('table', array('header'=> $header, 'rows' => $rows));
   return theme('timesheet', array('table' => $table));
@@ -75,6 +75,9 @@ function work_timesheet_query_database($start_date, $end_date, $group_by) {
   $query->join('node', 'np', 'tp.field_project_nid = np.nid');
   $query->leftJoin('field_data_field_bill_rate', 'br', 'br.entity_id = np.nid');
   $query->leftJoin('field_data_field_pay_rate', 'pr', 'pr.entity_id = np.nid');
+  $query->join('field_data_field_client', 'fc', 'fc.entity_id = np.nid');
+  $query->join('node', 'nc', 'nc.nid =fc.field_client_nid');
+  $query->addField('nc', 'title', 'client');
   $results = $query->execute();
   return $results;
 }
@@ -92,9 +95,11 @@ function build_rows_admin($results) {
     $billed_hours = ($hours * $billed);
     $paid_hours = ($hours * $paid);
     $difference = ($billed_hours - $paid_hours);
-    $developer = null;
-    $client = null;
-    $rows[] = array($r->client, $r->project, $r->dev, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+    $developer = user_load($r->field_user_uid);
+    //print '<pre>'; print_r($developer); exit;
+    //var_dump($r); exit;
+    $client = $r->client;
+    $rows[] = array($r->client, $r->project, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
     $total_hours += $hours;
     $total_billed += $billed_hours;
     $total_paid += $paid_hours;
@@ -112,8 +117,8 @@ function build_rows_client($results) {
     $hours = $r->field_hours_value;
     $billed = $r->bill_rate;
     $billed_hours = ($hours * $billed);
-    $developer = null;
-    $rows[] = array($r->project, $r->dev, $r->title, $r->field_date_value, $hours, $billed_hours);
+    $developer = user_load($r->field_user_id);
+    $rows[] = array($r->project, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours);
     $total_hours += $hours;
     $total_billed += $billed_hours;
   }
