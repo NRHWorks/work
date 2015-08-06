@@ -109,9 +109,9 @@ function build_rows_admin($results, $group_by) {
     $total_difference += $difference;
   }
   if ($group_by == 'any') {
-    array('', '', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference); 
+    $rows[] = array('', '', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference); 
   } else {
-    array('', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference); 
+    $rows[] = array('', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference); 
   }
   return $rows;
 }
@@ -161,7 +161,7 @@ function build_rows_dev($results) {
   if($group_by == 'project') {
     $rows[] = array('', '', $total_hours, $total_paid);
   } else {
-  $rows[] = array('', '', '', $total_hours, $total_paid);
+    $rows[] = array('', '', '', $total_hours, $total_paid);
   }
   return $rows;
 }
