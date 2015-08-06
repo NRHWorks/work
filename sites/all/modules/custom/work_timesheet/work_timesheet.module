@@ -23,7 +23,7 @@ function work_timesheet_theme($existing, $type, $theme, $path) {
 
 function work_timesheet() {
   global $user;
-  $group_by = 'developer';
+  $group_by = 'client';
   $params = drupal_get_query_parameters();
   $table = array();
   if(!isset($params["start_date"]) && !isset($params["end_date"])) {
@@ -34,42 +34,9 @@ function work_timesheet() {
     $end_date = date('Y-m-d 23:59:59',strtotime($params["end_date"]));
   }
   $data = work_timesheet_query_database($start_date, $end_date);
-  //var_dump($params);
-  //print_r($start_date); print_r($end_date); exit;
-  if ($group_by == 'any') {
-    if (in_array('administrator', $user->roles)) {
-      $header = array('Client', 'Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
-      $rows = build_rows_admin($data);
-    } elseif (in_array('Developer', $user->roles)) {
-      $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
-      $rows = build_rows_dev($data);
-    } elseif (in_array('Client', $user->roles)) {
-      $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Amount Due');
-      $rows = build_rows_client($data);
-    }  
-    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
-
-  } elseif ($group_by == 'developer') {
-      foreach ($data as $d) {
-        $sorted_data[$d->field_user_uid] = $d;
-      }
-    //print '<pre>'; print_r($sorted_data); exit;
-    foreach ($sorted_data as $dev_table) {
-      if (in_array('administrator', $user->roles)) {
-        $header = array('Client', 'Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
-        $rows = build_rows_admin($dev_table);
-      } elseif (in_array('Developer', $user->roles)) {
-        $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
-        $rows = build_rows_dev($dev_table);
-      } elseif (in_array('Client', $user->roles)) {
-        $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Amount Due');
-        $rows = build_rows_client($dev_table);
-      }
-    
-      $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
-      
-    }
-  }   
+  $header = build_headers($group_by);
+  $sorted_data = sort_data($data, $group_by);
+  $table= build_rows($sorted_data, $header, $group_by);
   return theme('timesheet', array('table' => $table));
 }
 
@@ -113,13 +80,13 @@ function work_timesheet_query_database($start_date, $end_date) {
   return $results;
 }
 
-function build_rows_admin($results) {
+function build_rows_admin($results, $group_by) {
   $rows = array();
   $total_hours = 0;
   $total_billed = 0;
   $total_paid = 0;
   $total_difference = 0;
-  foreach ($results as $r) {       
+  foreach ($results as $r) {    
     $hours = $r->field_hours_value;
     $billed = $r->bill_rate;
     $paid = $r->pay_rate;
@@ -127,16 +94,25 @@ function build_rows_admin($results) {
     $paid_hours = ($hours * $paid);
     $difference = ($billed_hours - $paid_hours);
     $developer = user_load($r->field_user_uid);
-    //print '<pre>'; print_r($developer); exit;
-    //var_dump($r); exit;
     $client = $r->client;
-    $rows[] = array($r->client, $r->project, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+    if ($group_by == 'client') {
+      $rows[] = array($r->project, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+    } elseif ($group_by == 'developer') {
+      $rows[] = array($r->client, $r->project, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+    } elseif ($group_by == 'project') {
+      $rows[] = array($r->client, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+    } else { $rows[] = array($r->client, $r->project, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+    }
     $total_hours += $hours;
     $total_billed += $billed_hours;
     $total_paid += $paid_hours;
     $total_difference += $difference;
   }
-  $rows[] = array('', '', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference);
+  if ($group_by == 'any') {
+    array('', '', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference); 
+  } else {
+    array('', '', '', '', $total_hours, $total_billed, $total_paid, $total_difference); 
+  }
   return $rows;
 }
 
@@ -149,11 +125,20 @@ function build_rows_client($results) {
     $billed = $r->bill_rate;
     $billed_hours = ($hours * $billed);
     $developer = user_load($r->field_user_uid);
-    $rows[] = array($r->project, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours);
+    if ($group_by == 'developer') {
+      $rows[] = array($r->project, $r->title, $r->field_date_value, $hours, $billed_hours);
+    } elseif ($group_by == 'project') {
+      $rows[] = array($developer->name, $r->title, $r->field_date_value, $hours, $billed_hours);
+    } else { $rows[] = array($r->project, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours);
+    }
     $total_hours += $hours;
     $total_billed += $billed_hours;
   }
-  $rows[] = array('', '', '', '', $total_hours, $total_billed);
+  if ($group_by == 'any') {
+    $rows[] = array('', '', '', '', $total_hours, $total_billed);
+  } else {
+    $rows[] = array( '', '', '', $total_hours, $total_billed);
+  }
   return $rows;
 }
 
@@ -165,10 +150,123 @@ function build_rows_dev($results) {
     $hours = $r->field_hours_value;
     $paid = $r->pay_rate;
     $paid_hours = ($hours * $paid);
+    if ($group_by == 'project') {
+      $rows[] = array($developer->name, $r->title, $r->field_date_value, $hours, $billed_hours);
+    } else { $rows[] = array($r->project, $developer->name, $r->title, $r->field_date_value, $hours, $billed_hours);
+    }
     $rows[] = array($r->project, $r->title, $r->field_date_value, $hours, $paid_hours);
     $total_hours += $hours;
     $total_paid += $paid_hours;
   }
+  if($group_by == 'project') {
+    $rows[] = array('', '', $total_hours, $total_paid);
+  } else {
   $rows[] = array('', '', '', $total_hours, $total_paid);
+  }
   return $rows;
+}
+
+function build_headers($group_by){
+  global $user;
+
+  if ($group_by == 'any') {
+    if (in_array('administrator', $user->roles)) {
+      $header = array('Client', 'Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
+    } elseif (in_array('client', $user->roles)) {
+      $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Amount Due');
+    } elseif (in_array('developer', $user->roles)) {
+      $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
+    }
+  } elseif ($group_by == 'client') {
+    if (in_array('administrator', $user->roles)) {
+      $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
+    }
+  } elseif ($group_by == 'developer') {
+      if (in_array('administrator', $user->roles)) {
+      $header = array('Client', 'Project', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
+    } elseif (in_array('client', $user->roles)) {
+      $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
+    } 
+  } elseif ($group_by == 'project') {
+      if (in_array('administrator', $user->roles)) {
+      $header = array('Client', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
+    } elseif (in_array('client', $user->roles)) {
+      $header = array('Developer', 'Task', 'Date', 'Hours', 'Amount Due');
+    } elseif (in_array('developer', $user->roles)) {
+      $header = array('Task', 'Date', 'Hours', 'Amount Due');
+    }
+  }
+  return $header;
+}
+
+function sort_data($data, $group_by) {
+  if ($group_by == 'any'){
+    $sorted_data = $data;
+  } elseif ($group_by == 'client') {
+    foreach ($data as $d) {
+        $sorted_data[$d->client][] = $d;
+      }
+  } elseif ($group_by == 'developer') {
+    foreach ($data as $d) {
+        $sorted_data[$d->field_user_uid][] = $d;
+      }
+  } elseif ($group_by == 'project') {
+    foreach ($data as $d) {
+        $sorted_data[$d->project][] = $d;
+      }
+  }
+return $sorted_data;
+}
+
+function build_rows($sorted_data, $header, $group_by) {
+  global $user;
+
+  if ($group_by == 'developer') {
+    foreach ($sorted_data as $developer => $dev_table) {
+      $dev = user_load($developer);
+      $table[] = "<h1> $dev->name </h1>";
+      if (in_array('administrator', $user->roles)) {
+        $rows = build_rows_admin($dev_table, $group_by);
+      } elseif (in_array('Developer', $user->roles)) {
+        $rows = build_rows_dev($dev_table, $group_by);
+      } elseif (in_array('Client', $user->roles)) {
+        $rows = build_rows_client($dev_table, $group_by);
+      } 
+      $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+    }
+  } elseif ($group_by == 'client') {
+    foreach ($sorted_data as $client => $client_table) {
+      $table[] = "<h1> $client </h1>";
+      if (in_array('administrator', $user->roles)) {
+        $rows = build_rows_admin($client_table, $group_by);
+      } elseif (in_array('Developer', $user->roles)) {
+        $rows = build_rows_dev($client_table, $group_by);
+      } elseif (in_array('Client', $user->roles)) {
+        $rows = build_rows_client($client_table, $group_by);
+      } 
+      $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+    }
+  } elseif ($group_by == 'project') {
+    foreach ($sorted_data as $project => $project_table) {
+      $table[] = "<h1> $project </h1>";
+      if (in_array('administrator', $user->roles)) {
+        $rows = build_rows_admin($project_table, $group_by);
+      } elseif (in_array('Developer', $user->roles)) {
+        $rows = build_rows_dev($project_table, $group_by);
+      } elseif (in_array('Client', $user->roles)) {
+        $rows = build_rows_client($project_table, $group_by);
+      } 
+      $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+    } 
+  } else {
+     if (in_array('administrator', $user->roles)) {
+        $rows = build_rows_admin($sorted_data, $group_by);
+      } elseif (in_array('Developer', $user->roles)) {
+        $rows = build_rows_dev($sorted_data, $group_by);
+      } elseif (in_array('Client', $user->roles)) {
+        $rows = build_rows_client($sorted_data, $group_by);
+      }
+    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+  }
+  return $table;
 }
