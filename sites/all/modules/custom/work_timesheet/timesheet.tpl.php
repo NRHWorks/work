@@ -12,4 +12,6 @@
    </div>
    </form>
 <?php
-   print $table; 
+foreach($table as $t) {
+   print $t; 
+ }

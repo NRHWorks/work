@@ -23,8 +23,9 @@ function work_timesheet_theme($existing, $type, $theme, $path) {
 
 function work_timesheet() {
   global $user;
-  $group_by = null;
+  $group_by = 'developer';
   $params = drupal_get_query_parameters();
+  $table = array();
   if(!isset($params["start_date"]) && !isset($params["end_date"])) {
     $start_date = date("Y-m-00 00:00:00");
     $end_date = date("Y-m-t 23:59:59");
@@ -32,24 +33,47 @@ function work_timesheet() {
     $start_date = date('Y-m-d 00:00:00',strtotime($params["start_date"]));
     $end_date = date('Y-m-d 23:59:59',strtotime($params["end_date"]));
   }
-  $data = work_timesheet_query_database($start_date, $end_date, $group_by);
+  $data = work_timesheet_query_database($start_date, $end_date);
   //var_dump($params);
   //print_r($start_date); print_r($end_date); exit;
-  if (in_array('administrator', $user->roles)) {
-    $header = array('Client', 'Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
-    $rows = build_rows_admin($data);
-  } elseif (in_array('Developer', $user->roles)) {
-    $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
-    $rows = build_rows_dev($data);
-  } elseif (in_array('Client', $user->roles)) {
-    $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Amount Due');
-    $rows = build_rows_client($data);
-  }
-  $table = theme('table', array('header'=> $header, 'rows' => $rows));
+  if ($group_by == 'any') {
+    if (in_array('administrator', $user->roles)) {
+      $header = array('Client', 'Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
+      $rows = build_rows_admin($data);
+    } elseif (in_array('Developer', $user->roles)) {
+      $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
+      $rows = build_rows_dev($data);
+    } elseif (in_array('Client', $user->roles)) {
+      $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Amount Due');
+      $rows = build_rows_client($data);
+    }  
+    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+
+  } elseif ($group_by == 'developer') {
+      foreach ($data as $d) {
+        $sorted_data[$d->field_user_uid] = $d;
+      }
+    //print '<pre>'; print_r($sorted_data); exit;
+    foreach ($sorted_data as $dev_table) {
+      if (in_array('administrator', $user->roles)) {
+        $header = array('Client', 'Project', 'Developer', 'Task', 'Date', 'Hours', 'Billed', 'Paid', 'Profit');
+        $rows = build_rows_admin($dev_table);
+      } elseif (in_array('Developer', $user->roles)) {
+        $header = array('Project', 'Task', 'Date', 'Hours', 'Amount Due');
+        $rows = build_rows_dev($dev_table);
+      } elseif (in_array('Client', $user->roles)) {
+        $header = array('Project', 'Developer', 'Task', 'Date', 'Hours', 'Amount Due');
+        $rows = build_rows_client($dev_table);
+      }
+    
+      $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+      
+    }
+  }   
   return theme('timesheet', array('table' => $table));
 }
 
-function work_timesheet_query_database($start_date, $end_date, $group_by) {
+function work_timesheet_query_database($start_date, $end_date) {
   global $user;
   //print '<pre>'; print_r($user); exit;
   $query = db_select('node', 'n');
