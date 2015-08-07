@@ -105,12 +105,12 @@ function build_rows_admin($results, $group_by) {
     $developer = user_load($r->field_user_uid);
     $client = $r->client;
     if ($group_by == 'client') {
-      $rows[] = array(l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+      $rows[] = array(l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
     } elseif ($group_by == 'developer') {
-      $rows[] = array($r->client, l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+      $rows[] = array($r->client, l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
     } elseif ($group_by == 'project') {
-      $rows[] = array($r->client, $developer->name, l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
-    } else { $rows[] = array($r->client, l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours, $paid_hours, $difference);
+      $rows[] = array($r->client, $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
+    } else { $rows[] = array($r->client, l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
     }
     $total_hours += $hours;
     $total_billed += $billed_hours;
@@ -138,10 +138,10 @@ function build_rows_client($results, $group_by) {
     $billed_hours = ($hours * $billed);
     $developer = user_load($r->field_user_uid);
     if ($group_by == 'developer') {
-      $rows[] = array(l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours);
+      $rows[] = array(l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
     } elseif ($group_by == 'project') {
-      $rows[] = array($developer->name, l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours);
-    } else { $rows[] = array(l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours);
+      $rows[] = array($developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+    } else { $rows[] = array(l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
     }
     $total_hours += $hours;
     $total_billed += $billed_hours;
@@ -169,8 +169,8 @@ function build_rows_dev($results, $group_by) {
     $billed = $r->bill_rate;
     $billed_hours = ($hours * $billed);
     if ($group_by == 'project') {
-      $rows[] = array(l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours);
-    } else { $rows[] = array(l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), $r->field_date_value, $hours, $billed_hours);
+      $rows[] = array(l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+    } else { $rows[] = array(l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
     }
     $total_hours += $hours;
     $total_paid += $paid_hours;
@@ -258,7 +258,6 @@ function build_rows($sorted_data, $header, $group_by) {
     }
   } elseif ($group_by == 'client') {
     foreach ($sorted_data as $client => $client_table) {
-      //print '<pre>'; print_r($client_table); exit;
       $table[] = "<h1> $client </h1>";
       if (in_array('administrator', $user->roles)) {
         $rows = build_rows_admin($client_table, $group_by);
@@ -270,11 +269,11 @@ function build_rows($sorted_data, $header, $group_by) {
       $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
     }
   } elseif ($group_by == 'project') {
-    //print '<pre>'; print_r($sorted_data); exit;
     foreach ($sorted_data as $project=>$project_table) {
-      $project_nid = $project->nid;
-      print '<pre>'; print_r($project_nid); exit;
-      $table[] = "<h1> $project </h1>";
+      $project_nid = $project_table[0]->nid;
+      $project = $project_table[0]->project;
+      $link = l($project, 'node/' . $project_nid);
+      $table[] = "<h1>$link</h1>";
       if (in_array('administrator', $user->roles)) {
         $rows = build_rows_admin($project_table, $group_by);
       } elseif (in_array('Developer', $user->roles)) {
