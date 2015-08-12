@@ -73,6 +73,7 @@ function work_timesheet_query_database($start_date, $end_date) {
   $query->join('field_data_field_client', 'fc', 'fc.entity_id = np.nid');
   $query->join('node', 'nc', 'nc.nid = fc.field_client_nid');
   $query->addField('nc', 'title', 'client');
+  $query->condition('n.status', '1', '=');
   if(in_array('Developer', $user->roles)) {
     $query->condition('u.field_user_uid', $user->uid, '=');
   } elseif(in_array('Client', $user->roles)) {

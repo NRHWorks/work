@@ -1,0 +1,37 @@
+<?php
+
+function work_schedule_menu() {
+
+	$items['schedule/day'] = array(
+    'title' => 'Schedule - Day',
+    'page callback' => 'work_schedule_day',
+    'access callback' => TRUE,
+  );
+return $items;
+}
+
+function work_schedule_day() {
+  $clients = array();
+  $tasks = array();  
+
+  $start = date('Y-m-d 00:00:00');
+  $end = date('Y-m-d 23:59:59');
+
+  return theme('schedule_day', array('tasks' => work_schedule_tasks($start, $end)));
+}
+
+function work_schedule_tasks($start, $end) {
+	$query = db_select('node', 'n');
+	$query->join('field_data_field_schedule', 's', 'n.nid = s.entity_id');
+	$query->join('field_data_field_date', 'fd', 'fd.entity_id = s.field_schedule_value');
+	$query->join('field_data_field_time', 'ft', 'ft.entity_id = s.field_schedule_value');
+	$query->join('field_data_field_user', 'fu', 'fu.entity_id = s.field_schedule_value');
+	$query->addField('s', 'field_data_field_schedule');
+	$query->addField('fd', 'field_date');
+	$query->addField('st', 'field_schedule_date');
+	$query->addField('fu', 'field_user');
+	$query->condition('n.type', 'task', '=');
+	$query->condition('n.status', '1', '=');
+	$data = $query->execute();
+	return $data;
+}
