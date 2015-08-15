@@ -1,0 +1,156 @@
+<?php
+
+function work_todo_menu() {
+  $items['todo'] = array(
+    'title' => 'To Do',
+    'page callback' => 'work_todo_page',
+    'access callback' => TRUE,
+  );
+  
+  $items['todo/%'] = array(
+    'title' => 'To Do',
+    'page callback' => 'work_todo_page_user',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+  );
+  
+  
+  $items['todo/done/%'] = array(
+    'title' => 'To Do',
+    'page callback' => 'work_todo_done',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+  
+  $items['todo/do-later/%'] = array(
+    'title' => 'To Do',
+    'page callback' => 'work_todo_do_later',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+  
+  $items['todo/do-tomorrow/%'] = array(
+    'title' => 'To Do',
+    'page callback' => 'work_todo_do_tomorrow',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+  
+  $items['todo/do-today/%'] = array(
+    'title' => 'To Do',
+    'page callback' => 'work_todo_do_today',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+function work_todo_theme($existing, $type, $theme, $path) {
+  $theme = array();
+  $theme['todo'] = array(
+    'template' => 'todo',
+    'variables' => array('data' => null, 'data_done' => null),
+    'path' => drupal_get_path('module', 'work_todo') . '/templates',
+   );
+
+  return $theme;
+}
+
+function work_todo_page() {
+  global $user;
+
+  $result = db_query("  SELECT nid 
+                        FROM {node} n 
+                        INNER JOIN {field_data_field_assigned_to} u ON n.nid = u.entity_id 
+                        INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
+                        INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
+                        WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 0 AND s.bundle = 'todo' AND u.field_assigned_to_uid = :uid
+                        ORDER BY p.field_priority_value", array(':uid' => $user->uid));
+
+  $nodes = array();
+  foreach ($result as $r) {
+    $nodes[] = node_load($r->nid); 
+  }
+  
+  $result = db_query("  SELECT nid 
+                        FROM {node} n 
+                        INNER JOIN {field_data_field_assigned_to} u ON n.nid = u.entity_id 
+                        INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
+                        INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
+                        WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 1 AND s.bundle = 'todo' AND u.field_assigned_to_uid = :uid
+                        ORDER BY n.changed DESC
+                        LIMIT 25", array(':uid' => $user->uid));
+
+  $nodes_done = array();
+  foreach ($result as $r) {
+    $nodes_done[] = node_load($r->nid); 
+  }
+
+  return theme('todo', array('data' => $nodes, 'data_done' => $nodes_done));
+}
+
+function work_todo_page_user($uid) {
+  $result = db_query("  SELECT nid 
+                        FROM {node} n 
+                        INNER JOIN {field_data_field_assigned_to} u ON n.nid = u.entity_id 
+                        INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
+                        INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
+                        WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 0 AND s.bundle = 'todo' AND u.field_assigned_to_uid = :uid
+                        ORDER BY p.field_priority_value", array(':uid' => $uid));
+
+  $nodes = array();
+  foreach ($result as $r) {
+    $nodes[] = node_load($r->nid); 
+  }
+  
+  $result = db_query("  SELECT nid 
+                        FROM {node} n 
+                        INNER JOIN {field_data_field_assigned_to} u ON n.nid = u.entity_id 
+                        INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
+                        INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
+                        WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 1 AND s.bundle = 'todo' AND u.field_assigned_to_uid = :uid
+                        ORDER BY n.changed DESC
+                        LIMIT 25", array(':uid' => $uid));
+
+  $nodes_done = array();
+  foreach ($result as $r) {
+    $nodes_done[] = node_load($r->nid); 
+  }
+
+  return theme('todo', array('data' => $nodes, 'data_done' => $nodes_done));
+}
+
+function work_todo_done($nid) {
+  $node = node_load($nid);
+  $node->field_todo_status[LANGUAGE_NONE][0]['value'] = 1;
+  node_save($node);
+
+  drupal_goto('todo');
+}
+
+function work_todo_do_later($nid) {
+  $max_priority = db_query("SELECT max(field_priority_value) FROM field_data_field_priority")->fetchField();
+  
+  $node = node_load($nid);
+  $node->field_priority[LANGUAGE_NONE][0]['value'] = $max_priority + 1;
+  node_save($node);
+
+  drupal_goto('todo');
+}
+
+function work_todo_do_tomorrow($nid) {
+  $node = node_load($nid);
+  $node->field_date[LANGUAGE_NONE][0]['value'] = date('Y-m-d 01:00:00', (time() + 86400));
+  node_save($node);
+  
+  work_todo_do_later($nid);
+}
+
+function work_todo_do_today($nid) {
+  $node = node_load($nid);
+  $node->field_date[LANGUAGE_NONE][0]['value'] = date('Y-m-d 01:00:00');
+  node_save($node);
+
+  work_todo_do_later($nid);
+}
