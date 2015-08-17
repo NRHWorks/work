@@ -25,12 +25,12 @@ function work_timesheet() {
   global $user;
   $params = drupal_get_query_parameters();
   $table = array();
-  if(!isset($params["start_date"]) && !isset($params["end_date"])) {
-    $start_date = date("Y-m-00 00:00:00");
-    $end_date = date("Y-m-t 23:59:59");
-  } else {
+  if((isset($params["start_date"]) && isset($params["end_date"])) && ($params["start_date"] != '') && $params["end_date"] != '') {
     $start_date = date('Y-m-d 00:00:00',strtotime($params["start_date"]));
     $end_date = date('Y-m-d 23:59:59',strtotime($params["end_date"]));
+  } else {
+    $start_date = date("Y-m-01 00:00:00");
+    $end_date = date("Y-m-t 23:59:59");
   }
   if(!isset($params["group_by"])) {
     $group_by = "any";
@@ -40,7 +40,7 @@ function work_timesheet() {
   $data = work_timesheet_query_database($start_date, $end_date);
   $header = build_headers($group_by);
   $sorted_data = sort_data($data, $group_by);
-  $table= build_rows($sorted_data, $header, $group_by);
+  $table = build_rows($sorted_data, $header, $group_by);
   return theme('timesheet', array('table' => $table));
 }
 
@@ -91,36 +91,38 @@ function build_rows_admin($results, $group_by) {
   $total_billed = 0;
   $total_paid = 0;
   $total_difference = 0;
-  foreach ($results as $r) {  
-    //print '<pre>'; print_r($r); exit; 
-    $nid = $r->nid;
-    $project = $r->project;
-    $project_nid = $r->project_nid;
-    $hours = $r->field_hours_value;
-    $billed = $r->bill_rate;
-    $paid = $r->pay_rate;
-    $title = $r->title;
-    $billed_hours = ($hours * $billed);
-    $paid_hours = ($hours * $paid);
-    $difference = ($billed_hours - $paid_hours);
-    $developer = user_load($r->field_user_uid);
-    $client = $r->client;
-    if ($group_by == 'client') {
-      $rows[] = array(l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
-    } elseif ($group_by == 'developer') {
-      $rows[] = array($r->client, l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
-    } elseif ($group_by == 'project') {
-      $rows[] = array($r->client, $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
-    } else { $rows[] = array($r->client, l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
+  if(isset($results)) {
+    foreach ($results as $r) {  
+      $nid = $r->nid;
+      $project = $r->project;
+      $project_nid = $r->project_nid;
+      $hours = $r->field_hours_value;
+      $billed = $r->bill_rate;
+      $paid = $r->pay_rate;
+      $title = $r->title;
+      $billed_hours = ($hours * $billed);
+      $paid_hours = ($hours * $paid);
+      $difference = ($billed_hours - $paid_hours);
+      $developer = user_load($r->field_user_uid);
+      $client = $r->client;
+      if ($group_by == 'client') {
+        $rows[] = array(l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
+      } elseif ($group_by == 'developer') {
+        $rows[] = array($r->client, l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
+      } elseif ($group_by == 'project') {
+        $rows[] = array($r->client, $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
+      } else { $rows[] = array($r->client, l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
+      }
+      $total_hours += $hours;
+      $total_billed += $billed_hours;
+      $total_paid += $paid_hours;
+      $total_difference += $difference;
     }
-    $total_hours += $hours;
-    $total_billed += $billed_hours;
-    $total_paid += $paid_hours;
-    $total_difference += $difference;
   }
-  $totals = make_strong(array("Total Hours: $total_hours", "Total Billed: $total_billed", "Total Paid: $total_paid", "Total Profit: $total_difference"));
-  foreach($totals as $t) {
-    $rows[] = array($t);
+  if ($group_by == 'any') {
+    $rows[] = make_strong(array("Totals:" ,null, null, null, null, $total_hours, $total_billed, $total_paid, $total_difference));
+  } else {
+    $rows[] = make_strong(array("Totals:" ,null, null, null, $total_hours, $total_billed, $total_paid, $total_difference));
   }
   return $rows;
 }
@@ -129,27 +131,30 @@ function build_rows_client($results, $group_by) {
   $rows = array();
   $total_hours = 0;
   $total_billed = 0;
-  foreach ($results as $r) { 
-    $nid = $r->nid;
-    $project_nid = $r->project_nid;
-    $project = $r->project;
-    $title = $r->title;
-    $hours = $r->field_hours_value;
-    $billed = $r->bill_rate;
-    $billed_hours = ($hours * $billed);
-    $developer = user_load($r->field_user_uid);
-    if ($group_by == 'developer') {
-      $rows[] = array(l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
-    } elseif ($group_by == 'project') {
-      $rows[] = array($developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
-    } else { $rows[] = array(l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+  if(isset($results)) {
+    foreach ($results as $r) { 
+      $nid = $r->nid;
+      $project_nid = $r->project_nid;
+      $project = $r->project;
+      $title = $r->title;
+      $hours = $r->field_hours_value;
+      $billed = $r->bill_rate;
+      $billed_hours = ($hours * $billed);
+      $developer = user_load($r->field_user_uid);
+      if ($group_by == 'developer') {
+        $rows[] = array(l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+      } elseif ($group_by == 'project') {
+        $rows[] = array($developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+      } else { $rows[] = array(l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+      }
+      $total_hours += $hours;
+      $total_billed += $billed_hours;
     }
-    $total_hours += $hours;
-    $total_billed += $billed_hours;
   }
-  $totals = make_strong(array("Total Hours: $total_hours", "Total Billed: $total_billed"));
-  foreach($totals as $t) {
-    $rows[] = array($t);
+  if ($group_by == 'any' || $group_by == 'client') {
+    $rows[] = make_strong(array("Totals:" ,null, null, null, $total_hours, $total_billed));
+  } else {
+    $rows[] = make_strong(array("Totals:" ,null, null, $total_hours, $total_billed));
   }
   return $rows;
 }
@@ -158,27 +163,30 @@ function build_rows_dev($results, $group_by) {
   $rows = array();
   $total_hours = 0;
   $total_paid = 0;
-  foreach ($results as $r) { 
-    $nid = $r->nid;
-    $project_nid = $r->project_nid;
-    $project = $r->project;
-    $hours = $r->field_hours_value;
-    $title = $r->title;
-    $paid = $r->pay_rate;
-    $paid_hours = ($hours * $paid);
-    $developer = user_load($r->field_user_uid);
-    $billed = $r->bill_rate;
-    $billed_hours = ($hours * $billed);
-    if ($group_by == 'project') {
-      $rows[] = array(l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
-    } else { $rows[] = array(l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+  if(isset($results)) {
+    foreach ($results as $r) { 
+      $nid = $r->nid;
+      $project_nid = $r->project_nid;
+      $project = $r->project;
+      $hours = $r->field_hours_value;
+      $title = $r->title;
+      $paid = $r->pay_rate;
+      $paid_hours = ($hours * $paid);
+      $developer = user_load($r->field_user_uid);
+      $billed = $r->bill_rate;
+      $billed_hours = ($hours * $billed);
+      if ($group_by == 'project') {
+        $rows[] = array(l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+      } else { $rows[] = array(l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours);
+      }
+      $total_hours += $hours;
+      $total_paid += $paid_hours;
     }
-    $total_hours += $hours;
-    $total_paid += $paid_hours;
   }
-  $totals = make_strong(array("Total Hours: $total_hours", "Total Paid: $total_paid"));
-  foreach($totals as $t) {
-    $rows[] = array($t);
+  if($group_by == 'project') {
+    $rows[] = make_strong(array("Totals: ", null, $total_hours, $total_paid));
+  } else {
+    $rows[] = make_strong(array("Totals: ", null, null, $total_hours, $total_paid));
   }
   return $rows;
 }
@@ -223,7 +231,8 @@ function build_headers($group_by){
 }
 
 function sort_data($data, $group_by) {
-  if ($group_by == 'any'){
+  $sorted_data = null;
+  if ($group_by == 'any') {
     $sorted_data = $data;
   } elseif ($group_by == 'client') {
     foreach ($data as $d) {
@@ -243,8 +252,17 @@ return $sorted_data;
 
 function build_rows($sorted_data, $header, $group_by) {
   global $user;
-
-  if ($group_by == 'developer') {
+  
+  if ($group_by == 'any' || $sorted_data == null) {
+    if (in_array('administrator', $user->roles)) {
+    $rows = build_rows_admin($sorted_data, $group_by);
+  } elseif (in_array('Developer', $user->roles)) {
+    $rows = build_rows_dev($sorted_data, $group_by);
+  } elseif (in_array('Client', $user->roles)) {
+    $rows = build_rows_client($sorted_data, $group_by);
+  }
+    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+  } elseif ($group_by == 'developer') {
     foreach ($sorted_data as $developer => $dev_table) {
       $dev = user_load($developer);
       $table[] = "<h1> $dev->name </h1>";
@@ -284,16 +302,7 @@ function build_rows($sorted_data, $header, $group_by) {
       } 
       $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
     } 
-  } else {
-     if (in_array('administrator', $user->roles)) {
-        $rows = build_rows_admin($sorted_data, $group_by);
-      } elseif (in_array('Developer', $user->roles)) {
-        $rows = build_rows_dev($sorted_data, $group_by);
-      } elseif (in_array('Client', $user->roles)) {
-        $rows = build_rows_client($sorted_data, $group_by);
-      }
-    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
-  }
+  } 
   return $table;
 }
 

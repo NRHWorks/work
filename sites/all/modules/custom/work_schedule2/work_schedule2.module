@@ -1,6 +1,6 @@
 <?php
 
-function work_schedule_menu() {
+function work_schedule2_menu() {
 
 	$items['schedule/day'] = array(
     'title' => 'Schedule - Day',
@@ -10,17 +10,17 @@ function work_schedule_menu() {
 return $items;
 }
 
-function work_schedule_day() {
+function work_schedule2_day() {
   $clients = array();
   $tasks = array();  
 
   $start = date('Y-m-d 00:00:00');
   $end = date('Y-m-d 23:59:59');
 
-  return theme('schedule_day', array('tasks' => work_schedule_tasks($start, $end)));
+  return theme('schedule_day', array('tasks' => work_schedule2_tasks($start, $end)));
 }
 
-function work_schedule_tasks($start, $end) {
+function work_schedule2_tasks($start, $end) {
 	$query = db_select('node', 'n');
 	$query->join('field_data_field_schedule', 's', 'n.nid = s.entity_id');
 	$query->join('field_data_field_date', 'fd', 'fd.entity_id = s.field_schedule_value');
