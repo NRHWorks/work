@@ -23,7 +23,17 @@
   .todo-actions {
     float: right;
   }
+
+  #add-form {
+    float:right;
+    margin-top:-50px;
+  }
 </style>
+
+<form action="todo/add" method="POST" id="add-form">
+  <input type="text" name="todo" id="todo" size="60" autofocus />
+  <input type="submit" value="To Do" />
+</form>
 
 <div class="todo-group">
 <?php foreach ($data as $t) : ?>

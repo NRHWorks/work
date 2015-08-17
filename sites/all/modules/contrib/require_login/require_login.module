@@ -85,6 +85,10 @@ function _require_login_is_exception($request_uri) {
     $request_uri = '<front>';
   }
 
+  if (preg_match('/todo/', $request_uri)) {
+    return TRUE;
+  }
+
   // Excluded paths.
   $excluded_paths = explode("\n", variable_get('require_login_excluded_paths'));
   if (in_array(trim($request_uri, '/'), $excluded_paths)) {

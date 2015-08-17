@@ -43,6 +43,28 @@ function work_todo_menu() {
     'access callback' => TRUE,
   );
 
+  $items['todo/add'] = array(
+    'title' => 'To Do Add',
+    'page callback' => 'work_todo_add',
+    'access callback' => TRUE,
+  );
+  
+  $items['todo/add/%'] = array(
+    'title' => 'To Do Add',
+    'page callback' => 'work_todo_add_user',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+  
+  $items['todo/%/cli'] = array(
+    'title' => 'To Do',
+    'page callback' => 'work_todo_cli',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+  );
+  
+  
+
   return $items;
 }
 
@@ -55,6 +77,56 @@ function work_todo_theme($existing, $type, $theme, $path) {
    );
 
   return $theme;
+}
+
+function work_todo_add_user($uid) {
+  $result = db_query("UPDATE {field_data_field_priority} SET field_priority_value = (field_priority_value + 1)}");
+
+  $node = new stdClass();
+  $node->title = $_POST['todo'];
+  $node->type = "todo";
+  node_object_prepare($node); 
+
+  $node->language = LANGUAGE_NONE;
+  $node->uid = $uid;
+  $node->status = 1;
+  
+  $node->field_assigned_to[LANGUAGE_NONE][0]['uid'] = $uid;
+  $node->field_status[LANGUAGE_NONE][0]['value'] = 0;
+  $node->field_date[LANGUAGE_NONE][0]['value'] = date('Y-m-d 01:00:00');
+  $node->field_priority[LANGUAGE_NONE][0]['value'] = 1;
+
+  $node = node_submit($node);
+  node_save($node);
+
+  drupal_set_message("TODO added");
+  drupal_goto("todo");
+}
+
+function work_todo_add() {
+  global $user;
+
+  $result = db_query("UPDATE {field_data_field_priority} SET field_priority_value = (field_priority_value + 1)}");
+
+  $node = new stdClass();
+  $node->title = $_POST['todo'];
+  $node->type = "todo";
+  node_object_prepare($node); 
+
+  $node->language = LANGUAGE_NONE;
+  $node->uid = $user->uid;
+  $node->status = 1;
+  
+  $node->field_assigned_to[LANGUAGE_NONE][0]['uid'] = $user->uid;
+  $node->field_status[LANGUAGE_NONE][0]['value'] = 0;
+  $node->field_date[LANGUAGE_NONE][0]['value'] = date('Y-m-d 01:00:00');
+  $node->field_priority[LANGUAGE_NONE][0]['value'] = 1;
+
+  $node = node_submit($node);
+  node_save($node);
+
+  drupal_set_message("TODO added");
+  drupal_goto("todo");
 }
 
 function work_todo_page() {
@@ -153,4 +225,41 @@ function work_todo_do_today($nid) {
   node_save($node);
 
   work_todo_do_later($nid);
+}
+
+function work_todo_cli($uid) {
+  $result = db_query("  SELECT nid 
+                        FROM {node} n 
+                        INNER JOIN {field_data_field_date} d ON n.nid = d.entity_id 
+                        INNER JOIN {field_data_field_assigned_to} u ON n.nid = u.entity_id 
+                        INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
+                        INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
+                        WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 0 AND s.bundle = 'todo' AND u.field_assigned_to_uid = :uid AND d.field_date_value <= '".date('Y-m-d 23:59:59')."'
+                        ORDER BY substr(d.field_date_value,0,11),  p.field_priority_value", array(':uid' => $uid));
+
+
+  $todo = '';
+  foreach ($result as $r) {
+    $node = node_load($r->nid); 
+    $todo .= "({$node->nid}) {$node->title}\n";
+  }
+
+  $todo .= "----------------------------------\n";
+
+  $result = db_query("  SELECT nid 
+                        FROM {node} n 
+                        INNER JOIN {field_data_field_date} d ON n.nid = d.entity_id 
+                        INNER JOIN {field_data_field_assigned_to} u ON n.nid = u.entity_id 
+                        INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
+                        INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
+                        WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 0 AND s.bundle = 'todo' AND u.field_assigned_to_uid = :uid AND d.field_date_value > '".date('Y-m-d 23:59:59')."'
+                        ORDER BY substr(d.field_date_value,0,11),  p.field_priority_value", array(':uid' => $uid));
+
+  foreach ($result as $r) {
+    $node = node_load($r->nid); 
+    $todo .= "({$node->nid}) {$node->title}\n";
+  }
+  
+  print $todo;
+  exit;
 }
