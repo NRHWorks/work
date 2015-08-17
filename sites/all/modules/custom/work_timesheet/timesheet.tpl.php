@@ -20,8 +20,9 @@
    </div>
    </form>
    <div style="clear:both;"></div>
+
 <?php
 foreach($table as $t) {
-   header('Content-Type: text/plain');
-   print $t; 
- }
+  header('Content-Type: text/plain');
+  print $t;
+}

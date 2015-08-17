@@ -25,8 +25,8 @@ function work_timesheet() {
   global $user;
   $params = drupal_get_query_parameters();
   $table = array();
-  if(!isset($params["start_date"]) && !isset($params["end_date"])) {
-    $start_date = date("Y-m-00 00:00:00");
+  if(!$params["start_date"] && !$params["end_date"]) {
+    $start_date = date("Y-m-01 00:00:00");
     $end_date = date("Y-m-t 23:59:59");
   } else {
     $start_date = date('Y-m-d 00:00:00',strtotime($params["start_date"]));
@@ -40,7 +40,7 @@ function work_timesheet() {
   $data = work_timesheet_query_database($start_date, $end_date);
   $header = build_headers($group_by);
   $sorted_data = sort_data($data, $group_by);
-  $table= build_rows($sorted_data, $header, $group_by);
+  $table = build_rows($sorted_data, $header, $group_by);
   return theme('timesheet', array('table' => $table));
 }
 
@@ -92,7 +92,6 @@ function build_rows_admin($results, $group_by) {
   $total_paid = 0;
   $total_difference = 0;
   foreach ($results as $r) {  
-    //print '<pre>'; print_r($r); exit; 
     $nid = $r->nid;
     $project = $r->project;
     $project_nid = $r->project_nid;
@@ -118,9 +117,10 @@ function build_rows_admin($results, $group_by) {
     $total_paid += $paid_hours;
     $total_difference += $difference;
   }
-  $totals = make_strong(array("Total Hours: $total_hours", "Total Billed: $total_billed", "Total Paid: $total_paid", "Total Profit: $total_difference"));
-  foreach($totals as $t) {
-    $rows[] = array($t);
+  if ($group_by == 'any') {
+    $rows[] = make_strong(array("Totals:" ,null, null, null, null, $total_hours, $total_billed, $total_paid, $total_difference));
+  } else {
+    $rows[] = make_strong(array("Totals:" ,null, null, null, $total_hours, $total_billed, $total_paid, $total_difference));
   }
   return $rows;
 }
@@ -147,9 +147,10 @@ function build_rows_client($results, $group_by) {
     $total_hours += $hours;
     $total_billed += $billed_hours;
   }
-  $totals = make_strong(array("Total Hours: $total_hours", "Total Billed: $total_billed"));
-  foreach($totals as $t) {
-    $rows[] = array($t);
+  if ($group_by == 'any') {
+    $rows[] = make_strong(array("Totals:" ,null, null, null, $total_hours, $total_billed));
+  } else {
+    $rows[] = make_strong(array("Totals:" ,null, null, $total_hours, $total_billed));
   }
   return $rows;
 }
@@ -176,9 +177,10 @@ function build_rows_dev($results, $group_by) {
     $total_hours += $hours;
     $total_paid += $paid_hours;
   }
-  $totals = make_strong(array("Total Hours: $total_hours", "Total Paid: $total_paid"));
-  foreach($totals as $t) {
-    $rows[] = array($t);
+  if($group_by == 'project') {
+    $rows[] = make_strong(array("Totals: ", null, $total_hours, $total_paid));
+  } else {
+    $rows[] = make_strong(array("Totals: ", null, null, $total_hours, $total_paid));
   }
   return $rows;
 }
@@ -223,6 +225,7 @@ function build_headers($group_by){
 }
 
 function sort_data($data, $group_by) {
+  $sorted_data = null;
   if ($group_by == 'any'){
     $sorted_data = $data;
   } elseif ($group_by == 'client') {
@@ -243,8 +246,17 @@ return $sorted_data;
 
 function build_rows($sorted_data, $header, $group_by) {
   global $user;
-
-  if ($group_by == 'developer') {
+  
+  if ($group_by == 'any' || $sorted_data == null) {
+    if (in_array('administrator', $user->roles)) {
+    $rows = build_rows_admin($sorted_data, $group_by);
+  } elseif (in_array('Developer', $user->roles)) {
+    $rows = build_rows_dev($sorted_data, $group_by);
+  } elseif (in_array('Client', $user->roles)) {
+    $rows = build_rows_client($sorted_data, $group_by);
+  }
+    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+  } elseif ($group_by == 'developer') {
     foreach ($sorted_data as $developer => $dev_table) {
       $dev = user_load($developer);
       $table[] = "<h1> $dev->name </h1>";
@@ -258,7 +270,7 @@ function build_rows($sorted_data, $header, $group_by) {
       $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
     }
   } elseif ($group_by == 'client') {
-    foreach ($sorted_data as $client => $client_table) {
+    foreach ($sorted_array as $client => $client_table) {
       $table[] = "<h1> $client </h1>";
       if (in_array('administrator', $user->roles)) {
         $rows = build_rows_admin($client_table, $group_by);
@@ -284,16 +296,7 @@ function build_rows($sorted_data, $header, $group_by) {
       } 
       $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
     } 
-  } else {
-     if (in_array('administrator', $user->roles)) {
-        $rows = build_rows_admin($sorted_data, $group_by);
-      } elseif (in_array('Developer', $user->roles)) {
-        $rows = build_rows_dev($sorted_data, $group_by);
-      } elseif (in_array('Client', $user->roles)) {
-        $rows = build_rows_client($sorted_data, $group_by);
-      }
-    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
-  }
+  } 
   return $table;
 }
 
