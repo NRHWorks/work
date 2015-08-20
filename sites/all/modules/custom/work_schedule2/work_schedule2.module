@@ -1,26 +1,35 @@
 <?php
 
 function work_schedule2_menu() {
-
 	$items['schedule/day'] = array(
     'title' => 'Schedule - Day',
-    'page callback' => 'work_schedule2_day',
+    'page callback' => 'work_schedule2',
     'access callback' => TRUE,
   );
 return $items;
 }
 
-function work_schedule2_day() {
-  $clients = array();
-  $tasks = array();  
+function work_schedule2_theme($existing, $type, $theme, $path) {
+  $theme = array();
+  $theme['schedule_day'] = array(
+    'template' => 'schedule_day',
+    'path' => drupal_get_path('module', 'work_schedule2'),
+    'variables' => array('table' => null),
+   );
 
-  $start = date('Y-m-d 00:00:00');
-  $end = date('Y-m-d 23:59:59');
-
-  return theme('schedule_day', array('tasks' => work_schedule2_tasks($start, $end)));
+  return $theme;
 }
 
-function work_schedule2_tasks($start, $end) {
+function work_schedule2() {
+	$sort_by = 'day';
+	$tables = array();
+	$data = work_schedule2_query_database();
+	$sorted = sort_tables($data, $sort_by);
+	$table = build_tables($sorted);
+	return theme('schedule_day', array('table' => $table));
+}
+
+function work_schedule2_query_database() {
 	$query = db_select('node', 'n');
 	//$query->addField('s', 'field_schedule_value');
 	//$query->addField('s', 'entity_id');
@@ -41,6 +50,49 @@ function work_schedule2_tasks($start, $end) {
 	$query->condition('n.type', 'task', '=');
 	$query->condition('n.status', '1', '=');
 	$data = $query->execute();
-	var_dump($data); exit;
 	return $data;
+
+}
+
+function get_header($t) {
+	if($temp == 'AM') {
+		$header = array("<h1>AM</h1>");
+	} elseif($temp == 'PM+') {
+		$header = array("<h1>Evening</h1>");
+	} elseif($temp == 'PM') {
+		$header = array("<h1>PM</h1>");
+	}
+	return $header;
+}
+
+function sort_tables($data, $sort_by) {
+	if($sort_by == 'day') {
+		foreach($data as $d) {
+			if(date("y-m-d", strtotime("today")) == date("y-m-d", strtotime($d->field_date_value))) {
+				$tables[$d->field_schedule_time_value][$d->name] = $d->title;
+			}
+		}
+	}
+	return $tables;
+}
+
+function objectToArray ($object) {
+    if(!is_object($object) && !is_array($object))
+        return $object;
+    return array_map('objectToArray', (array) $object);
+}
+
+function build_tables($data) {
+	foreach ($data as $key=>$val) {
+		$header = "<h1> $key </h1>";
+		//print($header); exit;
+		foreach($val as $k=>$v) {
+			//print($v); exit;
+			$rows[] = array($k, $v);
+		}
+		//print '<pre>'; print_r($rows); exit;
+		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+	}
+	return $table;
+
 }
