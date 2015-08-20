@@ -50,25 +50,17 @@ function work_schedule2_query_database() {
 	$query->condition('n.status', '1', '=');
 	$data = $query->execute();
 	return $data;
-
-}
-
-function get_header($t) {
-	if($temp == 'AM') {
-		$header = array("<h1>AM</h1>");
-	} elseif($temp == 'PM+') {
-		$header = array("<h1>Evening</h1>");
-	} elseif($temp == 'PM') {
-		$header = array("<h1>PM</h1>");
-	}
-	return $header;
 }
 
 function sort_tables($data, $sort_by) {
 	if($sort_by == 'day') {
 		foreach($data as $d) {
+			$time = $d->field_schedule_time_value;
+			if($time == 'PM+') {
+				$time = 'Evening';
+			}
 			if(date("y-m-d", strtotime("today")) == date("y-m-d", strtotime($d->field_date_value))) {
-				$tables[$d->field_schedule_time_value][$d->name] = $d->title;
+				$tables[$time][$d->name] = $d->title;
 			}
 		}
 	}
