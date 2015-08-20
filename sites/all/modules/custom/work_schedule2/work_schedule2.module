@@ -22,7 +22,6 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
 
 function work_schedule2() {
 	$sort_by = 'day';
-	$tables = array();
 	$data = work_schedule2_query_database();
 	$sorted = sort_tables($data, $sort_by);
 	$table = build_tables($sorted);
@@ -83,16 +82,13 @@ function objectToArray ($object) {
 }
 
 function build_tables($data) {
+	$header = array('User', 'Task');
 	foreach ($data as $key=>$val) {
-		$header = "<h1> $key </h1>";
-		//print($header); exit;
+		$table[] = "<h1> $key </h1>";
 		foreach($val as $k=>$v) {
-			//print($v); exit;
 			$rows[] = array($k, $v);
 		}
-		//print '<pre>'; print_r($rows); exit;
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
 	}
 	return $table;
-
 }
