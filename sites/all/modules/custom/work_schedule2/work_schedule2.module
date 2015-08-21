@@ -22,9 +22,18 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
 
 function work_schedule2() {
 	$sort_by = 'day';
+	$params = drupal_get_query_parameters();
 	$data = work_schedule2_query_database();
-	$sorted = sort_tables($data, $sort_by);
-	$table = build_tables($sorted);
+	$date = $_SERVER['QUERY_STRING'];
+	if($date) {
+		$date = rawurldecode(substr($date, 5));
+	} elseif (isset($params["date"]) && $params["date"] != '') {
+    	$date = date('Y-m-d',strtotime($params["date"]));
+  	} else {
+    	$date = date("Y-m-d");
+  	}
+	$sorted = sort_tables($data, $sort_by, $date);
+	$table = build_tables($sorted, $date);
 	return theme('schedule_day', array('table' => $table));
 }
 
@@ -52,15 +61,16 @@ function work_schedule2_query_database() {
 	return $data;
 }
 
-function sort_tables($data, $sort_by) {
-	
+function sort_tables($data, $sort_by, $date) {
+	//print_r($date); exit;
+	$tables = array();
 	if($sort_by == 'day') {
 		foreach($data as $d) {
 			$time = $d->field_schedule_time_value;
 			if($time == 'PM+') {
 				$time = 'Evening';
 			}
-			if(date("y-m-d", strtotime("today")) == date("y-m-d", strtotime($d->field_date_value))) {
+			if(date("y-m-d", strtotime($date)) == date("y-m-d", strtotime($d->field_date_value))) {
 				$tables[$time][$d->name] = $d->title;
 			}
 		}
@@ -74,7 +84,8 @@ function objectToArray ($object) {
     return array_map('objectToArray', (array) $object);
 }
 
-function build_tables($data) {
+function build_tables($data, $date) {
+	$table[] = '<h1><a href="day?date=' . date('m-d-Y',strtotime($date . '-1 days')) . '"><<</a> ' . $date . ' <a href="day?date=' . date('m-d-Y',strtotime($date . '+1 days')) . '">>></a></h1>';
 	$header = array('User', 'Task');
 	foreach ($data as $key=>$val) {
 		$table[] = "<h1> $key </h1>";
