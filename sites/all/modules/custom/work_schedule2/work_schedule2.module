@@ -53,6 +53,7 @@ function work_schedule2_query_database() {
 }
 
 function sort_tables($data, $sort_by) {
+	
 	if($sort_by == 'day') {
 		foreach($data as $d) {
 			$time = $d->field_schedule_time_value;
