@@ -70,7 +70,7 @@ function sort_tables($data, $sort_by, $date) {
 			if($time == 'PM+') {
 				$time = 'Evening';
 			}
-			if(date("y-m-d", strtotime($date)) == date("y-m-d", strtotime($d->field_date_value))) {
+			if(date("Y-m-d", strtotime($date)) == date("Y-m-d", strtotime($d->field_date_value))) {
 				$tables[$time][$d->name] = $d->title;
 			}
 		}
@@ -85,7 +85,7 @@ function objectToArray ($object) {
 }
 
 function build_tables($data, $date) {
-	$table[] = '<h1><a href="day?date=' . date('m-d-Y',strtotime($date . '-1 days')) . '"><<</a> ' . $date . ' <a href="day?date=' . date('m-d-Y',strtotime($date . '+1 days')) . '">>></a></h1>';
+	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($date . '-1 days')) . '"><<</a> ' . $date . ' <a href="day?date=' . date('Y-m-d',strtotime($date . '+1 days')) . '">>></a></h1>';
 	$header = array('User', 'Task');
 	foreach ($data as $key=>$val) {
 		$table[] = "<h1> $key </h1>";
