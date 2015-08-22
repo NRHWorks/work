@@ -1,37 +1,98 @@
 <?php
 
 function work_schedule2_menu() {
-
 	$items['schedule/day'] = array(
     'title' => 'Schedule - Day',
-    'page callback' => 'work_schedule_day',
+    'page callback' => 'work_schedule2',
     'access callback' => TRUE,
   );
 return $items;
 }
 
-function work_schedule2_day() {
-  $clients = array();
-  $tasks = array();  
+function work_schedule2_theme($existing, $type, $theme, $path) {
+  $theme = array();
+  $theme['schedule_day'] = array(
+    'template' => 'schedule_day',
+    'path' => drupal_get_path('module', 'work_schedule2'),
+    'variables' => array('table' => null),
+   );
 
-  $start = date('Y-m-d 00:00:00');
-  $end = date('Y-m-d 23:59:59');
-
-  return theme('schedule_day', array('tasks' => work_schedule2_tasks($start, $end)));
+  return $theme;
 }
 
-function work_schedule2_tasks($start, $end) {
+function work_schedule2() {
+	$sort_by = 'day';
+	$params = drupal_get_query_parameters();
+	$data = work_schedule2_query_database();
+	$date = $_SERVER['QUERY_STRING'];
+	if($date) {
+		$date = rawurldecode(substr($date, 5));
+	} elseif (isset($params["date"]) && $params["date"] != '') {
+    	$date = date('Y-m-d',strtotime($params["date"]));
+  	} else {
+    	$date = date("Y-m-d");
+  	}
+	$sorted = sort_tables($data, $sort_by, $date);
+	$table = build_tables($sorted, $date);
+	return theme('schedule_day', array('table' => $table));
+}
+
+function work_schedule2_query_database() {
 	$query = db_select('node', 'n');
+	//$query->addField('s', 'field_schedule_value');
+	//$query->addField('s', 'entity_id');
+	//$query->addField('st', 'entity_id');
+	$query->addField('st', 'field_schedule_time_value');
+	//$query->addField('fd', 'entity_id');
+	$query->addField('fd', 'field_date_value');
+	//$query->addField('fu', 'entity_id');
+	//$query->addField('fu', 'field_user_uid');
+	//$query->addField('u', 'uid');
+	$query->addField('u', 'name');
+	$query->addField('n', 'title');
 	$query->join('field_data_field_schedule', 's', 'n.nid = s.entity_id');
-	$query->join('field_data_field_date', 'fd', 'fd.entity_id = s.field_schedule_value');
-	$query->join('field_data_field_time', 'ft', 'ft.entity_id = s.field_schedule_value');
-	$query->join('field_data_field_user', 'fu', 'fu.entity_id = s.field_schedule_value');
-	$query->addField('s', 'field_data_field_schedule');
-	$query->addField('fd', 'field_date');
-	$query->addField('st', 'field_schedule_date');
-	$query->addField('fu', 'field_user');
+	$query->join('field_data_field_schedule_time', 'st', 'st.entity_id = s.field_schedule_value');
+	$query->join('field_data_field_date', 'fd', 'fd.entity_id = st.entity_id');
+	$query->join('field_data_field_user', 'fu', 'fu.entity_id = st.entity_id');
+	$query->join('users', 'u', 'u.uid = fu.field_user_uid');
 	$query->condition('n.type', 'task', '=');
 	$query->condition('n.status', '1', '=');
 	$data = $query->execute();
 	return $data;
+}
+
+function sort_tables($data, $sort_by, $date) {
+	//print_r($date); exit;
+	$tables = array();
+	if($sort_by == 'day') {
+		foreach($data as $d) {
+			$time = $d->field_schedule_time_value;
+			if($time == 'PM+') {
+				$time = 'Evening';
+			}
+			if(date("y-m-d", strtotime($date)) == date("y-m-d", strtotime($d->field_date_value))) {
+				$tables[$time][$d->name] = $d->title;
+			}
+		}
+	}
+	return $tables;
+}
+
+function objectToArray ($object) {
+    if(!is_object($object) && !is_array($object))
+        return $object;
+    return array_map('objectToArray', (array) $object);
+}
+
+function build_tables($data, $date) {
+	$table[] = '<h1><a href="day?date=' . date('m-d-Y',strtotime($date . '-1 days')) . '"><<</a> ' . $date . ' <a href="day?date=' . date('m-d-Y',strtotime($date . '+1 days')) . '">>></a></h1>';
+	$header = array('User', 'Task');
+	foreach ($data as $key=>$val) {
+		$table[] = "<h1> $key </h1>";
+		foreach($val as $k=>$v) {
+			$rows[] = array($k, $v);
+		}
+		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+	}
+	return $table;
 }
