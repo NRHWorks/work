@@ -39,22 +39,18 @@ function work_schedule2() {
 
 function work_schedule2_query_database() {
 	$query = db_select('node', 'n');
-	//$query->addField('s', 'field_schedule_value');
-	//$query->addField('s', 'entity_id');
-	//$query->addField('st', 'entity_id');
 	$query->addField('st', 'field_schedule_time_value');
-	//$query->addField('fd', 'entity_id');
 	$query->addField('fd', 'field_date_value');
-	//$query->addField('fu', 'entity_id');
-	//$query->addField('fu', 'field_user_uid');
-	//$query->addField('u', 'uid');
 	$query->addField('u', 'name');
 	$query->addField('n', 'title');
+	$query->addField('np', 'title');
 	$query->join('field_data_field_schedule', 's', 'n.nid = s.entity_id');
 	$query->join('field_data_field_schedule_time', 'st', 'st.entity_id = s.field_schedule_value');
 	$query->join('field_data_field_date', 'fd', 'fd.entity_id = st.entity_id');
 	$query->join('field_data_field_user', 'fu', 'fu.entity_id = st.entity_id');
 	$query->join('users', 'u', 'u.uid = fu.field_user_uid');
+	$query->join('field_data_field_project', 'fp', 'n.nid = fp.entity_id');
+	$query->join('node', 'np', 'np.nid = fp.field_project_nid');
 	$query->condition('n.type', 'task', '=');
 	$query->condition('n.status', '1', '=');
 	$data = $query->execute();
@@ -62,7 +58,6 @@ function work_schedule2_query_database() {
 }
 
 function sort_tables($data, $sort_by, $date) {
-	//print_r($date); exit;
 	$tables = array();
 	if($sort_by == 'day') {
 		foreach($data as $d) {
@@ -71,7 +66,7 @@ function sort_tables($data, $sort_by, $date) {
 				$time = 'Evening';
 			}
 			if(date("Y-m-d", strtotime($date)) == date("Y-m-d", strtotime($d->field_date_value))) {
-				$tables[$time][$d->name] = $d->title;
+				$tables[$time][$d->np_title][$d->name] = $d->title;
 			}
 		}
 	}
@@ -85,12 +80,14 @@ function objectToArray ($object) {
 }
 
 function build_tables($data, $date) {
-	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($date . '-1 days')) . '"><<</a> ' . $date . ' <a href="day?date=' . date('Y-m-d',strtotime($date . '+1 days')) . '">>></a></h1>';
-	$header = array('User', 'Task');
+	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($date . '-1 days')) . '"><<</a> ' . date('l, M j, Y', strtotime($date)) . ' <a href="day?date=' . date('Y-m-d',strtotime($date . '+1 days')) . '">>></a></h1>';
+	$header = array('Project', 'User', 'Task');
 	foreach ($data as $key=>$val) {
 		$table[] = "<h1> $key </h1>";
 		foreach($val as $k=>$v) {
-			$rows[] = array($k, $v);
+			foreach($v as $l=>$m) {
+				$rows[] = array($k, $l, $m);
+			}
 		}
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
 	}
