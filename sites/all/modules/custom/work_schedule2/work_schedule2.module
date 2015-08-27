@@ -21,7 +21,7 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
 }
 
 function work_schedule2() {
-	$sort_by = 'day';
+	$sort_by = 'week';
 	$params = drupal_get_query_parameters();
 	$data = work_schedule2_query_database();
 	$date = $_SERVER['QUERY_STRING'];
@@ -33,7 +33,7 @@ function work_schedule2() {
     	$date = date("Y-m-d");
   	}
 	$sorted = sort_tables($data, $sort_by, $date);
-	$table = build_tables($sorted, $date);
+	$table = build_tables($sorted, $date, $sort_by);
 	return theme('schedule_day', array('table' => $table));
 }
 
@@ -59,14 +59,22 @@ function work_schedule2_query_database() {
 
 function sort_tables($data, $sort_by, $date) {
 	$tables = array();
-	if($sort_by == 'day') {
-		foreach($data as $d) {
-			$time = $d->field_schedule_time_value;
-			if($time == 'PM+') {
-				$time = 'Evening';
-			}
-			if(date("Y-m-d", strtotime($date)) == date("Y-m-d", strtotime($d->field_date_value))) {
+	$date = date("Y-m-d", strtotime($date));
+	$day = date('w', strtotime($date));
+	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
+	$end_date = date('Y-m-d', strtotime('+'.(6 - $day).' days', strtotime($date)));
+	foreach($data as $d) {
+		$time = $d->field_schedule_time_value;
+		if($time == 'PM+') {
+			$time = 'Evening';
+		}
+		if($sort_by == 'day') {
+			if($date == date("Y-m-d", strtotime($d->field_date_value))) {
 				$tables[$time][$d->np_title][$d->name] = $d->title;
+			}
+		} elseif ($sort_by == 'week') {	
+			if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date && date("Y-m-d", strtotime($d->field_date_value)) <= $end_date) {
+				$tables[$time][$date][$d->name] = $d->title;
 			}
 		}
 	}
@@ -78,18 +86,68 @@ function objectToArray ($object) {
         return $object;
     return array_map('objectToArray', (array) $object);
 }
+function build_tables($data, $date, $sort_by) {
+	$tables = array();
+	if($sort_by == 'day') {
+		$tables = build_tables_day($data, $date);
+	} elseif ($sort_by == 'week') {
+		$tables = build_tables_week($data, $date);
+	}
+	return $tables;
 
-function build_tables($data, $date) {
+}
+
+function build_tables_day($data, $date) {
 	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($date . '-1 days')) . '"><<</a> ' . date('l, M j, Y', strtotime($date)) . ' <a href="day?date=' . date('Y-m-d',strtotime($date . '+1 days')) . '">>></a></h1>';
 	$header = array('Project', 'User', 'Task');
-	foreach ($data as $key=>$val) {
+	foreach ($data as $key => $val) {
 		$table[] = "<h1> $key </h1>";
-		foreach($val as $k=>$v) {
-			foreach($v as $l=>$m) {
+		foreach($val as $k => $v) {
+			foreach($v as $l => $m) {
 				$rows[] = array($k, $l, $m);
 			}
 		}
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+	}
+	return $table;
+}
+
+function build_tables_week($data, $date) {
+	$data_organized = array();
+	$day = date('w', strtotime($date));
+	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
+	$dates[] = $start_date;
+	for ($i = 0; $i < 6; $i++) {
+		$start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
+		$dates[] = $start_date;
+	}
+	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($start_date . '-6 days')) . '"><<</a> ' . date('l, M j, Y', strtotime($start_date)) . ' <a href="day?date=' . date('Y-m-d',strtotime($start_date . '+6 days')) . '">>></a></h1>';
+	$header = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+	foreach($data as $h=>$d) {
+		foreach($d as $key=>$val) {
+			foreach($val as $k=>$v) {
+				$data_organized[$h][$key][] = array($k, $v);
+			}
+		}
+	}
+	//print '<pre>'; print_r($data_organized); exit;
+	foreach ($data_organized as $a=>$b) {
+		$table[] = "<h1> $a </h1>";
+		foreach ($b as $c=>$d) {
+			$info = "<ul>";
+			print $info; exit;
+			foreach ($d as $e) {
+				$info += "<li>";
+				foreach ($e as $f) {
+					$info += "$f";
+				}
+				$info += "</li>";
+			}
+			$info += "</ul>";
+			$rows[] = array("$info");
+		}
+		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+		$info = '';
 	}
 	return $table;
 }
