@@ -130,24 +130,28 @@ function build_tables_week($data, $date) {
 			}
 		}
 	}
-	//print '<pre>'; print_r($data_organized); exit;
+	print '<pre>'; print_r($data_organized); exit;
+	$temp = array();
 	foreach ($data_organized as $a=>$b) {
+		$rows = null;
+		$temp = null;
 		$table[] = "<h1> $a </h1>";
-		foreach ($b as $c=>$d) {
+		foreach ($b as $c) {
 			$info = "<ul>";
-			print $info; exit;
-			foreach ($d as $e) {
-				$info += "<li>";
-				foreach ($e as $f) {
-					$info += "$f";
+			foreach ($c as $d) {
+				$info .= "<li>";
+				foreach ($d as $e) {
+					//print_r($e);  exit;
+					$info .= "$e ";
 				}
-				$info += "</li>";
+				$info .= "</li>";
 			}
-			$info += "</ul>";
-			$rows[] = array("$info");
+			$info .= "</ul>";
+			$rows[] = $info;
+			$info = "";
 		}
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
-		$info = '';
-	}
+	}	
+	//print_r($rows); exit;
 	return $table;
 }
