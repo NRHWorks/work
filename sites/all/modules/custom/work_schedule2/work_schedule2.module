@@ -117,41 +117,49 @@ function build_tables_week($data, $date) {
 	$day = date('w', strtotime($date));
 	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
 	$dates[] = $start_date;
+	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($start_date . '-6 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . ' - ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="day?date=' . date('Y-m-d',strtotime($start_date . '+6 days')) . '">>></a></h1>';
 	for ($i = 0; $i < 6; $i++) {
 		$start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
 		$dates[] = $start_date;
 	}
-	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($start_date . '-6 days')) . '"><<</a> ' . date('l, M j, Y', strtotime($start_date)) . ' <a href="day?date=' . date('Y-m-d',strtotime($start_date . '+6 days')) . '">>></a></h1>';
 	$header = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
 	foreach($data as $h=>$d) {
-		foreach($d as $key=>$val) {
-			foreach($val as $k=>$v) {
-				$data_organized[$h][$key][] = array($k, $v);
+		foreach($dates as $day) {
+			if(isset($d[$day])) {
+				foreach($d as $key=>$val) {
+					foreach($val as $k=>$v) {
+						$data_organized[$h][$key][] = array($k, $v);
+					}
+				}
+			} else {
+				$data_organized[$h][$day][][] = null;
 			}
 		}
 	}
-	print '<pre>'; print_r($data_organized); exit;
 	$temp = array();
+	//print '<pre>'; print_r($data_organized); exit;
 	foreach ($data_organized as $a=>$b) {
 		$rows = null;
-		$temp = null;
+		$infos = null;
 		$table[] = "<h1> $a </h1>";
 		foreach ($b as $c) {
+			$info = null;
 			$info = "<ul>";
+			//print_r($c); exit;
 			foreach ($c as $d) {
 				$info .= "<li>";
+				//print_r($d); exit;
 				foreach ($d as $e) {
-					//print_r($e);  exit;
 					$info .= "$e ";
 				}
 				$info .= "</li>";
 			}
 			$info .= "</ul>";
-			$rows[] = $info;
-			$info = "";
+			$infos[] = $info;
 		}
+		$rows[] = $infos;	
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
 	}	
-	//print_r($rows); exit;
+	//print '<pre>'; print_r($rows); exit;
 	return $table;
 }
