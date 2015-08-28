@@ -58,26 +58,24 @@ function work_schedule2_query_database() {
 }
 
 function sort_tables($data, $sort_by, $date) {
-	$tables = array();
+	$tables = array('AM'=> null, 'PM'=>null, 'PM+'=>null);
 	$date = date("Y-m-d", strtotime($date));
 	$day = date('w', strtotime($date));
 	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
 	$end_date = date('Y-m-d', strtotime('+'.(6 - $day).' days', strtotime($date)));
 	foreach($data as $d) {
 		$time = $d->field_schedule_time_value;
-		if($time == 'PM+') {
-			$time = 'Evening';
-		}
 		if($sort_by == 'day') {
 			if($date == date("Y-m-d", strtotime($d->field_date_value))) {
 				$tables[$time][$d->np_title][$d->name] = $d->title;
 			}
 		} elseif ($sort_by == 'week') {	
 			if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date && date("Y-m-d", strtotime($d->field_date_value)) <= $end_date) {
-				$tables[$time][$date][$d->name] = $d->title;
+				$tables[$time][date("Y-m-d", strtotime($d->field_date_value))][$d->name] = $d->title;
 			}
 		}
 	}
+	ksort($tables);
 	return $tables;
 }
 
@@ -101,11 +99,20 @@ function build_tables_day($data, $date) {
 	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($date . '-1 days')) . '"><<</a> ' . date('l, M j, Y', strtotime($date)) . ' <a href="day?date=' . date('Y-m-d',strtotime($date . '+1 days')) . '">>></a></h1>';
 	$header = array('Project', 'User', 'Task');
 	foreach ($data as $key => $val) {
-		$table[] = "<h1> $key </h1>";
-		foreach($val as $k => $v) {
-			foreach($v as $l => $m) {
-				$rows[] = array($k, $l, $m);
+		$rows = null;
+		$time = $key;
+		if($time == 'PM+'){
+			$time = 'Evening';
+		}
+		$table[] = "<h1> $time </h1>";
+		if(isset($val)) {
+			foreach($val as $k => $v) {
+				foreach($v as $l => $m) {
+					$rows[] = array($k, $l, $m);
+				}
 			}
+		} else {
+			$rows[] = array('', '', '');
 		}
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
 	}
@@ -113,46 +120,51 @@ function build_tables_day($data, $date) {
 }
 
 function build_tables_week($data, $date) {
+	$dates = null;
+	$table = null;
 	$data_organized = array();
 	$day = date('w', strtotime($date));
 	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
+	$end_date = date('Y-m-d', strtotime('+ 6 days', strtotime($start_date)));
 	$dates[] = $start_date;
-	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($start_date . '-6 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . ' - ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="day?date=' . date('Y-m-d',strtotime($start_date . '+6 days')) . '">>></a></h1>';
+	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . ' - ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="day?date=' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
 	for ($i = 0; $i < 6; $i++) {
 		$start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
 		$dates[] = $start_date;
 	}
 	$header = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
-	foreach($data as $h=>$d) {
-		foreach($dates as $day) {
-			if(isset($d[$day])) {
+	foreach($data as $h=>$d) {		
+		foreach($dates as $days) {
+			if(isset($d[$days])) {
 				foreach($d as $key=>$val) {
 					foreach($val as $k=>$v) {
 						$data_organized[$h][$key][] = array($k, $v);
 					}
 				}
 			} else {
-				$data_organized[$h][$day][][] = null;
+				$data_organized[$h][$days][][] = '';
 			}
 		}
 	}
-	$temp = array();
-	//print '<pre>'; print_r($data_organized); exit;
 	foreach ($data_organized as $a=>$b) {
+		$time = $a;
+		if ($time == 'PM+') {
+			$time = 'Evening';
+		}
 		$rows = null;
 		$infos = null;
-		$table[] = "<h1> $a </h1>";
+		$table[] = "<h1> $time </h1>";
 		foreach ($b as $c) {
 			$info = null;
 			$info = "<ul>";
-			//print_r($c); exit;
 			foreach ($c as $d) {
-				$info .= "<li>";
-				//print_r($d); exit;
-				foreach ($d as $e) {
-					$info .= "$e ";
+				if($d[0]) {
+					$info .= "<li>";
+					foreach ($d as $e) {
+						$info .= "$e ";
+					}
+					$info .= "</li>";
 				}
-				$info .= "</li>";
 			}
 			$info .= "</ul>";
 			$infos[] = $info;
@@ -160,6 +172,5 @@ function build_tables_week($data, $date) {
 		$rows[] = $infos;	
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
 	}	
-	//print '<pre>'; print_r($rows); exit;
 	return $table;
 }
