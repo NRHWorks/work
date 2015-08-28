@@ -61,8 +61,11 @@ function sort_tables($data, $sort_by, $date) {
 	$tables = array('AM'=> null, 'PM'=>null, 'PM+'=>null);
 	$date = date("Y-m-d", strtotime($date));
 	$day = date('w', strtotime($date));
+	$day_month = date('m', strtotime($date));
 	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
 	$end_date = date('Y-m-d', strtotime('+'.(6 - $day).' days', strtotime($date)));
+	$start_month = date('Y-m-d', strtotime('first day of this month', strtotime($date)));
+	$end_month = date('Y-m-d', strtotime('last day of this month', strtotime($date)));
 	foreach($data as $d) {
 		$time = $d->field_schedule_time_value;
 		if($sort_by == 'day') {
@@ -73,8 +76,13 @@ function sort_tables($data, $sort_by, $date) {
 			if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date && date("Y-m-d", strtotime($d->field_date_value)) <= $end_date) {
 				$tables[$time][date("Y-m-d", strtotime($d->field_date_value))][$d->name] = $d->title;
 			}
+		} elseif ($sort_by == 'month') {
+			if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_month && date("Y-m-d", strtotime($d->field_date_value)) <= $end_month) {
+				$tables[$time][date("Y-m-d", strtotime($d->field_date_value))][$d->name] = $d->title;
+			}
+
 		}
-	}
+ 	}
 	ksort($tables);
 	return $tables;
 }
@@ -90,6 +98,8 @@ function build_tables($data, $date, $sort_by) {
 		$tables = build_tables_day($data, $date);
 	} elseif ($sort_by == 'week') {
 		$tables = build_tables_week($data, $date);
+	} elseif($sort_by == 'month') {
+		$tables = build_tables_month($data, $date);
 	}
 	return $tables;
 
@@ -127,7 +137,7 @@ function build_tables_week($data, $date) {
 	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
 	$end_date = date('Y-m-d', strtotime('+ 6 days', strtotime($start_date)));
 	$dates[] = $start_date;
-	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . ' - ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="day?date=' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
+	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . '  -  ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="day?date=' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
 	for ($i = 0; $i < 6; $i++) {
 		$start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
 		$dates[] = $start_date;
@@ -173,4 +183,11 @@ function build_tables_week($data, $date) {
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
 	}	
 	return $table;
+}
+
+function build_tables_month($data, $date) {
+	$table[] = '<h1><a href="day?date=' . date('Y-m-d', strtotime('first day of last month', strtotime($date))) . '"><<</a>' . date(' M Y', strtotime('this month', strtotime($date))) . ' <a href="day?date=' . date('Y-m-d', strtotime('first day of next month', strtotime($date))) . '">>></a></h1>';
+
+	return $table;
+
 }
