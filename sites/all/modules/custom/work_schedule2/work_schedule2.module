@@ -6,6 +6,11 @@ function work_schedule2_menu() {
     'page callback' => 'work_schedule2',
     'access callback' => TRUE,
   );
+	$items['schedule/month'] = array(
+    'title' => 'Schedule - Month',
+    'page callback' => 'work_schedule2_month',
+    'access callback' => TRUE,
+  );
 return $items;
 }
 
@@ -16,12 +21,17 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
     'path' => drupal_get_path('module', 'work_schedule2'),
     'variables' => array('table' => null),
    );
+  $theme['schedule_month'] = array(
+    'template' => 'schedule-month',
+    'variables' => array('tasks' => null),
+    'path' => drupal_get_path('module', 'work_schedule2'),
+   );
 
   return $theme;
 }
 
 function work_schedule2() {
-	$sort_by = 'week';
+	$sort_by = 'month';
 	$params = drupal_get_query_parameters();
 	$data = work_schedule2_query_database();
 	$date = $_SERVER['QUERY_STRING'];
@@ -35,6 +45,22 @@ function work_schedule2() {
 	$sorted = sort_tables($data, $sort_by, $date);
 	$table = build_tables($sorted, $date, $sort_by);
 	return theme('schedule_day', array('table' => $table));
+}
+
+function work_schedule2_month() {
+	$sort_by = 'month';
+	$params = drupal_get_query_parameters();
+	$data = work_schedule2_query_database();
+	$date = $_SERVER['QUERY_STRING'];
+	if($date) {
+		$date = rawurldecode(substr($date, 5));
+	} elseif (isset($params["date"]) && $params["date"] != '') {
+    	$date = date('Y-m-d',strtotime($params["date"]));
+  	} else {
+    	$date = date("Y-m-d");
+  	}
+	$table = build_tables_month($data, $date);
+	return theme('schedule_month', array('table' => $table));
 }
 
 function work_schedule2_query_database() {
@@ -78,7 +104,7 @@ function sort_tables($data, $sort_by, $date) {
 			}
 		} elseif ($sort_by == 'month') {
 			if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_month && date("Y-m-d", strtotime($d->field_date_value)) <= $end_month) {
-				$tables[$time][date("Y-m-d", strtotime($d->field_date_value))][$d->name] = $d->title;
+				$tables[] = $d;
 			}
 
 		}
@@ -186,8 +212,14 @@ function build_tables_week($data, $date) {
 }
 
 function build_tables_month($data, $date) {
-	$table[] = '<h1><a href="day?date=' . date('Y-m-d', strtotime('first day of last month', strtotime($date))) . '"><<</a>' . date(' M Y', strtotime('this month', strtotime($date))) . ' <a href="day?date=' . date('Y-m-d', strtotime('first day of next month', strtotime($date))) . '">>></a></h1>';
-
-	return $table;
-
+	$start_date = date('Y-m-d', strtotime('first day of this month', strtotime($date)));
+	$end_date = date('Y-m-d', strtotime('last day of this month', strtotime($start_date)));
+	foreach($data as $d) {
+		//print_r($d); exit;
+		if($d->field_date_value >= $start_date && $d->field_date_value <= $end_date) {
+			$rows[] = $d;
+		}
+	}
+	return $rows;
+  
 }
