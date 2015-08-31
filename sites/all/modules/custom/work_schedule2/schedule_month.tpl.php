@@ -1,33 +1,38 @@
+<?php print theme('schedule_menu'); ?>
+
+<form action="/schedule/month" method="get">
+    <div>
+        <label for="name">Date:</label>
+        <input type="text" id="date" name="date"/>
+   </div>
+   <div class="button" style="margin-top: 10px;">
+       <input type="submit" value="Submit" />
+   </div>
+</form>
+
 <?php
 
 global $t;
 $t = $tasks;
-
-print theme('schedule_menu'); 
-
-print build_calendar(6, 2015);
+$date = $t[0];
+$month = date('m', strtotime($date));;
+$year = date('Y', strtotime($date));;
+print '<h1><a href="/schedule/month/' . date('Y-m-d', strtotime('first day of last month', strtotime($date))) . '"><<</a> ' . date( 'M Y', strtotime($date)) . ' <a href="/schedule/month/' . date('Y-m-d', strtotime('first day of next month', strtotime($date))) . '">>></a></h1>';
+print build_calendar($month, $year);
 
 function tasks_for_day($day) {
   global $t;
-
+  $data = $t[1];
   $output = '';
-  if (isset($t[$day])) {
-    foreach ($t[$day] as $times) {
-      foreach ($times as $time => $clients) {
-        foreach ($clients as $client => $projects) {
-          foreach ($projects as $task => $task_user) {
-            $output .= "{$task_user}: {$task}<br />";
-          }
-        }
-      }
+  $rows = array();
+  foreach($data as $val) {
+    if($val->field_date_value == $day) {
+      $output .= "{$val->name}: {$val->title}<br />";
     }
-
-    return $output;  
-
-  } else {
-    return null;
+    
   }
-}
+    return $output;  
+  } 
 
 function build_calendar($month,$year) {
 
@@ -125,3 +130,4 @@ function build_calendar($month,$year) {
      return $calendar;
 
 }
+

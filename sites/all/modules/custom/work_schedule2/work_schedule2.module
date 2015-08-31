@@ -3,12 +3,35 @@
 function work_schedule2_menu() {
 	$items['schedule/day'] = array(
     'title' => 'Schedule - Day',
-    'page callback' => 'work_schedule2',
+    'page callback' => 'work_schedule2_day',
+    'access callback' => TRUE,
+  );
+	$items['schedule/day/%'] = array(
+    'title' => 'Schedule - Day',
+    'page callback' => 'work_schedule2_day',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+	$items['schedule/week'] = array(
+    'title' => 'Schedule - Week',
+    'page callback' => 'work_schedule2_week',
+    'access callback' => TRUE,
+  );
+	$items['schedule/week/%'] = array(
+    'title' => 'Schedule - Week',
+    'page callback' => 'work_schedule2_week',
+    'page arguments' => array(2),
     'access callback' => TRUE,
   );
 	$items['schedule/month'] = array(
     'title' => 'Schedule - Month',
     'page callback' => 'work_schedule2_month',
+    'access callback' => TRUE,
+  );
+	$items['schedule/month/%'] = array(
+    'title' => 'Schedule - Month',
+    'page callback' => 'work_schedule2_month',
+    'page arguments' => array(2),
     'access callback' => TRUE,
   );
 return $items;
@@ -21,46 +44,57 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
     'path' => drupal_get_path('module', 'work_schedule2'),
     'variables' => array('table' => null),
    );
+  $theme['schedule_week'] = array(
+    'template' => 'schedule_week',
+    'path' => drupal_get_path('module', 'work_schedule2'),
+    'variables' => array('table' => null),
+   );
   $theme['schedule_month'] = array(
-    'template' => 'schedule-month',
+    'template' => 'schedule_month',
     'variables' => array('tasks' => null),
+    'path' => drupal_get_path('module', 'work_schedule2'),
+   );
+  $theme['schedule_menu'] = array(
+    'template' => 'schedule_menu',
     'path' => drupal_get_path('module', 'work_schedule2'),
    );
 
   return $theme;
 }
 
-function work_schedule2() {
-	$sort_by = 'month';
+function work_schedule2_day($date = null) {
+	if(!isset($date)) {
+		$date = date("Y-m-d");
+	}
+	$sort_by = 'day';
 	$params = drupal_get_query_parameters();
 	$data = work_schedule2_query_database();
-	$date = $_SERVER['QUERY_STRING'];
-	if($date) {
-		$date = rawurldecode(substr($date, 5));
-	} elseif (isset($params["date"]) && $params["date"] != '') {
-    	$date = date('Y-m-d',strtotime($params["date"]));
-  	} else {
-    	$date = date("Y-m-d");
-  	}
 	$sorted = sort_tables($data, $sort_by, $date);
 	$table = build_tables($sorted, $date, $sort_by);
 	return theme('schedule_day', array('table' => $table));
 }
 
-function work_schedule2_month() {
+function work_schedule2_week($date = null) {
+	if(!isset($date)) {
+		$date = date("Y-m-d");
+	}
+	$sort_by = 'week';
+	$params = drupal_get_query_parameters();
+	$data = work_schedule2_query_database();
+	$sorted = sort_tables($data, $sort_by, $date);
+	$table = build_tables($sorted, $date, $sort_by);
+	return theme('schedule_week', array('table' => $table));
+}
+
+function work_schedule2_month($date = null) {
+	if(!isset($date)) {
+		$date = date("Y-m-d");
+	}
 	$sort_by = 'month';
 	$params = drupal_get_query_parameters();
 	$data = work_schedule2_query_database();
-	$date = $_SERVER['QUERY_STRING'];
-	if($date) {
-		$date = rawurldecode(substr($date, 5));
-	} elseif (isset($params["date"]) && $params["date"] != '') {
-    	$date = date('Y-m-d',strtotime($params["date"]));
-  	} else {
-    	$date = date("Y-m-d");
-  	}
 	$table = build_tables_month($data, $date);
-	return theme('schedule_month', array('table' => $table));
+	return theme('schedule_month', array('tasks' => $table));
 }
 
 function work_schedule2_query_database() {
@@ -118,6 +152,7 @@ function objectToArray ($object) {
         return $object;
     return array_map('objectToArray', (array) $object);
 }
+
 function build_tables($data, $date, $sort_by) {
 	$tables = array();
 	if($sort_by == 'day') {
@@ -132,7 +167,7 @@ function build_tables($data, $date, $sort_by) {
 }
 
 function build_tables_day($data, $date) {
-	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($date . '-1 days')) . '"><<</a> ' . date('l, M j, Y', strtotime($date)) . ' <a href="day?date=' . date('Y-m-d',strtotime($date . '+1 days')) . '">>></a></h1>';
+	$table[] = '<h1><a href="/schedule/day/' . date('Y-m-d',strtotime($date . '-1 days')) . '"><<</a> ' . date('l, M j, Y', strtotime($date)) . ' <a href="/schedule/day/' . date('Y-m-d',strtotime($date . '+1 days')) . '">>></a></h1>';
 	$header = array('Project', 'User', 'Task');
 	foreach ($data as $key => $val) {
 		$rows = null;
@@ -163,7 +198,7 @@ function build_tables_week($data, $date) {
 	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
 	$end_date = date('Y-m-d', strtotime('+ 6 days', strtotime($start_date)));
 	$dates[] = $start_date;
-	$table[] = '<h1><a href="day?date=' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . '  -  ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="day?date=' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
+	$table[] = '<h1><a href="/schedule/week/' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . '  -  ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="schedule/week/' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
 	for ($i = 0; $i < 6; $i++) {
 		$start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
 		$dates[] = $start_date;
@@ -212,14 +247,14 @@ function build_tables_week($data, $date) {
 }
 
 function build_tables_month($data, $date) {
+	$rows = array();
 	$start_date = date('Y-m-d', strtotime('first day of this month', strtotime($date)));
 	$end_date = date('Y-m-d', strtotime('last day of this month', strtotime($start_date)));
 	foreach($data as $d) {
-		//print_r($d); exit;
 		if($d->field_date_value >= $start_date && $d->field_date_value <= $end_date) {
 			$rows[] = $d;
 		}
 	}
-	return $rows;
-  
+	$temp = array($start_date, $rows);
+	return $temp;
 }
