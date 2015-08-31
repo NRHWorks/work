@@ -2,7 +2,6 @@
 
 global $t;
 $t = $tasks;
-
 print theme('schedule_menu'); 
 
 print build_calendar(6, 2015);
