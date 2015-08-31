@@ -22,9 +22,9 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
     'variables' => array('table' => null),
    );
   $theme['schedule_month'] = array(
-    'template' => 'schedule_month',
+    'template' => 'schedule-month',
     'variables' => array('tasks' => null),
-    'path' => drupal_get_path('module', 'work_schedule2_month'),
+    'path' => drupal_get_path('module', 'work_schedule2'),
    );
 
   return $theme;
@@ -215,11 +215,11 @@ function build_tables_month($data, $date) {
 	$start_date = date('Y-m-d', strtotime('first day of this month', strtotime($date)));
 	$end_date = date('Y-m-d', strtotime('last day of this month', strtotime($start_date)));
 	foreach($data as $d) {
-		print_r($d); exit;
+		//print_r($d); exit;
 		if($d->field_date_value >= $start_date && $d->field_date_value <= $end_date) {
 			$rows[] = $d;
 		}
 	}
-	print_r($rows); exit;
+	return $rows;
   
 }
