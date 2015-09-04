@@ -1,5 +1,10 @@
-<?php print theme('schedule_menu'); ?>
-
+<?php print theme('schedule_menu'); 
+global $t;
+$t = $tasks;
+$date = $t[0];
+$month = date('m', strtotime($date));
+$year = date('Y', strtotime($date));
+?>
 <form action="/schedule/month" method="get">
     <div>
         <label for="name">Date:</label>
@@ -9,15 +14,23 @@
        <input type="submit" value="Submit" />
    </div>
 </form>
+<div>
+<h1>
+  <div style = "float: left; width: 50px;">
+    <a href="/schedule/month/<?php echo date('Y-m-d', strtotime('first day of last month', strtotime($date)));?>" ><<</a>
+  </div>
+  <div style = "float: left; margin-left: 350px;"> 
+    <?php echo date( 'M Y', strtotime($date)) ?>
+  </div>
+  <div style = "float: right; width:50px">
+    <a href="/schedule/month/<?php echo date('Y-m-d', strtotime('first day of next month', strtotime($date)));?>" >>></a>
+  </div>
+</h1>
+<br style="clear: left;" />
+</div>
 
 <?php
-
 global $t;
-$t = $tasks;
-$date = $t[0];
-$month = date('m', strtotime($date));;
-$year = date('Y', strtotime($date));;
-print '<h1><a href="/schedule/month/' . date('Y-m-d', strtotime('first day of last month', strtotime($date))) . '"><<</a> ' . date( 'M Y', strtotime($date)) . ' <a href="/schedule/month/' . date('Y-m-d', strtotime('first day of next month', strtotime($date))) . '">>></a></h1>';
 print build_calendar($month, $year);
 
 function tasks_for_day($day) {

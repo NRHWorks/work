@@ -167,7 +167,6 @@ function build_tables($data, $date, $sort_by) {
 }
 
 function build_tables_day($data, $date) {
-	$table[] = '<h1><a href="/schedule/day/' . date('Y-m-d',strtotime($date . '-1 days')) . '"><<</a> ' . date('l, M j, Y', strtotime($date)) . ' <a href="/schedule/day/' . date('Y-m-d',strtotime($date . '+1 days')) . '">>></a></h1>';
 	$header = array('Project', 'User', 'Task');
 	foreach ($data as $key => $val) {
 		$rows = null;
@@ -187,7 +186,8 @@ function build_tables_day($data, $date) {
 		}
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
 	}
-	return $table;
+	$temp = array($date, $table);
+	return $temp;
 }
 
 function build_tables_week($data, $date) {
@@ -196,9 +196,8 @@ function build_tables_week($data, $date) {
 	$data_organized = array();
 	$day = date('w', strtotime($date));
 	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
-	$end_date = date('Y-m-d', strtotime('+ 6 days', strtotime($start_date)));
 	$dates[] = $start_date;
-	$table[] = '<h1><a href="/schedule/week/' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . '  -  ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="schedule/week/' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
+	//$table[] = '<h1><a href="/schedule/week/' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . '  -  ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="schedule/week/' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
 	for ($i = 0; $i < 6; $i++) {
 		$start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
 		$dates[] = $start_date;
@@ -243,7 +242,8 @@ function build_tables_week($data, $date) {
 		$rows[] = $infos;	
 		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
 	}	
-	return $table;
+	$temp = array($date, $table);
+	return $temp;
 }
 
 function build_tables_month($data, $date) {
