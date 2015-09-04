@@ -6,32 +6,37 @@ $day = date('w', strtotime($date));
 $start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
 $end_date = date('Y-m-d', strtotime('+ 6 days', strtotime($start_date)));
 $begin = date('l, M j, Y', strtotime($start_date));
-$end = date('l, M j, Y', strtotime('+6 days', strtotime($start_date)));
-print theme('schedule_menu'); ?>
+$end = date('l, M j, Y', strtotime('+6 days', strtotime($start_date))); ?>
 
-<form action="/schedule/week/" method="get">
-    <div>
+<form action="/schedule/week/" method="get" style="float:right;" width: "300px;">
+    <div style="float:left; margin-right: 10px;">
         <label for="name">Date:</label>
         <input type="text" id="date" name="date"/>
    </div>
-   <div class="button" style="margin-top: 10px;">
+   <div class="button" style="margin-top: 20px; float:left;">
        <input type="submit" value="Submit" />
    </div>
 </form>
-<div>
+
+<?php print theme('schedule_menu'); ?>
+
+<div style ="clear:both; margin-top: 10px;">
 <h1>
   <div style = "float: left; width: 50px;">
     <a href="/schedule/week/<?php echo date('Y-m-d',strtotime('-7 days', strtotime($start_date)));?>" ><<</a>
   </div>
   <div style = "float: left; margin-left: 120px;"> 
-    Week of: <?php echo "$begin - $end;" ?>
+    Week of: <?php echo "$begin - $end" ?>
   </div>
-  <div style = "float: right; width:50px">
+  <div style = "float: right; width:50px;">
     <a href="/schedule/week/<?php echo date('Y-m-d',strtotime(' + 1 days', strtotime($end_date)));?>" >>></a>
   </div>
 </h1>
 <br style="clear: left;" />
 </div>
+
+
+
 
 <?php
 global $t;

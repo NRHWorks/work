@@ -1,20 +1,23 @@
-<?php print theme('schedule_menu'); 
+<?php 
 global $t;
 $t = $tasks;
 $date = $t[0];
 $month = date('m', strtotime($date));
 $year = date('Y', strtotime($date));
 ?>
-<form action="/schedule/month" method="get">
-    <div>
+
+<form action="/schedule/month" method="get" style="float:right;" width="300px;">
+    <div style="float:left; margin-right: 10px;">
         <label for="name">Date:</label>
         <input type="text" id="date" name="date"/>
    </div>
-   <div class="button" style="margin-top: 10px;">
+   <div class="button" style="float: left; margin-top: 20px;">
        <input type="submit" value="Submit" />
    </div>
 </form>
-<div>
+
+<?php print theme('schedule_menu'); ?>
+<div style="clear:both; margin-bottom: 20px;">
 <h1>
   <div style = "float: left; width: 50px;">
     <a href="/schedule/month/<?php echo date('Y-m-d', strtotime('first day of last month', strtotime($date)));?>" ><<</a>
