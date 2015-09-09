@@ -54,7 +54,66 @@ function work_task_menu() {
     'access callback' => TRUE,
   );
 
+  $items['add-task'] = array(
+    'title' => 'add tasks',
+    'page callback' => 'work_task_add_task',
+    'access callback' => TRUE,
+  );
+
   return $items;
+}
+
+function work_task_add_task($form, $form_state) {
+  $form_state['storage']['actions'] =
+    isset($form_state['storage']['actions']) ? $form_state['storage']['actions'] : 0;
+
+  $form['task'] = array(
+    '#title' => 'Task',
+    '#type' => 'textfield',
+    '#value' => t('task'),
+  );
+
+  $form['actions'] = array(
+    '#type' => 'container',
+    '#tree' => TRUE,
+    '#prefix' => '<div id="actions">',
+    '#suffix' => '</div>',
+  );
+
+  if ($form_state['storage']['actions']) {
+    for ($i = 1; $i <= $form_state['storage']['actions']; $i++) {
+      $form['actions'][$i] = array(
+        '#type' => 'fieldset',
+        '#tree' => TRUE,
+      );
+
+      $form['actions'][$i]['todo'] = array(
+        '#title' => t('To do'),
+        '#type' => 'textfield',
+      );
+    }
+  }
+
+  $form['add_action'] = array(
+    '#title' => 'actions',
+    '#type' => 'button',
+    '#value' => t('Add an action'),
+    '#href' => '',
+    '#ajax' => array(
+      'callback' => 'custom_task_ajax_add_action',
+      'wrapper' => 'actions',
+    ),
+  );
+
+  $form['project'] = array(
+    '#type' => 'hidden',
+    '#value' => t('project'),
+  );
+
+  $form_state['storage']['actions']++;
+
+  return $form;
+
 }
 
 function work_task_estimate($nid) {
@@ -208,4 +267,8 @@ function work_task_update_comment() {
 
   $content = node_view($node);
   print render($content['field_comments']);
+}
+
+function custom_task_ajax_add_action($form, $form_state) {
+  return $form['actions'];
 }
