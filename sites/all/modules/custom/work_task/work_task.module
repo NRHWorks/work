@@ -55,8 +55,9 @@ function work_task_menu() {
   );
 
   $items['add-task'] = array(
-    'title' => 'add tasks',
-    'page callback' => 'work_task_add_task',
+    'title' => 'Add Tasks',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('work_task_add_task'),
     'access callback' => TRUE,
   );
 
@@ -64,57 +65,85 @@ function work_task_menu() {
 }
 
 function work_task_add_task($form, $form_state) {
-  $form_state['storage']['actions'] =
-    isset($form_state['storage']['actions']) ? $form_state['storage']['actions'] : 0;
-
-  $form['task'] = array(
-    '#title' => 'Task',
-    '#type' => 'textfield',
-    '#value' => t('task'),
-  );
-
-  $form['actions'] = array(
-    '#type' => 'container',
-    '#tree' => TRUE,
-    '#prefix' => '<div id="actions">',
-    '#suffix' => '</div>',
-  );
-
-  if ($form_state['storage']['actions']) {
-    for ($i = 1; $i <= $form_state['storage']['actions']; $i++) {
-      $form['actions'][$i] = array(
-        '#type' => 'fieldset',
-        '#tree' => TRUE,
-      );
-
-      $form['actions'][$i]['todo'] = array(
-        '#title' => t('To do'),
-        '#type' => 'textfield',
-      );
-    }
-  }
-
-  $form['add_action'] = array(
-    '#title' => 'actions',
-    '#type' => 'button',
-    '#value' => t('Add an action'),
-    '#href' => '',
-    '#ajax' => array(
-      'callback' => 'custom_task_ajax_add_action',
-      'wrapper' => 'actions',
-    ),
-  );
+ 
+  $form['#tree'] = TRUE;
+  $form['#attributes']['enctype'] = 'multipart/form-data';
 
   $form['project'] = array(
     '#type' => 'hidden',
     '#value' => t('project'),
   );
 
-  $form_state['storage']['actions']++;
+  $form['task'] = array(
+    '#title' => 'Task',
+    '#type' => 'textfield',
+  );
+
+  $form['description'] = array(
+    '#title' => 'Description',
+    '#type' => 'textarea',
+  );
+
+  // --------------- Add more text box starts  ------------------------------
+
+  $form['example_entry']['entry_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Action Items'),
+    '#prefix' => '<div id="entry-fieldset-wrapper">',
+    '#suffix' => '</div>',
+  );
+
+  if (empty($form_state['num_items'])) {
+    $form_state['num_items'] = 1;
+  }
+
+  for ($i = 0; $i < $form_state['num_items']; $i++) {
+
+  $form['example_entry']['entry_fieldset']['action_items'][$i] = array(
+    '#type' => 'textfield',
+    '#attributes' => array('multiple' => 'multiple'),
+    );
+  }
+
+  $form['example_entry']['entry_fieldset']['add_action_item'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add Action Item'),
+      '#submit' => array('action_add_one'),
+      '#ajax' => array(
+        'callback' => 'action_add_one_callback',
+        'wrapper' => 'entry-fieldset-wrapper',
+      ),
+  );
+
+  // ---------------  Add more text box ends ---------------------------------
+
+  $form['example_entry']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
 
   return $form;
-
 }
+
+function work_task_add_task_submit($form, &$form_state) {
+  print 'PROCESS FORM!!!'; exit;
+}
+
+function action_add_one($form, &$form_state) {
+  if (!isset($form_state['num_items'])) {
+    $form_state['num_items'] = 0;
+    $form_state['num_items']++;
+  }
+
+  $form_state['num_items']++;
+  $form_state['rebuild'] = TRUE;
+} 
+
+function action_add_one_callback($form, &$form_state) {
+  return $form['example_entry']['entry_fieldset'];
+}
+
+
 
 function work_task_estimate($nid) {
   $node = node_load($nid);
