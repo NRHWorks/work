@@ -1,0 +1,131 @@
+<?php
+
+function work_project_menu() {
+
+  $items['projects/update-users/add/%/%'] = array(
+    'title' => 'update users add',
+    'page callback' => 'work_project_update_users_add',
+    'page arguments' => array(3, 4),
+    'access callback' => TRUE,
+  );
+  
+  $items['projects/update-credentials/add'] = array(
+    'title' => 'update credentials',
+    'page callback' => 'work_project_update_credentials',
+    'access callback' => TRUE,
+  );
+  
+  $items['projects/update-assets/add'] = array(
+    'title' => 'update assets',
+    'page callback' => 'work_project_update_assets',
+    'access callback' => TRUE,
+  );
+  
+  $items['projects/update-resources/add'] = array(
+    'title' => 'update resources',
+    'page callback' => 'work_project_update_resources',
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+function work_project_update_users_add($nid, $uid) {
+  $node = node_load($nid);
+
+  $node->field_users['und'][]['uid'] = $uid;
+
+  node_save($node);
+
+  $content = node_view($node);
+  print render($content['field_users']);
+  
+  drupal_exit();
+}
+
+function work_project_update_credentials() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_credentials';
+
+  $fc['field_description']['und'][0]['value'] = $data['description'];
+  $fc['field_path']['und'][0]['value'] =        $data['path'];
+  $fc['field_username']['und'][0]['value'] =    $data['username'];
+  $fc['field_password']['und'][0]['value'] =    $data['password'];
+
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $content = node_view($node);
+  print render($content['field_credentials']);
+  
+  drupal_exit();
+}
+
+function work_project_update_assets() {
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_assets';
+
+  $fc['field_description']['und'][0]['value'] = $_POST['asset'];
+
+  $file = file_get_contents($_FILES['file']['tmp_name']);
+
+  $file_upload = file_save_data($file, 'public://' . $_FILES['file']['name'], FILE_EXISTS_RENAME);
+
+  $file_upload->display = 1;
+
+  $fc['field_asset']['und'][] = (array) $file_upload;
+
+  $node = node_load($_POST['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  drupal_set_message("Asset added");
+
+  drupal_goto('node/' . $node->nid, array('query' => array('assets' => 'TRUE')));
+  drupal_exit();
+}
+
+function work_project_update_resources() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_resources';
+
+  $fc['field_description']['und'][0]['value'] = $data['resource'];
+  $fc['field_url']['und'][0]['url'] = $data['url'];
+  $fc['field_url']['und'][0]['title'] = $data['url'];
+  $fc['field_url']['und'][0]['attributes']['target'] = '_blank';
+
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $content = node_view($node);
+
+  print render($content['field_resources']);
+  
+  drupal_exit();
+}

@@ -15,15 +15,35 @@ function work_task_menu() {
     'access callback' => TRUE,
   );
   
+  $items['tasks/update-todo/add'] = array(
+    'title' => 'add todo',
+    'page callback' => 'work_task_update_todo_add',
+    'access callback' => TRUE,
+  );
+  
   $items['tasks/update-status/%/%'] = array(
-    'title' => 'update todo',
+    'title' => 'update status',
     'page callback' => 'work_task_update_status',
     'page arguments' => array(2, 3),
     'access callback' => TRUE,
   );
   
+  $items['tasks/update-assigned/%/%'] = array(
+    'title' => 'update assigned',
+    'page callback' => 'work_task_update_assigned',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+  );
+
+  $items['tasks/update-users/add/%/%'] = array(
+    'title' => 'update users add',
+    'page callback' => 'work_task_update_users_add',
+    'page arguments' => array(3, 4),
+    'access callback' => TRUE,
+  );
+  
   $items['tasks/update-schedule/add'] = array(
-    'title' => 'update schedule',
+    'title' => 'add schedule',
     'page callback' => 'work_task_update_schedule',
     'access callback' => TRUE,
   );
@@ -36,7 +56,7 @@ function work_task_menu() {
   );
   
   $items['tasks/update-time/add'] = array(
-    'title' => 'update schedule',
+    'title' => 'add time',
     'page callback' => 'work_task_update_time',
     'access callback' => TRUE,
   );
@@ -49,34 +69,81 @@ function work_task_menu() {
   );
   
   $items['tasks/update-comment/add'] = array(
-    'title' => 'update schedule',
+    'title' => 'update comments',
     'page callback' => 'work_task_update_comment',
     'access callback' => TRUE,
   );
+  
+  $items['tasks/update-credentials/add'] = array(
+    'title' => 'update credentials',
+    'page callback' => 'work_task_update_credentials',
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-assets/add'] = array(
+    'title' => 'update assets',
+    'page callback' => 'work_task_update_assets',
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/update-resources/add'] = array(
+    'title' => 'update resources',
+    'page callback' => 'work_task_update_resources',
+    'access callback' => TRUE,
+  );
 
-  $items['add-task'] = array(
+  $items['tasks/add/%'] = array(
     'title' => 'Add Tasks',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('work_task_add_task'),
+    'page arguments' => array('work_task_add_task', 2),
     'access callback' => TRUE,
   );
 
   return $items;
 }
 
-function work_task_add_task($form, $form_state) {
- 
+function work_task_add_task($form, $form_state, $project) {
   $form['#tree'] = TRUE;
   $form['#attributes']['enctype'] = 'multipart/form-data';
 
+  $p = node_load($project);
+
+  $form['title'] = array(
+    '#type' => 'item',
+    '#markup' => "<h3>Adding task for <strong>{$p->title}</strong></h3>",
+  );
+
   $form['project'] = array(
     '#type' => 'hidden',
-    '#value' => t('project'),
+    '#value' => $project,
   );
 
   $form['task'] = array(
     '#title' => 'Task',
     '#type' => 'textfield',
+  );
+
+  global $user;
+
+  $users = db_query("SELECT uid, name FROM {users} WHERE uid IN (SELECT uid FROM {users_roles} WHERE rid IN (3, 4, 5))");
+
+  $assigned_to = array();
+  foreach ($users as $u) {
+    $assigned_to[$u->uid] = $u->name;
+  }
+
+  $form['assigned_to'] = array(
+    '#title' => 'Assigned To',
+    '#type' => 'select',
+    '#options' => $assigned_to,
+    '#default_value' => $user->uid,
+  );
+
+  $form['due_date'] = array(
+    '#type' => 'date_popup',
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '-3:+3',
+    '#title' => 'Due Date',
   );
 
   $form['description'] = array(
@@ -86,10 +153,10 @@ function work_task_add_task($form, $form_state) {
 
   // --------------- Add more text box starts  ------------------------------
 
-  $form['example_entry']['entry_fieldset'] = array(
+  $form['action_items']['action_items_fieldset'] = array(
     '#type' => 'fieldset',
     '#title' => t('Action Items'),
-    '#prefix' => '<div id="entry-fieldset-wrapper">',
+    '#prefix' => '<div id="action-items-wrapper">',
     '#suffix' => '</div>',
   );
 
@@ -99,19 +166,19 @@ function work_task_add_task($form, $form_state) {
 
   for ($i = 0; $i < $form_state['num_items']; $i++) {
 
-  $form['example_entry']['entry_fieldset']['action_items'][$i] = array(
+  $form['action_items']['action_items_fieldset']['items'][$i] = array(
     '#type' => 'textfield',
     '#attributes' => array('multiple' => 'multiple'),
     );
   }
 
-  $form['example_entry']['entry_fieldset']['add_action_item'] = array(
+  $form['action_items']['action_items_fieldset']['add_action_item'] = array(
       '#type' => 'submit',
       '#value' => t('Add Action Item'),
       '#submit' => array('action_add_one'),
       '#ajax' => array(
         'callback' => 'action_add_one_callback',
-        'wrapper' => 'entry-fieldset-wrapper',
+        'wrapper' => 'action-items-wrapper',
       ),
   );
 
@@ -126,7 +193,55 @@ function work_task_add_task($form, $form_state) {
 }
 
 function work_task_add_task_submit($form, &$form_state) {
-  print 'PROCESS FORM!!!'; exit;
+  $v = $form_state['values'];
+
+  global $user;
+
+  $node = new stdClass();
+  $node->title = $v['task'];
+  $node->type = 'task';
+  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+  $node->uid = $user->uid; 
+  $node->status = 1; 
+  $node->promote = 0; 
+  $node->comment = 0; 
+
+  $node->field_status['und'][0]['tid'] = 1;
+  
+  $node->field_project['und'][0]['nid'] = $v['project'];
+
+  $node->field_assigned_to['und'][0]['uid'] = $v['assigned_to'];
+
+  $node->field_users['und'][0]['uid'] = $v['assigned_to'];
+
+  if ($user->uid != $v['assigned_to']) {
+    $node->field_users['und'][1]['uid'] = $user->uid;
+  }
+
+  $node->field_due_date['und'][0]['value'] = $v['due_date'] . ' 00:00:00';
+  
+  node_save($node);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  foreach($v['action_items']['action_items_fieldset']['items'] as $i) { 
+    $fc = array();  
+
+    $fc['field_name'] = 'field_to_do';
+
+    $fc['field_description']['und'][0]['value'] = $i;  
+
+    $entity = entity_create('field_collection_item', $fc);
+    $entity->setHostEntity('node', $node);
+    $entity->save();
+  }
+
+  node_save($node);
+
+  drupal_set_message("Task Added: " . l($node->title, 'node/' . $node->nid));
+
+  drupal_goto('<front>');
 }
 
 function action_add_one($form, &$form_state) {
@@ -140,7 +255,7 @@ function action_add_one($form, &$form_state) {
 } 
 
 function action_add_one_callback($form, &$form_state) {
-  return $form['example_entry']['entry_fieldset'];
+  return $form['action_items']['action_items_fieldset'];
 }
 
 
@@ -151,6 +266,8 @@ function work_task_estimate($nid) {
   $content = node_view($node);
 
   print render($content['field_estimate']);
+  
+  drupal_exit();
 }
 
 function work_task_update_time_delete($nid, $fcid) {
@@ -168,6 +285,8 @@ function work_task_update_time_delete($nid, $fcid) {
   
   $content = node_view($node);
   print render($content['field_time']);
+  
+  drupal_exit();
 }
 
 function work_task_update_time() {
@@ -195,6 +314,8 @@ function work_task_update_time() {
 
   $content = node_view($node);
   print render($content['field_time']);
+  
+  drupal_exit();
 }
 
 function work_task_update_schedule_delete($nid, $fcid) {
@@ -212,6 +333,8 @@ function work_task_update_schedule_delete($nid, $fcid) {
   
   $content = node_view($node);
   print render($content['field_schedule']);
+  
+  drupal_exit();
 }
 
 function work_task_update_schedule() {
@@ -240,6 +363,8 @@ function work_task_update_schedule() {
 
   $content = node_view($node);
   print render($content['field_schedule']);
+  
+  drupal_exit();
 }
 
 function work_task_update_status($nid, $tid) {
@@ -250,6 +375,26 @@ function work_task_update_status($nid, $tid) {
   node_save($node);
 }
 
+function work_task_update_assigned($nid, $uid) {
+  $node = node_load($nid);
+
+  $node->field_assigned_to['und'][0]['uid'] = $uid;
+
+  node_save($node);
+}
+
+function work_task_update_users_add($nid, $uid) {
+  $node = node_load($nid);
+
+  $node->field_users['und'][]['uid'] = $uid;
+
+  node_save($node);
+
+  $content = node_view($node);
+  print render($content['field_users']);
+  
+  drupal_exit();
+}
 
 function work_task_update_todo($id) {
 
@@ -257,15 +402,42 @@ function work_task_update_todo($id) {
   $todo = array_pop($collection);
 
   if ($todo->field_todo_status['und'][0]['value'] == 1) {
+    $todo->field_user['und'][0]['uid'] = null;
     $todo->field_todo_status['und'][0]['value'] = 0;
   } else {
+    
+    global $user;
+
+    $todo->field_user['und'][0]['uid'] = $user->uid;
     $todo->field_todo_status['und'][0]['value'] = 1;
   }
 
-  global $user;
-  $todo->field_user['und'][0]['uid'] = $user->uid;
-
   entity_save('field_collection_item', $todo);
+}
+
+function work_task_update_todo_add() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_to_do';
+  $fc['field_description']['und'][0]['value'] = $data['todo'];  
+ 
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+  
+  $node = node_load($data['nid']);
+
+  $content = node_view($node);
+  print render($content['field_to_do']);
+  
+  drupal_exit();
 }
 
 function work_task_update_comment() {
@@ -296,8 +468,124 @@ function work_task_update_comment() {
 
   $content = node_view($node);
   print render($content['field_comments']);
+  
+  drupal_exit();
 }
 
+function work_task_update_credentials() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_credentials';
+
+  $fc['field_description']['und'][0]['value'] = $data['description'];
+  $fc['field_path']['und'][0]['value'] =        $data['path'];
+  $fc['field_username']['und'][0]['value'] =    $data['username'];
+  $fc['field_password']['und'][0]['value'] =    $data['password'];
+
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $content = node_view($node);
+  print render($content['field_credentials']);
+  
+  drupal_exit();
+}
+
+function work_task_update_assets() {
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_assets';
+
+  $fc['field_description']['und'][0]['value'] = $_POST['asset'];
+
+  $file = file_get_contents($_FILES['file']['tmp_name']);
+
+  $file_upload = file_save_data($file, 'public://' . $_FILES['file']['name'], FILE_EXISTS_RENAME);
+
+  $file_upload->display = 1;
+
+  $fc['field_asset']['und'][] = (array) $file_upload;
+
+  $node = node_load($_POST['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  drupal_set_message("Asset added");
+
+  drupal_goto('node/' . $node->nid, array('query' => array('assets' => 'TRUE')));
+  drupal_exit();
+}
+
+function work_task_update_resources() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_resources';
+
+  $fc['field_description']['und'][0]['value'] = $data['resource'];
+  $fc['field_url']['und'][0]['url'] = $data['url'];
+  $fc['field_url']['und'][0]['title'] = $data['url'];
+  $fc['field_url']['und'][0]['attributes']['target'] = '_blank';
+
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $content = node_view($node);
+
+  print render($content['field_resources']);
+  
+  drupal_exit();
+}
 function custom_task_ajax_add_action($form, $form_state) {
   return $form['actions'];
+}
+
+function work_task_progress($nid) {
+  $node = node_load($nid);
+
+  if (isset($node->field_to_do['und'])) {
+    $count = count($node->field_to_do['und']);
+    $done = 0;
+
+    foreach($node->field_to_do['und'] as $t) {
+      $e = entity_load('field_collection_item', array($t['value']));
+      $fc = array_pop($e);  
+
+      if ($fc->field_todo_status['und'][0]['value'] == 1) {
+        $done += 1;
+      }
+    }
+
+     return floor($done / $count * 100) . '%';
+  } 
+
+  else {
+    if (($node->field_status['und'][0]['tid'] == 6) || ($node->field_status['und'][0]['tid'] == 7)) {
+      return '100%';
+   } else {
+      return '0%';
+   }
+  }
 }

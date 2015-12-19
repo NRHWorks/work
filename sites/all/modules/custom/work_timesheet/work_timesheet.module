@@ -62,6 +62,7 @@ function work_timesheet_query_database($start_date, $end_date) {
   $query->leftJoin('field_data_field_description', 'fd', 'fd.entity_id = ft.field_time_value');
   $query->condition('n.type', 'task');
   $query->condition('d.field_date_value', array($start_date, $end_date), 'BETWEEN');
+  $query->condition('h.field_hours_value', '0', '>');
   $query->addField('np', 'title', 'project');
   $query->addField('tp', 'field_project_nid', 'project_nid');
   $query->addField('br', 'field_bill_rate_value', 'bill_rate');
@@ -91,6 +92,7 @@ function build_rows_admin($results, $group_by) {
   $total_billed = 0;
   $total_paid = 0;
   $total_difference = 0;
+
   if(isset($results)) {
     foreach ($results as $r) {  
       $nid = $r->nid;
@@ -111,7 +113,8 @@ function build_rows_admin($results, $group_by) {
         $rows[] = array($r->client, l($project, 'node/' . $project_nid), l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
       } elseif ($group_by == 'project') {
         $rows[] = array($r->client, $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
-      } else { $rows[] = array($r->client, l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
+      } else { 
+        $rows[] = array($r->client, l($project, 'node/' . $project_nid), $developer->name, l($title, 'node/' . $nid), date('F j, Y', strtotime($r->field_date_value)), $hours, $billed_hours, $paid_hours, $difference);
       }
       $total_hours += $hours;
       $total_billed += $billed_hours;
@@ -119,11 +122,18 @@ function build_rows_admin($results, $group_by) {
       $total_difference += $difference;
     }
   }
+
+  $rows[] = array('Bookweb', l('Bookweb Ongoing Maintenance', 'node/188'), null, null, null, null, '3000', null, null);
+      
+  $total_billed += 3000;
+  $total_difference += 3000;
+
   if ($group_by == 'any') {
     $rows[] = make_strong(array("Totals:" ,null, null, null, null, $total_hours, $total_billed, $total_paid, $total_difference));
   } else {
     $rows[] = make_strong(array("Totals:" ,null, null, null, $total_hours, $total_billed, $total_paid, $total_difference));
   }
+
   return $rows;
 }
 
@@ -308,7 +318,7 @@ function build_rows($sorted_data, $header, $group_by) {
 
 function make_strong($string) {
   foreach($string as &$s) {
-    $s = "<Strong>$s</Strong>";
+    $s = "<strong>$s</strong>";
   }
 
   return $string;

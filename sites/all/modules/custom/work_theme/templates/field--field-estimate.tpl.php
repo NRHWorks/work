@@ -48,12 +48,16 @@
 
 <?php
 
-$t = $element['#object']->field_time['und'];
-
 $times = array();
-foreach ($t as $fc) {
-  $times[] = $fc['value'];
-}
+
+if (isset($element['#object']->field_time['und'])) {
+  $t = $element['#object']->field_time['und'];
+
+  foreach ($t as $fc) {
+    $times[] = $fc['value'];
+  }
+} 
+
 
 $collections = entity_load('field_collection_item', $times);
 

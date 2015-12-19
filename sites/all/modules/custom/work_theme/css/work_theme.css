@@ -95,6 +95,7 @@ input[type=submit] {
   border-right: 1px solid #CCC;
   box-sizing:border-box;
   font-size: 12px;
+  min-height: 450px;
 }
 
 #task-right {
@@ -106,6 +107,8 @@ input[type=submit] {
 
   -webkit-box-shadow: -5px 0px 5px -3px #CCC;
   box-shadow: -5px 0px 5px -3px #CCC;
+  
+  min-height: 450px;
 }
 
 #task-right .tabs {
@@ -121,15 +124,23 @@ input[type=submit] {
   display: block;
 }
 
+.node-type-project #task-right #log-wrapper {
+  display: block;
+}
+
+
+.node-type-project .section > div.tabs,
 .node-type-task .section > div.tabs {
   width: 40%;
   margin-bottom: -11px;
   height: 28px;
 }
 
+.node-type-project:not(.page-node-edit) #block-system-main > .content,
 .node-type-task:not(.page-node-edit) #block-system-main > .content {
   background-color: #FFF;
   border: 1px solid #CCC;
+  min-height: 450px;
 }
 
 .half {
@@ -170,17 +181,73 @@ input[type=submit] {
 .field-name-field-time > .field-label,
 .field-name-field-schedule > .field-label,
 .field-name-field-to-do > .field-label {
-  background-color: #ededed;
+  background-color: #DDD;
   padding: 10px;
   margin-left: -10px;
   margin-right: -10px;
-  border-top: 1px solid #CCC;
-  border-bottom: 1px solid #CCC;
+  border-top: 1px solid #BBB;
+  border-bottom: 1px solid #BBB;
   font-weight: bold;
 }
 
 .todo-done {
   text-decoration: line-through;
+}
+
+#node-todo-div #todo {
+  margin-bottom: 10px;
+}
+
+#node-users-div {
+  position: absolute;
+  border: 1px solid #CCC;
+  background-color: #FFF;
+  padding: 10px;
+  display: none;
+
+  top: 103px;
+  left: 52px;
+
+  height: auto;
+ 
+  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
+  box-shadow: 5px 5px 5px -3px #CCC;
+
+  z-index: 999;
+}
+
+.node-type-project #node-users-div {
+  top: 35px;
+}
+
+#node-users-div a {
+  width: 150px;
+  display: block;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+#node-assign-to-div {
+  position: absolute;
+  border: 1px solid #CCC;
+  background-color: #FFF;
+  padding: 10px;
+  display: none;
+
+  top: 75px;
+  left: 100px;
+ 
+  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
+  box-shadow: 5px 5px 5px -3px #CCC;
+
+  z-index: 999;
+}
+
+#node-assign-to-div a {
+  width: 150px;
+  display: block;
+  margin-bottom: 10px;
+  font-size: 12px;
 }
 
 #node-status-div {
@@ -190,12 +257,13 @@ input[type=submit] {
   padding: 10px;
   display: none;
 
-  top: 100px;
-  left: 296px;
-  height: 200px; 
+  top: 45px;
+  left: 280px;
  
   -webkit-box-shadow: 5px 5px 5px -3px #CCC;
   box-shadow: 5px 5px 5px -3px #CCC;
+
+  z-index: 999;
 }
 
 #node-status-div a {
@@ -224,23 +292,6 @@ input[type=submit] {
   font-weight: bold;
 }
 
-#node-schedule-div {
-  position: absolute;
-  border: 1px solid #CCC;
-  background-color: #FFF;
-  padding: 10px;
-  display: none;
-
-  height: 45px;  
-  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
-  box-shadow: 5px 5px 5px -3px #CCC;
-}
-
-a#schedule-time {
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
 .field-collection-item-field-time .field-name-field-user {
   float: left;
   margin-right: 10px;
@@ -266,24 +317,6 @@ a#schedule-time {
   margin-bottom: 10px;
   border-bottom: 1px dashed #DDD;
   width: 400px;
-}
-
-#node-record-div {
-  position: absolute;
-  border: 1px solid #CCC;
-  background-color: #FFF;
-  padding: 10px;
-  display: none;
-  width: 415px;
-  
-  height: 100px;  
-  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
-  box-shadow: 5px 5px 5px -3px #CCC;
-}
-
-a#record-time {
-  margin-bottom: 5px;
-  font-weight: bold;
 }
 
 .field-name-field-estimate {
@@ -342,19 +375,6 @@ a#record-time {
   width: 400px;
 }
 
-#node-add-comment {
-  position: absolute;
-  border: 1px solid #CCC;
-  background-color: #FFF;
-  padding: 10px 20px;
-  display: none;
-  width: 415px;
-  bottom: 75px; 
-  height: 280px;  
-  -webkit-box-shadow: 5px 5px 5px -3px #CCC;
-  box-shadow: 5px 5px 5px -3px #CCC;
-}
-
 .field-name-field-comment-description {
   display: none;
 }
@@ -367,4 +387,33 @@ a#record-time {
   font-size: 12px;
   float: right;
   margin-right: 20px;
+}
+
+#task-project {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 5px 0 16px 0;
+}
+
+.hidden-form {
+  border-top: 1px solid #CCC;
+  border-bottom: 1px solid #CCC;
+  padding: 20px 10px 10px 10px;
+  display: none;
+  margin: 10px -10px; 
+  background-color: #F5f5f5;
+}
+
+.form-link {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+#todo-wrapper {
+  position: relative;
+  z-index: 100;
+}
+
+.form-item-due-date-date label {
+  display: none;
 }

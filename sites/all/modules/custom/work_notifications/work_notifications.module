@@ -14,11 +14,13 @@ function work_notifications_node_presave($node) {
 function _new_project($client, $project) {
   $users = array();
 
+  if ($client->field_users)
   foreach ($client->field_users['und'] as $u) {
     $user = user_load($u['uid']);
     $users[$user->name] = $user->mail;
   }
   
+  if ($client->field_admins)
   foreach ($client->field_admins['und'] as $u) {
     $user = user_load($u['uid']);
     $users[$user->name] = $user->mail;

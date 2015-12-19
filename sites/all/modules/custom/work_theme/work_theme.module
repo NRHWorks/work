@@ -14,6 +14,13 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'template' => 'node--task',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
+
+  $theme['node__project'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--project',
+    'path' => drupal_get_path('module', 'work_theme') . '/templates',
+   );
   
   $theme['field_collection_item__field_to_do'] = array(
     'render element' => 'content',
@@ -47,6 +54,20 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'render element' => 'content',
     'base hook' => 'field',
     'template' => 'field--field-status',
+    'path' => drupal_get_path('module', 'work_theme') . '/templates',
+   );
+  
+  $theme['field__field_users'] = array(
+    'render element' => 'content',
+    'base hook' => 'field',
+    'template' => 'field--field-users',
+    'path' => drupal_get_path('module', 'work_theme') . '/templates',
+   );
+  
+  $theme['field__field_assigned_to'] = array(
+    'render element' => 'content',
+    'base hook' => 'field',
+    'template' => 'field--field-assigned-to',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
 

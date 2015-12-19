@@ -66,7 +66,6 @@ function reset_height() {
         $(this).addClass('active');
       }
     });
-    
   });
 
 }(jQuery));
