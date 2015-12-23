@@ -235,16 +235,17 @@ function work_todo_cli($uid) {
                         INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
                         INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
                         WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 0 AND s.bundle = 'todo' AND u.field_assigned_to_uid = :uid AND d.field_date_value <= '".date('Y-m-d 23:59:59')."'
+                        GROUP BY nid
                         ORDER BY substr(d.field_date_value,0,11),  p.field_priority_value", array(':uid' => $uid));
 
 
   $todo = '';
   foreach ($result as $r) {
     $node = node_load($r->nid); 
-    $todo .= "({$node->nid}) {$node->title}\n";
+    $todo .= "<span style='color:green'>({$node->nid}) {$node->title}</span><br />";
   }
 
-  $todo .= "----------------------------------\n";
+  $todo .= "<hr style='color:blue; border-color:blue;' />";
 
   $result = db_query("  SELECT nid 
                         FROM {node} n 
@@ -253,11 +254,30 @@ function work_todo_cli($uid) {
                         INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
                         INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
                         WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 0 AND s.bundle = 'todo' AND u.field_assigned_to_uid = :uid AND d.field_date_value > '".date('Y-m-d 23:59:59')."'
+                        GROUP BY nid
                         ORDER BY substr(d.field_date_value,0,11),  p.field_priority_value", array(':uid' => $uid));
 
   foreach ($result as $r) {
     $node = node_load($r->nid); 
-    $todo .= "({$node->nid}) {$node->title}\n";
+    $todo .= "<span style='color:yellow;'>({$node->nid}) {$node->title}</span><br />";
+  }
+  
+  $todo .= "<hr style='color:blue; border-color:blue;' />";
+
+  $result = db_query("  SELECT nid 
+                        FROM {node} n 
+                        INNER JOIN {field_data_field_date} d ON n.nid = d.entity_id 
+                        INNER JOIN {field_data_field_assigned_to} u ON n.nid = u.entity_id 
+                        INNER JOIN {field_data_field_priority} p ON n.nid = p.entity_id 
+                        INNER JOIN {field_data_field_todo_status} s ON n.nid = s.entity_id 
+                        WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 1 AND s.bundle = 'todo' 
+                        GROUP BY nid
+                        ORDER BY n.changed DESC
+                        LIMIT 5", array(':uid' => $uid));
+
+  foreach ($result as $r) {
+    $node = node_load($r->nid); 
+    $todo .= "<span style='color:red;'>({$node->nid}) <span style='text-decoration:line-through;'>{$node->title}</span></span><br />";
   }
   
   print $todo;
