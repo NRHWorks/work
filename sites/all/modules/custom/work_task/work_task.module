@@ -448,8 +448,8 @@ function work_task_update_todo($id) {
   $todo = array_pop($collection);
 
   $nid = db_query("
-    SELECT entity_id FROM {field_data_field_task_todo}
-    WHERE field_task_todo_value = :fc_id", array(":fc_id" => $id))->fetchField();
+    SELECT entity_id FROM {field_data_field_to_do}
+    WHERE field_to_do_value = :fc_id", array(":fc_id" => $id))->fetchField();
 
   global $user;
 
