@@ -239,6 +239,7 @@ function work_task_add_task_submit($form, &$form_state) {
 
   node_save($node);
 
+  work_log_create_log_entry($v['project'], "Task Added", "Task Added: " . l($node->title, 'node/' . $node->nid));
   drupal_set_message("Task Added: " . l($node->title, 'node/' . $node->nid));
 
   drupal_goto('<front>');
@@ -271,6 +272,8 @@ function work_task_estimate($nid) {
 }
 
 function work_task_update_time_delete($nid, $fcid) {
+
+
   entity_delete_multiple('field_collection_item', array($fcid));
 
   $node = node_load($nid);
@@ -319,6 +322,22 @@ function work_task_update_time() {
 }
 
 function work_task_update_schedule_delete($nid, $fcid) {
+  // get info for log entry
+  $fc = entity_load('field_collection_item', array($fcid));
+  $fc = array_shift($fc);
+  $date = substr($fc->field_date['und'][0]['value'], 0 ,10);
+  $u = db_query("
+    SELECT name FROM {users} WHERE uid = :uid",
+    array(":uid" => $fc->field_user['und'][0]['uid']))->fetchField();
+  $time = "";
+  foreach ($fc->field_schedule_time['und'] as $v){
+    $time .= $v['value'].", ";
+  }
+  $time = rtrim($time, ", ");
+  work_log_create_log_entry($nid, "Scheduled Time Deleted",
+    "Scheduled time deleted:<br/>Date: ".$date."<br/>Time: ".$time. "<br/>Created by ". $u);
+
+  // Delete actual field collection
   entity_delete_multiple('field_collection_item', array($fcid));
 
   $node = node_load($nid);
@@ -348,10 +367,13 @@ function work_task_update_schedule() {
   $fc['field_name'] = 'field_schedule';
   $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));  
  
+  $time_string = "";
   foreach ($data['time'] as $t) {
-    $fc['field_schedule_time']['und'][]['value'] = $t;  
+    $fc['field_schedule_time']['und'][]['value'] = $t;
+    $time_string .= $t .", ";
   } 
   
+  $time_string = rtrim($time_string, ", ");
   global $user;
   $fc['field_user']['und'][0]['uid'] = $user->uid;
 
@@ -361,6 +383,13 @@ function work_task_update_schedule() {
   $entity->setHostEntity('node', $node);
   $entity->save();
 
+
+
+  work_log_create_log_entry($node->nid, "Scheduled Time Updated",
+    "Scheduled time updated:<br/>Date: ".
+    substr($fc['field_date']['und'][0]['value'], 0, 10) .
+    "<br/>Time: " . $time_string . "<br/>Created by " . $user->name);
+  
   $content = node_view($node);
   print render($content['field_schedule']);
   
@@ -370,17 +399,30 @@ function work_task_update_schedule() {
 function work_task_update_status($nid, $tid) {
   $node = node_load($nid);
 
-  $node->field_status['und'][0]['tid'] = $tid;
+  $original_status = db_query("
+    SELECT name FROM {taxonomy_term_data}
+    WHERE tid = :tid", array(":tid" => $node->field_status['und'][0]['tid']))->fetchField();
 
+  $node->field_status['und'][0]['tid'] = $tid;
+  $new_status = db_query("
+    SELECT name FROM {taxonomy_term_data}
+    WHERE tid = :tid", array(":tid" => $tid))->fetchField();
   node_save($node);
+  
+  work_log_create_log_entry($nid, "Status Updated",
+    "Status changed from <strong>" .
+    $original_status . "</strong> to <strong>" . $new_status . "</strong>");
+  
 }
 
 function work_task_update_assigned($nid, $uid) {
   $node = node_load($nid);
-
   $node->field_assigned_to['und'][0]['uid'] = $uid;
-
   node_save($node);
+
+  $u = db_query("SELECT name FROM {users} WHERE uid = :uid", array(":uid" => $uid))->fetchField();
+  work_log_create_log_entry($node->nid,"Assignee changed",
+    "Task assigned to <strong>" . $u ."</strong>");
 }
 
 function work_task_update_users_add($nid, $uid) {
@@ -390,6 +432,11 @@ function work_task_update_users_add($nid, $uid) {
 
   node_save($node);
 
+  $u = db_query("SELECT name FROM {users} WHERE uid = :uid", array(":uid" => $uid))->fetchField();
+
+  work_log_create_log_entry($node->nid,"User Added",
+    "New user <strong>" . $u . "</strong> added to the task");
+  
   $content = node_view($node);
   print render($content['field_users']);
   
@@ -397,22 +444,31 @@ function work_task_update_users_add($nid, $uid) {
 }
 
 function work_task_update_todo($id) {
-
   $collection = entity_load('field_collection_item', array($id));
   $todo = array_pop($collection);
+
+  $nid = db_query("
+    SELECT entity_id FROM {field_data_field_task_todo}
+    WHERE field_task_todo_value = :fc_id", array(":fc_id" => $id))->fetchField();
+
+  global $user;
 
   if ($todo->field_todo_status['und'][0]['value'] == 1) {
     $todo->field_user['und'][0]['uid'] = null;
     $todo->field_todo_status['und'][0]['value'] = 0;
-  } else {
-    
-    global $user;
 
+  } else {
     $todo->field_user['und'][0]['uid'] = $user->uid;
     $todo->field_todo_status['und'][0]['value'] = 1;
   }
-
   entity_save('field_collection_item', $todo);
+
+  work_log_create_log_entry($nid, "Todo status changed",
+      "Todo status changed to <strong>".
+      ( $todo->field_todo_status['und'][0]['value'] == 0 ? "Unfinished" : "finished" ).
+      "</strong> by ". $user->name."<br/>Todo description:<br/>".$todo->field_description['und'][0]['value']);
+  
+  
 }
 
 function work_task_update_todo_add() {
@@ -421,7 +477,7 @@ function work_task_update_todo_add() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_to_do';
   $fc['field_description']['und'][0]['value'] = $data['todo'];  
@@ -434,8 +490,14 @@ function work_task_update_todo_add() {
   
   $node = node_load($data['nid']);
 
+  global $user;
+  work_log_create_log_entry($node->nid, "New Todo added",
+    "New Todo item added by " . $user->name .
+    "<br/>Todo description:<br/>".$entity->field_description['und'][0]['value']);
+  
   $content = node_view($node);
   print render($content['field_to_do']);
+  
   
   drupal_exit();
 }
@@ -466,6 +528,11 @@ function work_task_update_comment() {
   $entity->setHostEntity('node', $node);
   $entity->save();
 
+  global $user;
+  work_log_create_log_entry($node->nid, "New comment added",
+    "New comment added by " . $user->name .
+    "<br/>Comment:<br/>".$entity->field_title['und'][0]['value']);
+
   $content = node_view($node);
   print render($content['field_comments']);
   
@@ -493,6 +560,11 @@ function work_task_update_credentials() {
   $entity = entity_create('field_collection_item', $fc);
   $entity->setHostEntity('node', $node);
   $entity->save();
+
+  global $user;
+  work_log_create_log_entry($node->nid, "Credentials updated",
+    "Credentials updated by " . $user->name .
+    "<br/>Credentials description: ".$entity->field_description['und'][0]['value']);
 
   $content = node_view($node);
   print render($content['field_credentials']);
@@ -526,6 +598,11 @@ function work_task_update_assets() {
 
   drupal_set_message("Asset added");
 
+  global $user;
+  work_log_create_log_entry($node->nid, "Asset added",
+    "Asset added by " . $user->name .
+    "<br/>File description: ".$entity->field_description['und'][0]['value']);
+
   drupal_goto('node/' . $node->nid, array('query' => array('assets' => 'TRUE')));
   drupal_exit();
 }
@@ -552,12 +629,20 @@ function work_task_update_resources() {
   $entity->setHostEntity('node', $node);
   $entity->save();
 
+  global $user;
+  work_log_create_log_entry($node->nid, "Resource added",
+    "Resource added by " . $user->name .
+    "<br/>Resource description: ".$entity->field_description['und'][0]['value']);
+
+
   $content = node_view($node);
 
   print render($content['field_resources']);
   
   drupal_exit();
 }
+
+
 function custom_task_ajax_add_action($form, $form_state) {
   return $form['actions'];
 }

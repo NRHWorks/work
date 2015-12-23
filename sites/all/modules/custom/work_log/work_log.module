@@ -1,1 +1,60 @@
 <?php
+
+/**
+ * This function creates a log_entry node which refernces to the given node id
+ */
+function work_log_create_log_entry($node_nid, $log_title, $log_message) {
+  global $user;
+
+  $log_node = new stdClass();
+  $log_node->title = $log_title;
+  $log_node->type = "log_entry";
+  node_object_prepare($log_node);
+  $log_node->language = LANGUAGE_NONE;
+  $log_node->status = 1;
+  $log_node->promote = 0;
+  $log_node->comment = 0;
+
+  // Set user
+  $log_node->uid = $user->uid;
+
+  // Set body
+  $log_node->body['und'][0] = array(
+    'value' => $log_message,
+    'format' => 'full_html');
+  // Set node reference
+  $parent_type = db_query("
+    SELECT type FROM {node}
+    WHERE nid = :nid",
+    array(":nid" => $node_nid))->fetchField();
+  $log_node->{'field_'.$parent_type}['und'][0]['nid'] = $node_nid;
+
+  $log_node = node_submit($log_node); // Prepare node for saving
+  node_save($log_node);
+}
+
+function work_log_view($node_nid) {
+  $node_type = db_query("
+    SELECT type FROM {node} WHERE nid = :nid",
+    array(":nid" => $node_nid))->fetchField();
+
+  $logs = db_query("
+    SELECT n.nid FROM {node} AS n
+    INNER JOIN {field_data_field_$node_type} AS f
+    ON f.entity_id = n.nid
+    WHERE f.field_".$node_type."_nid = :nid
+    ORDER BY n.created ASC", array(":nid" => $node_nid));
+
+  $rendered_log = "";
+
+
+  foreach($logs as $log) {
+    $n = node_load($log->nid);
+    //$rendered_log.= print_r($n, TRUE);
+    $content = node_view($n);
+    $rendered_log .= render($content);
+  }
+
+  return $rendered_log;
+
+}

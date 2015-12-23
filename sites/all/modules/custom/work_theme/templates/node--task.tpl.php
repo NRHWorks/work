@@ -111,8 +111,8 @@
       <div id="node-add-comment" class="hidden-form">
         <form action="#" 
               id="comment-form" 
-              onsubmit=" jQuery('#comments-container').load('/tasks/update-comment/add', {data: jQuery('#comment-form').serialize()}); 
-                         jQuery('#node-add-comment').hide(); 
+              onsubmit=" jQuery('#comments-container').load('/tasks/update-comment/add', {data: jQuery('#comment-form').serialize()});
+                         jQuery('#node-add-comment').hide();
                          reset_height();
                          return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
@@ -181,6 +181,10 @@
           <input type="submit" value="Add Comment"/>
         </form>
       </div>
+    </div>
+    
+    <div id="log-wrapper" class="right-wrapper">
+      <?php print work_log_view($node->nid);?>
     </div>
 
     <div style="clear:both"></div><br /><br />
