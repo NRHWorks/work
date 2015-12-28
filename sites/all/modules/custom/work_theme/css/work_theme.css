@@ -168,13 +168,14 @@ input[type=submit] {
 }
 
 .todo-check {
-  width: 25px;
   float: left;
   clear: both;
+  margin-right:10px;
 }
 
 .todo-item {
   margin-top: 10px;
+  clear:both;
 }
 
 .gray,

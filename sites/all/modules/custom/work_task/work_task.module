@@ -463,10 +463,10 @@ function work_task_update_todo($id) {
   }
   entity_save('field_collection_item', $todo);
 
-  work_log_create_log_entry($nid, "Todo status changed",
-      "Todo status changed to <strong>".
+  work_log_create_log_entry($nid, "Todo #".$todo->item_id ." status changed",
+      "Todo <strong>#".$todo->item_id."</strong> status changed to <strong>".
       ( $todo->field_todo_status['und'][0]['value'] == 0 ? "Unfinished" : "finished" ).
-      "</strong> by ". $user->name."<br/>Todo description:<br/>".$todo->field_description['und'][0]['value']);
+      "</strong> by ". $user->name);
   
   
 }
@@ -491,8 +491,8 @@ function work_task_update_todo_add() {
   $node = node_load($data['nid']);
 
   global $user;
-  work_log_create_log_entry($node->nid, "New Todo added",
-    "New Todo item added by " . $user->name .
+  work_log_create_log_entry($node->nid, "New Todo #". $entity->item_id . " added",
+    "New Todo item <strong>#".$entity->item_id."</strong> added by " . $user->name .
     "<br/>Todo description:<br/>".$entity->field_description['und'][0]['value']);
   
   $content = node_view($node);

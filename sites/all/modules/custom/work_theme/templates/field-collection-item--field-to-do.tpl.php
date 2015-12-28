@@ -33,7 +33,7 @@
 ?>
 <div class="todo-item">
   <div class="todo-check">
-    <input type="checkbox" data-todo="<?php print $e->item_id; ?>" <?php if ($e->field_todo_status['und'][0]['value'] == 1) { print "checked='checked'"; } ?> />
+    <input type="checkbox" data-todo="<?php print $e->item_id; ?>" <?php if ($e->field_todo_status['und'][0]['value'] == 1) { print "checked='checked'"; } ?> /> <strong>#<?php print $e->item_id;?></strong>
   </div>
   <div class="todo-todo <?php if ($e->field_todo_status['und'][0]['value'] == 1) { print "todo-done"; } ?>">
     <?php print $e->field_description['und'][0]['value']; ?>
