@@ -39,7 +39,7 @@
   <div class="content"<?php print $content_attributes; ?>>
     <div style="float:left; margin-right:20px; font-weight:bold;">
       <a href="#" 
-         onclick="  jQuery('#time-wrapper').load('/tasks/update-time/delete/<?php print $he->nid; ?>/<?php print $e->item_id; ?>'); 
+         onclick="  jQuery('#time-wrapper').load('/tasks/update-time/delete/<?php print $he->nid; ?>/<?php print $e->item_id; ?>', function(){work_log.update_log(<?php print $he->nid;?>);});
                     setTimeout(function() { jQuery('#estimate-wrapper').load('/tasks/estimate/<?php print $he->nid; ?>') }, 1000);
                     return false;">X</a>
     </div>

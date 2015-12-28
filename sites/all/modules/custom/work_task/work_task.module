@@ -272,7 +272,15 @@ function work_task_estimate($nid) {
 }
 
 function work_task_update_time_delete($nid, $fcid) {
+  $fc = entity_load('field_collection_item', array($fcid));
+  $fc = array_shift($fc);
+  $date = substr($fc->field_date['und'][0]['value'], 0 ,10);
+  $u = db_query("
+    SELECT name FROM {users} WHERE uid = :uid",
+    array(":uid" => $fc->field_user['und'][0]['uid']))->fetchField();
 
+  work_log_create_log_entry($nid, "Record Time Deleted",
+    "Record time deleted:<br/>Date: ".$date."<br/>Hours: ".$fc->field_hours['und'][0]['value']. "<br/>Created by ". $u);
 
   entity_delete_multiple('field_collection_item', array($fcid));
 
@@ -314,6 +322,9 @@ function work_task_update_time() {
   $entity = entity_create('field_collection_item', $fc);
   $entity->setHostEntity('node', $node);
   $entity->save();
+
+  work_log_create_log_entry($node->nid, "Record Time Added",
+    "Record Time added:<br/>Date: ".$fc['field_date']['und'][0]['value']."<br/>Time: ".$fc['field_hours']['und'][0]['value']. "<br/>Created by ". $user->name);
 
   $content = node_view($node);
   print render($content['field_time']);
