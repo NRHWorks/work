@@ -37,6 +37,12 @@ function work_project_update_users_add($nid, $uid) {
 
   node_save($node);
 
+
+  $u = db_query("SELECT name FROM {users} WHERE uid = :uid", array(":uid" => $uid))->fetchField();
+  work_log_create_log_entry($node->nid,"User Added",
+    "New user <strong>" . $u . "</strong> added to the project.");
+
+
   $content = node_view($node);
   print render($content['field_users']);
   
@@ -65,6 +71,10 @@ function work_project_update_credentials() {
   $entity->setHostEntity('node', $node);
   $entity->save();
 
+  global $user;
+  work_log_create_log_entry($node->nid, "Credentials updated",
+    "Credentials updated by " . $user->name .
+    "<br/>Credentials description: ".$entity->field_description['und'][0]['value']);
   $content = node_view($node);
   print render($content['field_credentials']);
   
@@ -96,6 +106,10 @@ function work_project_update_assets() {
   $entity->save();
 
   drupal_set_message("Asset added");
+  global $user;
+  work_log_create_log_entry($node->nid, "Asset added",
+    "Asset added by " . $user->name .
+    "<br/>File description: ".$entity->field_description['und'][0]['value']);
 
   drupal_goto('node/' . $node->nid, array('query' => array('assets' => 'TRUE')));
   drupal_exit();
@@ -122,6 +136,12 @@ function work_project_update_resources() {
   $entity = entity_create('field_collection_item', $fc);
   $entity->setHostEntity('node', $node);
   $entity->save();
+
+  global $user;
+  work_log_create_log_entry($node->nid, "Resource added",
+    "Resource added by " . $user->name .
+    "<br/>Resource description: ".$entity->field_description['und'][0]['value']);
+
 
   $content = node_view($node);
 

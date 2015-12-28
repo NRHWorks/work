@@ -33,18 +33,16 @@
       </ul>
     </div>
     
-    <div id="log-wrapper" class="right-wrapper">
-      Log Wrapper
-    </div>
+
 
     <div id="credentials-wrapper" class="right-wrapper">
       <div id="credentials-container"><?php print render($content['field_credentials']); ?></div>
       <a href="#" id="add-credentials" onclick="jQuery('#node-add-credentials').toggle(); return false;" class="form-link">Add Credentials</a>
       <div id="node-add-credentials" class="hidden-form"> 
         <form action="#" 
-              id="credentials-form" 
-              onsubmit="  jQuery('#credentials-container').load('/projects/update-credentials/add', {data: jQuery('#credentials-form').serialize()}); 
-                          jQuery('#node-add-credentials').hide(); 
+              id="credentials-form"
+              onsubmit="  jQuery('#credentials-container').load('/projects/update-credentials/add', {data: jQuery('#credentials-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
+                          jQuery('#node-add-credentials').hide();
                           reset_height();
                           return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
@@ -83,7 +81,7 @@
       <div id="node-add-resource" class="hidden-form">
         <form action="#" 
               id="resource-form" 
-              onsubmit="  jQuery('#resources-container').load('/projects/update-resources/add', {data: jQuery('#resource-form').serialize()}); 
+              onsubmit="  jQuery('#resources-container').load('/projects/update-resources/add', {data: jQuery('#resource-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
                           jQuery('#node-add-resource').hide(); 
                           reset_height();
                           return false;">
@@ -94,6 +92,13 @@
         </form>
       </div>
     </div>
+    
+    
+    <div id="log-wrapper" class="right-wrapper">
+      <?php print work_log_view($node->nid);?>
+    </div>
+    
+    
 
     <div style="clear:both"></div><br /><br />
   </div>
@@ -106,7 +111,7 @@
     foreach ($result as $r) {
         print " <a  href='#' 
                     onclick=' jQuery(\"#node-users-div\").hide(); 
-                              jQuery(\"#users-container\").load(\"/projects/update-users/add/{$node->nid}/{$r->uid}\")'>
+                              jQuery(\"#users-container\").load(\"/projects/update-users/add/{$node->nid}/{$r->uid}\", function(){work_log.update_log({$node->nid});})'>
                     {$r->name}
                 </a>\n";
 

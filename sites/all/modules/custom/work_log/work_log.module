@@ -68,7 +68,9 @@ function work_log_view($node_nid) {
     INNER JOIN {field_data_field_$node_type} AS f
     ON f.entity_id = n.nid
     WHERE f.field_".$node_type."_nid = :nid
-    ORDER BY n.created ASC", array(":nid" => $node_nid));
+    AND f.bundle = 'log_entry'
+    ORDER BY n.created ASC", array(":nid" => $node_nid))->fetchAll();
+
 
   $rendered_log = "";
 
