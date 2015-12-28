@@ -1,6 +1,28 @@
 <?php
 
 /**
+ * Hook_menu.
+ */
+function work_log_menu(){
+  $items['work-log/ajax/get-log-by-nid/%'] = array(
+    'title' => "Work Log",
+    'page callback' => 'work_log_ajax_get_log',
+    'access callback' => TRUE,
+    'page arguments' => array(3),
+  );
+
+  $items['work-log/ajax/get-log-by-todo-eid/%'] = array(
+    'title' => "Work Log",
+    'page callback' => 'work_log_ajax_get_log_by_todo_eid',
+    'access callback' => TRUE,
+    'page arguments' => array(3),
+  );
+
+  return $items;
+}
+
+
+/**
  * This function creates a log_entry node which refernces to the given node id
  */
 function work_log_create_log_entry($node_nid, $log_title, $log_message) {
@@ -33,6 +55,9 @@ function work_log_create_log_entry($node_nid, $log_title, $log_message) {
   node_save($log_node);
 }
 
+/**
+ * Returns the rendered html markup of the log.
+ */
 function work_log_view($node_nid) {
   $node_type = db_query("
     SELECT type FROM {node} WHERE nid = :nid",
@@ -57,4 +82,19 @@ function work_log_view($node_nid) {
 
   return $rendered_log;
 
+}
+
+/**
+ * Returns the rendered html mark up of the log via ajax call.
+ */
+function work_log_ajax_get_log($nid) {
+  echo work_log_view($nid);
+}
+
+
+function work_log_ajax_get_log_by_todo_eid($eid) {
+  $nid = db_query("
+    SELECT entity_id FROM field_data_field_to_do
+    WHERE field_to_do_value = :eid", array(":eid" => $eid))->fetchField();
+  work_log_ajax_get_log($nid);
 }

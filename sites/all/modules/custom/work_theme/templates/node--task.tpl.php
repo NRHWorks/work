@@ -38,7 +38,7 @@
     <br />
     <a href="#" id="todo-add" onclick="jQuery('#node-todo-div').toggle(); return false;" class="form-link">Add Item</a>
     <div id="node-todo-div" class="hidden-form">
-      <form action="#" id="todo-form" onsubmit="jQuery('#todo-wrapper').load('/tasks/update-todo/add', {data: jQuery('#todo-form').serialize()}, function() {jQuery('#todo').val(''); jQuery('#node-todo-div').hide();  }); return false;">
+      <form action="#" id="todo-form" onsubmit="jQuery('#todo-wrapper').load('/tasks/update-todo/add', {data: jQuery('#todo-form').serialize()}, function() {jQuery('#todo').val(''); jQuery('#node-todo-div').hide(); work_log.update_log(<?php print $node->nid;?>)}); return false;">
         <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
         <input type="text" id="todo" name="todo" size="50" placeholder="todo..."  /><br />
         <input type="submit" value="Add Item" />
@@ -55,7 +55,8 @@
     <br />
     <a href="#" id="schedule-time" onclick="jQuery('#node-schedule-div').toggle(); return false;" class="form-link">Schedule Time</a>
     <div id="node-schedule-div" class="hidden-form">
-      <form action="#" id="schedule-form" onsubmit="jQuery('#schedule-wrapper').load('/tasks/update-schedule/add', {data: jQuery('#schedule-form').serialize()}); jQuery('#node-schedule-div').hide(); return false;">
+      <form action="#" id="schedule-form" onsubmit="
+        jQuery('#schedule-wrapper').load('/tasks/update-schedule/add', {data: jQuery('#schedule-form').serialize()}, function(){work_log.update_log(<?php print $node->nid;?>);}); jQuery('#node-schedule-div').hide(); return false;">
         <input type="text" id="schedule-date" class="datepicker init" placeholder="mm/dd/yyyy" name="date"/>
         <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
         <input type="checkbox" name="time[]" value="AM"/> AM
@@ -79,7 +80,7 @@
     <div id="node-record-div" class="hidden-form">
       <form action="#" 
             id="record-form" 
-            onsubmit="  jQuery('#time-wrapper').load('/tasks/update-time/add', {data: jQuery('#record-form').serialize()}); 
+            onsubmit="  jQuery('#time-wrapper').load('/tasks/update-time/add', {data: jQuery('#record-form').serialize()}, function(){work_log.update_log(<?php print $node->nid;?>);});
                         jQuery('#node-record-div').hide(); 
                         setTimeout(function() { jQuery('#estimate-wrapper').load('/tasks/estimate/<?php print $node->nid; ?>') }, 1000);
                         return false;">
@@ -111,7 +112,7 @@
       <div id="node-add-comment" class="hidden-form">
         <form action="#" 
               id="comment-form" 
-              onsubmit=" jQuery('#comments-container').load('/tasks/update-comment/add', {data: jQuery('#comment-form').serialize()});
+              onsubmit=" jQuery('#comments-container').load('/tasks/update-comment/add', {data: jQuery('#comment-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
                          jQuery('#node-add-comment').hide();
                          reset_height();
                          return false;">
@@ -131,7 +132,7 @@
       <div id="node-add-credentials" class="hidden-form"> 
         <form action="#" 
               id="credentials-form" 
-              onsubmit="  jQuery('#credentials-container').load('/tasks/update-credentials/add', {data: jQuery('#credentials-form').serialize()}); 
+              onsubmit="  jQuery('#credentials-container').load('/tasks/update-credentials/add', {data: jQuery('#credentials-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
                           jQuery('#node-add-credentials').hide(); 
                           reset_height();
                           return false;">
@@ -171,7 +172,7 @@
       <div id="node-add-resource" class="hidden-form">
         <form action="#" 
               id="resource-form" 
-              onsubmit="  jQuery('#resources-container').load('/tasks/update-resources/add', {data: jQuery('#resource-form').serialize()}); 
+              onsubmit="  jQuery('#resources-container').load('/tasks/update-resources/add', {data: jQuery('#resource-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
                           jQuery('#node-add-resource').hide(); 
                           reset_height();
                           return false;">
@@ -201,7 +202,7 @@
         print "<a href='#' 
                   onclick=' jQuery(\"#node-status-div\").hide(); 
                             jQuery(\"#node-status\").html(\"{$t->name}\"); 
-                            jQuery.post(\"/tasks/update-status/{$node->nid}/{$t->tid}\")'>
+                            jQuery.post(\"/tasks/update-status/{$node->nid}/{$t->tid}\", function(){work_log.update_log({$node->nid});})'>
                   {$t->name}
                </a>\n";
       }
@@ -217,7 +218,7 @@
         print " <a  href='#' 
                     onclick=' jQuery(\"#node-assign-to-div\").hide(); 
                               jQuery(\"#node-assigned-to\").html(\"{$assign_user->name}\"); 
-                              jQuery.post(\"/tasks/update-assigned/{$node->nid}/{$assign_user->uid}\")'>
+                              jQuery.post(\"/tasks/update-assigned/{$node->nid}/{$assign_user->uid}\", function(){work_log.update_log({$node->nid});})'>
                     {$assign_user->name}
                 </a>\n";
     }
@@ -232,7 +233,7 @@
     foreach ($result as $r) {
         print " <a  href='#' 
                     onclick=' jQuery(\"#node-users-div\").hide(); 
-                              jQuery(\"#users-container\").load(\"/tasks/update-users/add/{$node->nid}/{$r->uid}\")'>
+                              jQuery(\"#users-container\").load(\"/tasks/update-users/add/{$node->nid}/{$r->uid}\", function(){work_log.update_log({$node->nid});})'>
                     {$r->name}
                 </a>\n";
 

@@ -44,8 +44,12 @@ function reset_height() {
       } else {
         $(this).parent().siblings('div').removeClass('todo-done');
       }
- 
-      $.post('/tasks/update-todo/' + $(this).data('todo')); 
+      var thisCheckbox = $(this);
+      $.post('/tasks/update-todo/' + $(this).data('todo'), function(d, status){
+        if (status == 'success') {
+          work_log.update_log_by_todo_eid(thisCheckbox.data('todo'));
+        }
+      });
       
     });
 
@@ -68,4 +72,19 @@ function reset_height() {
     });
   });
 
+}(jQuery));
+
+var work_log = (function ($) {
+  return {
+    update_log: function(nid){
+      $.get("/work-log/ajax/get-log-by-nid/" + nid, function(data, status){
+        $("#log-wrapper").html(data);
+      });
+    },
+    update_log_by_todo_eid:function(eid) {
+     $.get("/work-log/ajax/get-log-by-todo-eid/" + eid, function(data, status){
+        $("#log-wrapper").html(data);
+      });
+    }
+  }
 }(jQuery));

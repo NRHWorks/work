@@ -36,10 +36,12 @@
 <div class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
   <div class="content"<?php print $content_attributes; ?>>
     <div style="float:left; margin-right:20px; font-weight:bold;">
-      <a href="#" onclick="jQuery('#schedule-wrapper').load('/tasks/update-schedule/delete/<?php print $he->nid; ?>/<?php print $e->item_id; ?>'); return false;">X</a>
+      <a href="#" onclick="jQuery('#schedule-wrapper').load('/tasks/update-schedule/delete/<?php print $he->nid; ?>/<?php print $e->item_id; ?>',function(){work_log.update_log(<?php print $he->nid;?>);}); return false;">X</a>
     </div>
     <?php
       print render($content);
     ?>
   </div>
 </div>
+
+
