@@ -52,12 +52,12 @@ function work_github_push_callback(){
     return;
   }
 
-  //work_log_create_log_entry($project_nid, $log_title, $log_message);
+  //work_log_create_log_entry($project_nid, $log, $log_message);
 
 
-  file_put_contents("test.txt", print_r($content, TRUE));
-  file_put_contents("test.txt", print_r($headers, TRUE), FILE_APPEND);
+  //file_put_contents("test.txt", print_r($content, TRUE));
+  //file_put_contents("test.txt", print_r($headers, TRUE), FILE_APPEND);
 
-  echo "Yes!";
+  //echo "Yes!";
 
 }
