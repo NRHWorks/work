@@ -209,6 +209,8 @@ function work_task_add_task_submit($form, &$form_state) {
 
   $node->field_status['und'][0]['tid'] = 1;
   
+  $node->body['und'][0]['value'] = $v['description'];
+
   $node->field_project['und'][0]['nid'] = $v['project'];
 
   $node->field_assigned_to['und'][0]['uid'] = $v['assigned_to'];
