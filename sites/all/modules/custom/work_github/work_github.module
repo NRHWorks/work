@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * Hook_menu.
+ */
+function work_github_menu(){
+  $items['github/push'] = array(
+    'title' => "Work GitHub Push Callback",
+    'page callback' => 'work_github_push_callback',
+    'access callback' => TRUE,
+    'page arguments' => array(3),
+  );
+
+  return $items;
+}
+
+
+function work_github_push_callback(){
+
+}

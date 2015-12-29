@@ -1,0 +1,6 @@
+name = Work GitHub
+description = Sets up functions for GitHub.
+core = 7.x
+package = NHR Works
+
+version = 7.x-1.0
