@@ -16,5 +16,48 @@ function work_github_menu(){
 
 
 function work_github_push_callback(){
+  // Get request headers.
+  $headers = getallheaders();
+
+  // If this is not a push event, simply return.
+  if ($headers['X-GitHub-Event'] !== 'push') {
+    echo "";
+    return;
+  }
+
+  // Get json Content. It's not in $_POST.
+  $content_string = file_get_contents('php://input');
+  $content = json_decode($content_string);
+
+  // Generate hashed content for comparison.
+  $security_hash = hash_hmac("sha1" ,$content_string , "clBcigEcgCULOiulEIDLXBloLQDB" );
+
+  // If these two are not the same, discard post data.
+  if (strcmp(substr($headers['X-Hub-Signature'],5), $security_hash) !== 0){
+    echo "";
+    return;
+  }
+
+  $repository_name = $content->repository->name;
+
+
+  $project_nid = db_query(
+    "SELECT entity_id FROM {field_data_field_github_repository_name}
+     WHERE bundle = 'project' AND field_github_repository_name_value = :rname",
+     array(":rname" => $repository_name));
+
+  // If this repository doesn't belong to any project, return.
+  if ($project_nid->rowCount() === 0) {
+    echo "";
+    return;
+  }
+
+  //work_log_create_log_entry($project_nid, $log_title, $log_message);
+
+
+  file_put_contents("test.txt", print_r($content, TRUE));
+  file_put_contents("test.txt", print_r($headers, TRUE), FILE_APPEND);
+
+  echo "Yes!";
 
 }
