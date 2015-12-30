@@ -6,9 +6,234 @@ function work_timesheet_menu() {
     'page callback' => 'work_timesheet',
     'access callback' => TRUE,
   );
+  
+  $items['timesheet/developer'] = array(
+    'title' => 'Timesheet',
+    'page callback' => 'work_timesheet_developer',
+    'access callback' => TRUE,
+  );
+  
+  $items['timesheet/client'] = array(
+    'title' => 'Timesheet',
+    'page callback' => 'work_timesheet_client',
+    'access callback' => TRUE,
+  );
 
   return $items;
 }
+
+function work_timesheet_client() {
+
+  $result = db_query("SELECT nid FROM {node} WHERE type = 'client' ORDER BY title");
+
+  $output = '';
+
+
+  foreach ($result as $r) {
+    $client = node_load($r->nid);
+
+    $times = get_time_by_client($client->nid);
+      
+
+    if (count($times) > 0) {
+    
+      $output .= "<h2>{$client->title}</h2>";
+
+      $headers = array('Project', 'Task', 'Developer', 'Date', 'Hours', 'Paid', 'Billed', 'Profit');
+
+      $rows = array();
+      
+      $hours = 0;
+      $paid = 0;
+      $billed = 0;
+      $profit = 0;
+
+      foreach ($times as $t) {
+
+        $task = get_task_by_time($t->item_id);
+        
+        $project = node_load($task->field_project['und'][0]['nid']);
+        
+        $client = node_load($project->field_client['und'][0]['nid']);
+        
+        $user = user_load($t->field_user['und'][0]['uid']);
+
+        $task_hours = $t->field_hours['und'][0]['value'];
+        $task_paid = $task_hours * $user->field_rate['und'][0]['value'];
+
+        if (isset($project->field_bill_rate['und'][0]['value'])) {
+          $task_billed = '$' . ($task_hours * $project->field_bill_rate['und'][0]['value']);
+          $task_profit = '$' . (($task_hours * $project->field_bill_rate['und'][0]['value'])  - $task_paid);
+
+          $billed += $task_hours * $project->field_bill_rate['und'][0]['value'];
+          $profit += ($task_hours * $project->field_bill_rate['und'][0]['value']) - $task_paid;
+        
+        } else {
+          if (isset($project->field_retainer['und'][0]['value'])) {
+            $task_billed = 'retainer';
+            $task_profit = 'retainer';
+          }
+          
+          if (isset($project->field_flat_fee['und'][0]['value'])) {
+            $task_billed = 'flat fee';
+            $task_profit = 'flat fee';
+          }
+        }
+
+
+        $rows[] = array(  l($project->title, 'node/' . $project->nid),
+                          l($task->title, 'node/' . $task->nid),
+                          $user->name,
+                          date('M d (D)', strtotime($t->field_date['und'][0]['value'])),
+                          $task_hours,
+                          '$' . $task_paid, 
+                          $task_billed,
+                          $task_profit);
+
+        $hours += $task_hours;
+        $paid  += $task_paid;
+      }
+        
+      $rows[] = array(
+                  array(  'data' => '<strong>Totals</strong>', 
+                          'colspan' => 4), 
+                  '<strong>' . $hours  . '</strong>', 
+                  '<strong>$' .$paid . '</strong>', 
+                  '<strong>$' .$billed . '</strong>', 
+                  '<strong>$' . $profit . '</strong>');
+
+      $output .= theme('table', array('header'=> $headers, 'rows' => $rows));
+    }
+  }
+
+  return $output;
+}
+
+function work_timesheet_developer() {
+  $result = db_query("SELECT uid FROM {users} WHERE uid IN (SELECT uid FROM {users_roles WHERE rid = 5 OR rid = 3}) ORDER BY name");
+
+  $output = '';
+
+  foreach ($result as $r) {
+    $user = user_load($r->uid);
+
+    $times = get_time_by_user($user->uid);
+
+    if (count($times) > 0) {
+      $output .= "<h2>{$user->name}</h2>";
+
+      $headers = array('Client', 'Project', 'Task', 'Date', 'Hours', 'Paid', 'Billed', 'Profit');
+
+      $rows = array();
+      
+      $hours = 0;
+      $paid = 0;
+      $billed = 0;
+      $profit = 0;
+
+      foreach ($times as $t) {
+
+        $task = get_task_by_time($t->item_id);
+        
+        $project = node_load($task->field_project['und'][0]['nid']);
+        
+        $client = node_load($project->field_client['und'][0]['nid']);
+
+        $task_hours = $t->field_hours['und'][0]['value'];
+        $task_paid = $task_hours * $user->field_rate['und'][0]['value'];
+
+        if (isset($project->field_bill_rate['und'][0]['value'])) {
+          $task_billed = '$' . ($task_hours * $project->field_bill_rate['und'][0]['value']);
+          $task_profit = '$' . (($task_hours * $project->field_bill_rate['und'][0]['value'])  - $task_paid);
+
+          $billed += $task_hours * $project->field_bill_rate['und'][0]['value'];
+          $profit += ($task_hours * $project->field_bill_rate['und'][0]['value']) - $task_paid;
+        
+        } else {
+          if (isset($project->field_retainer['und'][0]['value'])) {
+            $task_billed = 'retainer';
+            $task_profit = 'retainer';
+          }
+          
+          if (isset($project->field_flat_fee['und'][0]['value'])) {
+            $task_billed = 'flat fee';
+            $task_profit = 'flat fee';
+          }
+        }
+
+        $rows[] = array(  l($client->title, 'node/' . $client->nid),
+                          l($project->title, 'node/' . $project->nid),
+                          l($task->title, 'node/' . $task->nid),
+                          date('M d (D)', strtotime($t->field_date['und'][0]['value'])),
+                          $task_hours,
+                          '$' . $task_paid, 
+                          $task_billed,
+                          $task_profit);
+
+        $hours += $task_hours;
+        $paid  += $task_paid;
+      }
+        
+      $rows[] = array(
+                  array(  'data' => '<strong>Totals</strong>', 
+                          'colspan' => 4), 
+                  '<strong>' . $hours  . '</strong>', 
+                  '<strong>$' .$paid . '</strong>', 
+                  '<strong>$' .$billed . '</strong>', 
+                  '<strong>$' . $profit . '</strong>');
+
+      $output .= theme('table', array('header'=> $headers, 'rows' => $rows));
+    }
+  }
+
+  return $output;
+}
+
+function get_task_by_time($id) {
+  $nid = db_query("SELECT entity_id FROM {field_data_field_time} WHERE field_time_value = :ftv", array(':ftv' => $id))->fetchField();
+
+  $node = node_load($nid);
+
+  return $node;
+}
+
+function get_time_by_user($uid) {
+  $result = db_query("SELECT entity_id FROM {field_data_field_user} WHERE bundle = 'field_time' AND field_user_uid = :uid", array(':uid' => $uid));
+
+  $times = array();
+
+  foreach($result as $r) {
+    $entity = entity_load('field_collection_item', array($r->entity_id));
+    $times[] = array_pop($entity);
+  }
+
+  return $times;
+} 
+
+function get_time_by_client($nid) {
+  $result = db_query("SELECT entity_id FROM {field_data_field_client} WHERE field_client_nid = :nid", array(':nid' => $nid));
+
+  $times = array(); 
+
+  foreach($result as $r) {
+    $project = node_load($r->entity_id);
+
+    $result_tasks = db_query("SELECT entity_id FROM {field_data_field_project} WHERE field_project_nid = :nid", array(':nid' => $project->nid));
+
+    foreach ($result_tasks as $rt) {
+      $task = node_load($rt->entity_id);
+
+      if (isset($task->field_time['und'])) {
+        foreach ($task->field_time['und'] as $t) {
+          $entity = entity_load('field_collection_item', array($t['value']));
+          $times[] = array_pop($entity);
+        }
+      }
+    }
+  }
+
+  return $times;
+} 
 
 function work_timesheet_theme($existing, $type, $theme, $path) {
   $theme = array();

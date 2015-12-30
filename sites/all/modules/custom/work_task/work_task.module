@@ -228,15 +228,17 @@ function work_task_add_task_submit($form, &$form_state) {
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
   foreach($v['action_items']['action_items_fieldset']['items'] as $i) { 
-    $fc = array();  
+    if (isset($i) && ($i <> '')) {
+      $fc = array();  
 
-    $fc['field_name'] = 'field_to_do';
+      $fc['field_name'] = 'field_to_do';
 
-    $fc['field_description']['und'][0]['value'] = $i;  
+      $fc['field_description']['und'][0]['value'] = $i;  
 
-    $entity = entity_create('field_collection_item', $fc);
-    $entity->setHostEntity('node', $node);
-    $entity->save();
+      $entity = entity_create('field_collection_item', $fc);
+      $entity->setHostEntity('node', $node);
+      $entity->save();
+    }
   }
 
   node_save($node);
