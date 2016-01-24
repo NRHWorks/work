@@ -62,7 +62,10 @@ function work_project_update_credentials() {
   $fc['field_description']['und'][0]['value'] = $data['description'];
   $fc['field_path']['und'][0]['value'] =        $data['path'];
   $fc['field_username']['und'][0]['value'] =    $data['username'];
-  $fc['field_password']['und'][0]['value'] =    $data['password'];
+
+  $password = g09s8df7q23opughrqw8e7($data['password']);
+
+  $fc['field_password']['und'][0]['value'] =    $password;
 
 
   $node = node_load($data['nid']);

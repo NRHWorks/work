@@ -94,14 +94,27 @@
     <div style="clear:both;" /></div>
     <br /><br />
   </div>
+  <?php
+    $credentials_count = 0;
+    $assets_count = 0;
+    $resources_count = 0;
+
+    if (isset($node->field_credentials['und'])) { $credentials_count += count($node->field_credentials['und']); }
+    if (isset($node->field_assets['und'])) { $assets_count += count($node->field_assets['und']); }
+    if (isset($node->field_resources['und'])) { $resources_count += count($node->field_resources['und']); }
+
+    if (isset($project->field_credentials['und'])) { $credentials_count += count($project->field_credentials['und']); }
+    if (isset($project->field_assets['und'])) { $assets_count += count($project->field_assets['und']); }
+    if (isset($project->field_resources['und'])) { $resources_count += count($project->field_resources['und']); }
+  ?>
 
   <div id="task-right">
     <div class="tabs">
       <ul class="tabs primary task">
         <li class="active"><a href="#" data-show="comments" class="active">Comments</a></li>
-        <li><a href="#" data-show="credentials">Credentials</a></li>
-        <li><a href="#" id="assets-tab" data-show="assets">Assets</a></li>
-        <li><a href="#" data-show="resources">Resources</a></li>
+        <li><a href="#" data-show="credentials">Credentials (<?php print $credentials_count; ?>)</a></li>
+        <li><a href="#" id="assets-tab" data-show="assets">Assets (<?php print $assets_count; ?>)</a></li>
+        <li><a href="#" data-show="resources">Resources (<?php print $resources_count; ?>)</a></li>
         <li><a href="#" data-show="log">Log</a></li>
       </ul>
     </div>
@@ -128,6 +141,9 @@
 
     <div id="credentials-wrapper" class="right-wrapper">
       <div id="credentials-container"><?php print render($content['field_credentials']); ?></div>
+      --- Project Creds ---<br /><br />
+      <?php $f = field_view_field('node', $project, 'field_credentials', array('label' => 'hidden')); print render($f); ?>
+
       <a href="#" id="add-credentials" onclick="jQuery('#node-add-credentials').toggle(); return false;" class="form-link">Add Credentials</a>
       <div id="node-add-credentials" class="hidden-form"> 
         <form action="#" 
@@ -153,6 +169,8 @@
 
     <div id="assets-wrapper" class="right-wrapper">
       <?php print render($content['field_assets']); ?>
+      --- Project Assets ---<br /><br />
+      <?php $f = field_view_field('node', $project, 'field_assets', array('label' => 'hidden')); print render($f); ?>
       <a href="#" id="add-asset" onclick="jQuery('#node-add-asset').toggle(); return false;" class="form-link">Add Asset</a>
       <div id="node-add-asset" class="hidden-form">
         <form action="/tasks/update-assets/add" id="asset-form" method="post" enctype="multipart/form-data">
@@ -168,6 +186,8 @@
 
     <div id="resources-wrapper" class="right-wrapper">
       <div id="resources-container"><?php print render($content['field_resources']); ?></div>
+      --- Project Resources ---<br /><br />
+      <?php $f = field_view_field('node', $project, 'field_resources', array('label' => 'hidden')); print render($f); ?>
       <a href="#" id="add-resource" onclick="jQuery('#node-add-resource').toggle(); return false;" class="form-link">Add Resource</a>
       <div id="node-add-resource" class="hidden-form">
         <form action="#" 

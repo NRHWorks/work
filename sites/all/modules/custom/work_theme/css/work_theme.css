@@ -128,6 +128,14 @@ input[type=submit] {
   display: block;
 }
 
+#log-wrapper h2 {
+  font-size: 1em !important;
+  font-weight: bold;
+}
+
+#log-wrapper h2 a {
+  color: #333;
+}
 
 .node-type-project .section > div.tabs,
 .node-type-task .section > div.tabs {
