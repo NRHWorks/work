@@ -1,0 +1,106 @@
+<?php
+
+global $results;
+
+function work_browser_test_menu() {
+  $items['work-browser-test/status/%/%/%/%/%'] = array(
+    'title' => 'Update Status',
+    'page callback' => 'work_browser_test_set_status',
+    'page arguments' => array(2,3,4,5,6),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+
+function work_browser_test_get_status($nid, $page, $browser, $resolution) {
+  $results = work_browser_test_get_results($nid);
+  
+  if (isset($results[$page][$browser][$resolution])) {
+    return $results[$page][$browser][$resolution];
+  } 
+
+  return null;
+}
+
+function work_browser_test_set_status($nid, $page, $browser, $resolution, $status) {
+  $node = node_load($nid);
+
+  $results = array();
+
+  $found = FALSE;
+
+  foreach ($node->field_pages['und'] as $p) {
+    $entity = entity_load('field_collection_item', array($p['value']));
+    $e = array_pop($entity);
+
+    $page_name = $e->field_page['und'][0]['value'];
+
+    if (isset($e->field_results['und'])) {
+      foreach($e->field_results['und'] as $res) {
+        $entity = entity_load('field_collection_item', array($res['value']));
+        $r = array_pop($entity);
+
+        $browser_tid = $r->field_browser['und'][0]['tid'];
+
+        $resolution_tid = $r->field_resolution['und'][0]['tid'];
+
+
+        if (($page == $page_name) && ($browser == $browser_tid) && ($resolution == $resolution_tid)) {
+          $r->field_browser_test_status['und'][0]['value'] = $status;
+          entity_save('field_collection_item', $r);
+          $found = TRUE;
+        }
+      }
+    }
+
+    if (($page == $page_name) && ($found == FALSE)) {
+      $fc = array();
+
+      $fc['field_name'] = 'field_results';
+
+      $fc['field_browser']['und'][0]['tid'] = $browser;
+      $fc['field_resolution']['und'][0]['tid'] = $resolution;
+      $fc['field_browser_test_status']['und'][0]['value'] = $status;
+
+      $entity = entity_create('field_collection_item', $fc);
+      $entity->setHostEntity('field_collection_item', $e);
+      $entity->save();
+    }
+  }
+}
+
+function work_browser_test_get_results($nid) {
+  global $results;
+
+  if (isset($results)) { return $results; }
+
+  $node = node_load($nid);
+
+  $results = array();
+
+  foreach ($node->field_pages['und'] as $p) {
+    $entity = entity_load('field_collection_item', array($p['value']));
+    $e = array_pop($entity);
+
+    $page = $e->field_page['und'][0]['value'];
+
+    if (isset($e->field_results['und'])) {
+      foreach($e->field_results['und'] as $res) {
+        $entity = entity_load('field_collection_item', array($res['value']));
+        $r = array_pop($entity);
+
+        $browser = $r->field_browser['und'][0]['tid'];
+
+        $resolution = $r->field_resolution['und'][0]['tid'];
+
+        $status = $r->field_browser_test_status['und'][0]['value'];
+
+        $results[$page][$browser][$resolution] = $status;
+      }
+    }
+  }
+
+  return $results;
+}
