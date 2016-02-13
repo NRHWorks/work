@@ -14,21 +14,22 @@
       print l($project->title, 'node/' . $project->nid);
     ?>
     </div>
-    <div class="row">
-      <div class="half">
-        <?php print render($content['field_due_date']); ?>
-      </div>
-      <div class="half">
-        <?php print render($content['field_status']); ?>
-      </div>
-      <div class="clear"></div>
-    </div>
 
+    <div class="row">
+        <?php print render($content['field_due_date']); ?>
+    </div>
+    <br />
+    <?php print render($content['body']); ?><br />
+    <div class="row" id="status-row">
+        <?php print render($content['field_status']); ?>
+    </div>
+    <div class="field-label gray">Users:</div>
+    <br />
     <div id="assigned-to-container"><?php print render($content['field_assigned_to']); ?></div><br />
+    <div id="creator-container"><?php print render($content['field_creator']); ?></div><br />
+    <div id="owner-container"><?php print render($content['field_owner']); ?></div><br />
     <div id="users-container"><?php print render($content['field_users']); ?></div><br /> 
 
-    <?php print render($content['body']); ?><br />
-   
     <div class="field-label gray">To Do:</div>
 
     <div id="todo-wrapper">
@@ -127,10 +128,11 @@
               id="comment-form" 
               onsubmit=" jQuery('#comments-container').load('/tasks/update-comment/add', {data: jQuery('#comment-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
                          jQuery('#node-add-comment').hide();
+                         jQuery('#comment-form #description').val('');
                          reset_height();
                          return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
-          <input type="text" id="title" name="title" size="50" placeholder="Subject"  /><br /><br />
+          <!-- <input type="text" id="title" name="title" size="50" placeholder="Subject"  /><br /><br /> -->
           <textarea id="description" name="description" class="init" cols="50" rows="10" placeholder="Comment" /></textarea>
           <input type="submit" value="Add Comment"/>
         </form>

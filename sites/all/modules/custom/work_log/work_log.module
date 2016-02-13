@@ -69,7 +69,7 @@ function work_log_view($node_nid) {
     ON f.entity_id = n.nid
     WHERE f.field_".$node_type."_nid = :nid
     AND f.bundle = 'log_entry'
-    ORDER BY n.created DESC", array(":nid" => $node_nid))->fetchAll();
+    ORDER BY n.created DESC LIMIT 10", array(":nid" => $node_nid))->fetchAll();
 
 
   $rendered_log = "";

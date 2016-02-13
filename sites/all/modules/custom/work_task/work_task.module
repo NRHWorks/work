@@ -98,6 +98,20 @@ function work_task_menu() {
     'page arguments' => array('work_task_add_task', 2),
     'access callback' => TRUE,
   );
+  
+  $items['tasks/status/%/%'] = array(
+    'title' => 'Update Task Status',
+    'page callback' => 'work_task_update_status_ajax',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/ajax/get-comments-by-nid/%'] = array(
+    'title' => 'Get Comments',
+    'page callback' => 'work_task_get_comments',
+    'page arguments' => array(3),
+    'access callback' => TRUE,
+  );
 
   return $items;
 }
@@ -214,6 +228,10 @@ function work_task_add_task_submit($form, &$form_state) {
 
   $node->field_project['und'][0]['nid'] = $v['project'];
 
+  $node->field_creator['und'][0]['uid'] = $node->uid;
+
+  $node->field_owner['und'][0]['uid'] = $v['assigned_to'];
+
   $node->field_assigned_to['und'][0]['uid'] = $v['assigned_to'];
 
   $node->field_users['und'][0]['uid'] = $v['assigned_to'];
@@ -223,7 +241,7 @@ function work_task_add_task_submit($form, &$form_state) {
   }
 
   $node->field_due_date['und'][0]['value'] = $v['due_date'] . ' 00:00:00';
-  
+
   node_save($node);
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
@@ -244,7 +262,7 @@ function work_task_add_task_submit($form, &$form_state) {
 
   node_save($node);
 
-  work_log_create_log_entry($v['project'], "Task Added", "Task Added: " . l($node->title, 'node/' . $node->nid));
+  work_log_create_log_entry($v['project'], "Task Added: " . l($node->title, 'node/' . $node->nid), "Task Added: " . l($node->title, 'node/' . $node->nid));
   drupal_set_message("Task Added: " . l($node->title, 'node/' . $node->nid) . "<br />" . l ('Add Another Task', 'tasks/add/' . $v['project']));
 
   drupal_goto('<front>');
@@ -514,7 +532,6 @@ function work_task_update_todo_add() {
   $content = node_view($node);
   print render($content['field_to_do']);
   
-  
   drupal_exit();
 }
 
@@ -528,14 +545,12 @@ function work_task_update_comment() {
 
   $fc['field_name'] = 'field_comments';
 
-
   global $user;
   $fc['field_user']['und'][0]['uid'] = $user->uid;
 
   $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');  
- 
 
-  $fc['field_title']['und'][0]['value'] = $data['title'];
+  $fc['field_title']['und'][0]['value'] = 'Comment';
   $fc['field_comment_description']['und'][0]['value'] = $data['description'];
 
   $node = node_load($data['nid']);
@@ -544,7 +559,6 @@ function work_task_update_comment() {
   $entity->setHostEntity('node', $node);
   $entity->save();
 
-  global $user;
   work_log_create_log_entry($node->nid, "New comment added",
     "New comment added by " . $user->name .
     "<br/>Comment:<br/>".$entity->field_title['und'][0]['value']);
@@ -693,3 +707,154 @@ function work_task_progress($nid) {
   }
 }
 
+function work_task_update_status_ajax($nid, $new_status) {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  /*
+    1 = New
+    2 = In Progress
+    5 = Feedback Requested
+    6 = Resolved
+    7 = Closed
+  */
+
+  $node = node_load($nid);
+
+  $status   = &$node->field_status['und'][0]['tid'];
+  
+  $assigned = &$node->field_assigned_to['und'][0]['uid'];
+  $creator  = &$node->field_creator['und'][0]['uid'];
+  $owner    = &$node->field_owner['und'][0]['uid'];
+
+  switch ($status) {
+    case 1: 
+      $status = 2;
+
+      work_log_create_log_entry($node->nid, 'Status Updated: New => In Progress'); 
+
+      // email creator
+      
+      node_save($node);
+      break;
+
+   case 2:
+
+      if ($new_status == 'feedback') {
+        $status = 5;
+
+        $assigned = $creator;
+
+        work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Feedback Requested'); 
+
+        work_task_add_comment($node->nid, 'Feedback Requested', $data['status-text']);
+
+        // email creator 
+
+        node_save($node);
+
+      } else {
+        $status = 6;
+        
+        $assigned = $creator;
+        
+        work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Resolved'); 
+ 
+        if (isset($data['status-text'])) {
+          work_task_add_comment($node->nid, 'Resolved', $data['status-text']);
+        }
+
+        // email creator 
+
+        node_save($node);
+
+      }
+
+    break;
+
+    case 5:
+        $status = 2;
+       
+        $assigned = $owner;
+
+        work_log_create_log_entry($node->nid, 'Status Updated: Feedback Requested => In Progress'); 
+
+        if (isset($data['status-text'])) {
+          work_task_add_comment($node->nid, 'Feedback', $data['status-text']);
+        }
+
+        // email owner 
+
+        node_save($node);
+
+      break;
+
+    case 6:
+
+      if ($new_status == 'reject') {
+        $status = 2;
+      
+        $assigned = $owner;
+        
+        work_log_create_log_entry($node->nid, 'Status Updated: Resolved => In Progress'); 
+        
+        if (isset($data['status-text'])) {
+          work_task_add_comment($node->nid, 'Task Rejected', $data['status-text']);
+        }
+
+        // email owner 
+
+        node_save($node);
+
+      } else {
+        $status = 7;
+        
+        work_log_create_log_entry($node->nid, 'Status Updated: Resolved => Closed'); 
+        // email owner 
+
+        node_save($node);
+
+      }
+
+  }
+
+  $content = node_view($node);
+
+  print render($content['field_status']);
+  
+  drupal_exit();
+
+}
+
+function work_task_add_comment($nid, $title, $body) {
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();  
+
+  $fc['field_name'] = 'field_comments';
+
+  global $user;
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');  
+
+  $fc['field_title']['und'][0]['value'] = $title;
+  $fc['field_comment_description']['und'][0]['value'] = $body;
+
+  $node = node_load($nid);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+}
+
+function work_task_get_comments($nid) {
+  $node = node_load($nid);
+  
+  $content = node_view($node);
+
+  print render($content['field_comments']);
+
+  drupal_exit;
+
+}

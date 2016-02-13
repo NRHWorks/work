@@ -31,6 +31,7 @@ th {
   float: none !important;
 }
 
+/*
 input.init, textarea.init {
   color: #999;
   border: 1px solid #999;
@@ -42,14 +43,31 @@ input.active, textarea.active {
   border: 1px solid #555;
   border-radius: 3px;
 }
+*/
 
-input[type=submit] {
+input, textarea {
+  color: #000;
+  border: 1px solid #999;
+  border-radius: 3px;
+  padding: 5px;
+}
+
+textarea {
+  width: 95%;
+}
+
+input[type=submit], button {
   background-color: #d61111;
   color: #FFF;
   font-weight: bold;
   padding: 7px 10px;
   border-radius: 3px;
   border: 0px;
+  cursor: pointer;
+}
+
+button {
+  background-color: #999;
 }
 
 #content .section {
@@ -139,10 +157,15 @@ input[type=submit] {
 
 .node-type-project .section > div.tabs,
 .node-type-task .section > div.tabs {
-  width: 40%;
   margin-bottom: -11px;
   height: 28px;
 }
+
+.tabs {
+  width: auto !important;
+}
+
+
 
 .node-type-project:not(.page-node-edit) #block-system-main > .content,
 .node-type-task:not(.page-node-edit) #block-system-main > .content {
@@ -385,7 +408,7 @@ input[type=submit] {
 }
 
 .field-name-field-comment-description {
-  display: none;
+//  display: none;
 }
 
 .field-name-field-comments > .field-items >  .field-item:last-child .field-name-field-comment-description {
@@ -425,4 +448,101 @@ input[type=submit] {
 
 .form-item-due-date-date label {
   display: none;
+}
+
+#creator-container .field-label, #owner-container .field-label, #users-container .field-label {
+  width: 65px;
+}
+
+#assigned-to-container {
+  font-size: 16px;
+}
+
+#assigned-to-container .field-label {
+  width: 125px;
+}
+
+.field-name-field-status .field-label, .field-name-field-status {
+  font-size: 16px !important;
+}
+
+.status-link {
+  font-size: 12px;
+}
+
+.field-name-field-password.field-label-inline .field-item {
+    font-size: 7px;
+    line-height: 20px;
+}
+
+th.resolution {
+  position: relative;
+  height: 160px;
+  min-width: 20px;
+}
+
+.vert-text {
+  transform: rotate(-90deg);
+  transform-origin: left top;
+  position: absolute;
+  top: 95%;
+  left: 3;
+  width: 150px;
+}
+
+.node-type-browser-test .region-content {
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+
+h1.title, .tabs, #header .section, #breadcrumb  {
+  width: 960px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+#width-toggle {
+  margin-left: auto;
+  margin-right: auto;
+  width: 925px;
+  text-align: right;
+}
+
+#width-toggle i {
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.pass {
+  background-color: #dff0d8;
+  color: green;
+  font-size: 16px;
+  text-align: center;
+}
+
+.fail {
+  background-color: #f2dede;
+  color: red;
+  font-size: 16px;
+  text-align: center;
+}
+
+.in-progress {
+  background-color: #fcf8e3;
+  font-size: 12px; 
+  text-align: center;
+}
+
+.needs-tested {
+  font-size: 12px; 
+  text-align: center;
+}
+
+.node-type-browser-test table tr.hover-color:hover td,
+.blue-hover {
+  background-color: #d9edf7;
+}
+
+th.blue-hover {
+  color: #000
 }

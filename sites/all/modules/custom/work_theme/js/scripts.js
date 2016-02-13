@@ -70,8 +70,54 @@ function reset_height() {
         $(this).addClass('active');
       }
     });
+
+    $('.browser_test i').click(function() {
+      work_browser_test.icon_click(this);
+    });
+
+    $('tr.hover-color td').hover(function() {
+      $('.col-' + $(this).data('col')).addClass('blue-hover');
+    },
+    function() {
+      $('.col-' + $(this).data('col')).removeClass('blue-hover');
+    });
   });
 
+}(jQuery));
+
+var work_browser_test =(function ($) {
+  return {
+    icon_click: function(clicked) {
+      $.post('/work-browser-test/status/' + $(clicked).data('nid') + '/' + $(clicked).data('page') + '/' + $(clicked).data('browser') + '/' + $(clicked).data('resolution') + '/' + $(clicked).data('status'));
+
+      if ($(clicked).data('status') == 'Passed') {
+        $(clicked).parent().addClass('pass');
+        $(clicked).parent().removeClass('in-progress');
+        $(clicked).parent().removeClass('needs-tested');
+        $(clicked).parent().html(' <i  class="icon-ok-1" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Needs Tested"> </i>');
+      } 
+
+      if ($(clicked).data('status') == 'Failed') {
+        $(clicked).parent().addClass('fail');
+        $(clicked).parent().removeClass('in-progress');
+        $(clicked).parent().removeClass('needs-tested');
+        $(clicked).parent().html(' <i  class="icon-cancel" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Needs Tested"> </i>');
+      } 
+
+      if ($(clicked).data('status') == 'Needs Tested') {
+        $(clicked).parent().addClass('in-progress');
+        $(clicked).parent().removeClass('pass');
+        $(clicked).parent().removeClass('fail');
+        $(clicked).parent().html(' <i style="color:green;" class="icon-ok-circle" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Passed"> </i><br /><i style="color:red;" class="icon-cancel-circle" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Failed"> </i>');
+      } 
+
+      $('.browser_test i').unbind('click');
+
+      $('.browser_test i').click(function() {
+        work_browser_test.icon_click(this);
+      });
+    }
+  }
 }(jQuery));
 
 var work_log = (function ($) {
@@ -85,6 +131,14 @@ var work_log = (function ($) {
      $.get("/work-log/ajax/get-log-by-todo-eid/" + eid, function(data, status){
         $("#log-wrapper").html(data);
       });
-    }
+    },
+    update_log_comments: function(nid){
+      $.get("/work-log/ajax/get-log-by-nid/" + nid, function(data, status){
+        $("#log-wrapper").html(data);
+      });
+      $.get("/tasks/ajax/get-comments-by-nid/" + nid, function(data, status){
+        $("#comments-container").html(data);
+      });
+    },
   }
 }(jQuery));

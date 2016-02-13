@@ -55,6 +55,8 @@
         <?php print render($item); ?>
       </div>
     <?php endforeach; ?>
+    <!--
     <a href="#" onclick="jQuery('#node-users-div').toggle(); return false;">add user</a>
+    -->
   </div>
 </div>

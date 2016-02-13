@@ -1,59 +1,100 @@
-<?php
-
-/**
- * @file field.tpl.php
- * Default template implementation to display the value of a field.
- *
- * This file is not used and is here as a starting point for customization only.
- * @see theme_field()
- *
- * Available variables:
- * - $items: An array of field values. Use render() to output them.
- * - $label: The item label.
- * - $label_hidden: Whether the label display is set to 'hidden'.
- * - $classes: String of classes that can be used to style contextually through
- *   CSS. It can be manipulated through the variable $classes_array from
- *   preprocess functions. The default values can be one or more of the
- *   following:
- *   - field: The current template type, i.e., "theming hook".
- *   - field-name-[field_name]: The current field name. For example, if the
- *     field name is "field_description" it would result in
- *     "field-name-field-description".
- *   - field-type-[field_type]: The current field type. For example, if the
- *     field type is "text" it would result in "field-type-text".
- *   - field-label-[label_display]: The current label position. For example, if
- *     the label position is "above" it would result in "field-label-above".
- *
- * Other variables:
- * - $element['#object']: The entity to which the field is attached.
- * - $element['#view_mode']: View mode, e.g. 'full', 'teaser'...
- * - $element['#field_name']: The field name.
- * - $element['#field_type']: The field type.
- * - $element['#field_language']: The field language.
- * - $element['#field_translatable']: Whether the field is translatable or not.
- * - $element['#label_display']: Position of label display, inline, above, or
- *   hidden.
- * - $field_name_css: The css-compatible field name.
- * - $field_type_css: The css-compatible field type.
- * - $classes_array: Array of html class attribute values. It is flattened
- *   into a string within the variable $classes.
- *
- * @see template_preprocess_field()
- * @see theme_field()
- *
- * @ingroup themeable
- */
+<?php 
+  $node = $element['#object']; 
+  $nid  = $node->nid;
 ?>
-
-<div class="<?php print $classes; ?>"<?php print $attributes; ?>>
-  <?php if (!$label_hidden): ?>
+  <div class="<?php print $classes; ?>"<?php print $attributes; ?>>
     <div class="field-label"<?php print $title_attributes; ?>><?php print $label ?>:&nbsp;</div>
-  <?php endif; ?>
-  <div class="field-items"<?php print $content_attributes; ?>>
-    <?php foreach ($items as $delta => $item): ?>
-      <div class="field-item <?php print $delta % 2 ? 'odd' : 'even'; ?>"<?php print $item_attributes[$delta]; ?>>
-        <a href="#" onclick="jQuery('#node-status-div').toggle()"> <span id="node-status"><?php print render($item); ?></span> </a>
+    <div class="field-items"<?php print $content_attributes; ?>>
+      <div class="field-item"> <span id="node-status"><?php print render($items[0]); ?></span> 
+      <?php
+         global $user;
+
+         if ($user->uid == $node->field_assigned_to['und'][0]['uid']) {
+
+            switch ($items[0]['#markup']) {
+              case 'New' :
+                ?>
+                  <span class="status-link"> => 
+                    <a href="#" onclick="jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/progress', function() { work_log.update_log(<?php print $nid; ?>); }); ">get started</a>
+                  </span>
+                <?php
+                break;
+              case 'In Progress' :
+                ?>
+                  <span class="status-link"> => 
+                    <a href="#" onclick="jQuery('#feedback-comment').show(); ">request feedback</a> |
+                    <a href="#" onclick="jQuery('#resolve-comment').show(); ">resolve</a> 
+                  </span>
+                <?php
+                break;
+              
+              case 'Feedback Requested' :
+                ?>
+                  <span class="status-link"> => 
+                    <a href="#" onclick="jQuery('#give-feedback-comment').show(); ">give feedback</a>
+                  </span>
+                <?php
+                break;
+              
+              case 'Resolved' :
+                ?>
+                  <span class="status-link"> => 
+                    <a href="#" onclick="jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/close', function() { work_log.update_log(<?php print $nid; ?>); });">accept work</a> |
+                    <a href="#" onclick="jQuery('#reject-comment').show(); ">reject work</a> 
+                  </span>
+                <?php
+                break;
+
+            }
+
+          }
+       ?>
+
       </div>
-    <?php endforeach; ?>
+    </div>
   </div>
-</div>
+  <div id="reject-comment" style="display:none;" class="status-form hidden-form">
+    <form action="#" 
+          id="reject-comment-form" 
+          onsubmit=" jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/reject', {data: jQuery('#reject-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
+                     jQuery('#give-feedback-comment').hide();
+                     return false;">
+      <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Why is the work being rejected?" /></textarea><br />
+      <input type="submit" value="Reject!!!!!"/>
+      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();"/>Cancel</button>
+    </form>
+  </div>
+  <div id="give-feedback-comment" style="display:none;" class="status-form hidden-form">
+    <form action="#" 
+          id="give-feedback-comment-form" 
+          onsubmit=" jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/give-feedback', {data: jQuery('#give-feedback-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
+                     jQuery('#give-feedback-comment').hide();
+                     return false;">
+      <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Provide feedback..." /></textarea><br />
+      <input type="submit" value="Give Feedback"/>
+      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();"/>Cancel</button>
+    </form>
+  </div>
+  <div id="feedback-comment" style="display:none;" class="status-form hidden-form">
+    <form action="#" 
+          id="feedback-comment-form" 
+          onsubmit=" jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/feedback', {data: jQuery('#feedback-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
+                     jQuery('#feedback-comment').hide();
+                     return false;">
+      <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Ask questions..." /></textarea><br />
+      <input type="submit" value="Request Feedback"/>
+      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();"/>Cancel</button>
+    </form>
+  </div>
+  <div id="resolve-comment" style="display:none;" class="status-form hidden-form">
+    <form action="#" 
+          id="resolve-comment-form" 
+          onsubmit=" jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/resolve', {data: jQuery('#resolve-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
+                     jQuery('#resolve-comment').hide();
+                     return false;">
+      <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Add comments..." /></textarea><br />
+      <input type="submit" value="Resolve Task"/>
+      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();"/>Cancel</button>
+    </form>
+  </div>
+
