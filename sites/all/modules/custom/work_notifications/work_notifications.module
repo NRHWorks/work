@@ -42,6 +42,13 @@ function _new_project($client, $project) {
 }
 
 function work_notifications_mail($key, &$message, $params) {
-  $message['subject'] = 'NRH Work\'s Work: ' . $params['subject'];
-  $message['body'] = array($params['body']);
+  if ($key == 'new_project') {
+    $message['subject'] = 'NRH Work\'s Work: ' . $params['subject'];
+    $message['body'] = array($params['body']);
+  }
+  
+  if ($key == 'task_update') {
+    $message['subject'] = '[WORK: #' . $params['id']  . '] ' . $params['subject'];
+    $message['body'] = array($params['body']);
+  }
 }

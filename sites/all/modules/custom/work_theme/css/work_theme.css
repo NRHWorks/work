@@ -106,7 +106,8 @@ button {
   font-weight: bold;
 }
 
-#task-left {
+#task-left,
+#project-left {
   width: 50%;
   padding: 10px;
   float: left;
@@ -116,7 +117,16 @@ button {
   min-height: 450px;
 }
 
-#task-right {
+#project-left {
+  padding-top: 25px;
+}
+
+#project-right {
+  padding-left: 25px !important;
+}
+
+#task-right,
+#project-right {
   width: 50%;
   padding: 10px;
   float: left;
@@ -129,16 +139,22 @@ button {
   min-height: 450px;
 }
 
-#task-right .tabs {
+#task-right .tabs,
+#project-right .tabs {
   margin-top: -35px;
   margin-left: -7px;
 }
+
 
 #task-right .right-wrapper {
   display: none;
 }
 
 #task-right #comments-wrapper {
+  display: block;
+}
+
+#project-right #contact-wrapper {
   display: block;
 }
 
@@ -165,8 +181,11 @@ button {
   width: auto !important;
 }
 
+.node-type-client:not(.page-node-edit) #block-system-main > .content {
+  margin-top: -21px;
+}
 
-
+.node-type-client:not(.page-node-edit) #block-system-main > .content,
 .node-type-project:not(.page-node-edit) #block-system-main > .content,
 .node-type-task:not(.page-node-edit) #block-system-main > .content {
   background-color: #FFF;
@@ -546,3 +565,30 @@ h1.title, .tabs, #header .section, #breadcrumb  {
 th.blue-hover {
   color: #000
 }
+
+.node-type-client .views-row {
+  background-color: #FFF;
+  border: 1px solid #CCC;
+  margin-top: 15px;
+}
+
+.node-type-client .views-row > .views-field-title {
+  background-color: #cf3535;
+  padding: 10px;
+  border-bottom: 1px solid #CCC
+}
+
+.node-type-client .views-row > .views-field-title a {
+  color: #FFF;
+  font-family: 'verdana';
+  font-size: 1.25em;
+  font-weight: bold;
+}
+
+.node-type-client .views-row > .views-field-view-1 {
+  padding: 10px;
+}
+
+
+
+
