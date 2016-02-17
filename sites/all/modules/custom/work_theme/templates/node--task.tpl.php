@@ -1,4 +1,6 @@
 <?php
+  global $user;
+
   // We hide the comments and links now so that we can render them later.
   hide($content['comments']);
   hide($content['links']);
@@ -67,31 +69,33 @@
       </form>
     </div>
     <br /><br />
-    
-    <div class="field-label gray">
-      <div id="estimate-wrapper"><?php print render($content['field_estimate']); ?></div>
-      Time:
-    </div>
+  
+    <?php if (!in_array('Client', $user->roles)) : ?>
+      <div class="field-label gray">
+        <div id="estimate-wrapper"><?php print render($content['field_estimate']); ?></div>
+        Time:
+      </div>
 
-    <div id="time-wrapper">
-      <?php print render($content['field_time']); ?>
-    </div>
-    <br />
-    <a href="#" id="record-time" onclick="jQuery('#node-record-div').toggle(); return false;" class="form-link">Record Time</a>
-    <div id="node-record-div" class="hidden-form">
-      <form action="#" 
-            id="record-form" 
-            onsubmit="  jQuery('#time-wrapper').load('/tasks/update-time/add', {data: jQuery('#record-form').serialize()}, function(){work_log.update_log(<?php print $node->nid;?>);});
-                        jQuery('#node-record-div').hide(); 
-                        setTimeout(function() { jQuery('#estimate-wrapper').load('/tasks/estimate/<?php print $node->nid; ?>') }, 1000);
-                        return false;">
-        <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
-        <input type="text" id="record-date" class="datepicker init" name="date" placeholder="mm/dd/yyyy" size="12" />
-        <input type="text" id="record-hours" name="hours" placeholder="hours" size="7" /><br />
-        <input type="text" id="record-description" name="description" placeholder="description" size="50"  />
-        <input type="submit" value="Record Time"/>
-      </form>
-    </div>
+      <div id="time-wrapper">
+        <?php print render($content['field_time']); ?>
+      </div>
+      <br />
+      <a href="#" id="record-time" onclick="jQuery('#node-record-div').toggle(); return false;" class="form-link">Record Time</a>
+      <div id="node-record-div" class="hidden-form">
+        <form action="#" 
+              id="record-form" 
+              onsubmit="  jQuery('#time-wrapper').load('/tasks/update-time/add', {data: jQuery('#record-form').serialize()}, function(){work_log.update_log(<?php print $node->nid;?>);});
+                          jQuery('#node-record-div').hide(); 
+                          setTimeout(function() { jQuery('#estimate-wrapper').load('/tasks/estimate/<?php print $node->nid; ?>') }, 1000);
+                          return false;">
+          <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
+          <input type="text" id="record-date" class="datepicker init" name="date" placeholder="mm/dd/yyyy" size="12" />
+          <input type="text" id="record-hours" name="hours" placeholder="hours" size="7" /><br />
+          <input type="text" id="record-description" name="description" placeholder="description" size="50"  />
+          <input type="submit" value="Record Time"/>
+        </form>
+      </div>
+    <?php endif; ?>
     <div style="clear:both;" /></div>
     <br /><br />
   </div>

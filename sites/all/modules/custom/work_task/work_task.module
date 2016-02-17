@@ -990,6 +990,34 @@ function work_task_add_comment($nid, $title, $body) {
   $entity = entity_create('field_collection_item', $fc);
   $entity->setHostEntity('node', $node);
   $entity->save();
+
+  if ($title == 'Comment') {
+    // email owner 
+    $subject = " comment added for {$node->nid}.";
+    
+    $body = "A comment has been added for task {$node->nid}.<br /><br />";
+    $body .= "<strong>Comment:</strong><br /> {$body}<br /><br />";
+
+    $body .= "View Comment Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
+    
+    $to = $assigned_user->mail;
+
+    $params['subject'] = $subject;
+    $params['body'] = $body;
+    $params['id'] = $node->nid;
+
+    foreach ($node->field_users['und'] as $u) {
+      if ($u['uid'] <> $user->uid) {
+        $mailto = user_load($u['uid']);
+        
+        $to = $mailto->mail;
+        
+        drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+      }
+    }
+
+  }
+
 }
 
 function work_task_get_comments($nid) {

@@ -484,6 +484,7 @@ function get_time_by_user($uid) {
     $entity = entity_load('field_collection_item', array($r->entity_id));
     $e = array_pop($entity);
 
+
     if ((($e->field_date['und'][0]['value'] >= $_GET['start']) && ($e->field_date['und'][0]['value'] < $_GET['stop'])) || (!isset($_GET['start']) && !isset($_GET['stop']))) {
       $times[] = $e;
     }
