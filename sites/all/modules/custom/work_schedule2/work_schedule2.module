@@ -1,34 +1,34 @@
 <?php
 
 function work_schedule2_menu() {
-	$items['schedule/day'] = array(
+  $items['schedule/day'] = array(
     'title' => 'Schedule - Day',
     'page callback' => 'work_schedule2_day',
     'access callback' => TRUE,
   );
-	$items['schedule/day/%'] = array(
+  $items['schedule/day/%'] = array(
     'title' => 'Schedule - Day',
     'page callback' => 'work_schedule2_day',
     'page arguments' => array(2),
     'access callback' => TRUE,
   );
-	$items['schedule/week'] = array(
+  $items['schedule/week'] = array(
     'title' => 'Schedule - Week',
     'page callback' => 'work_schedule2_week',
     'access callback' => TRUE,
   );
-	$items['schedule/week/%'] = array(
+  $items['schedule/week/%'] = array(
     'title' => 'Schedule - Week',
     'page callback' => 'work_schedule2_week',
     'page arguments' => array(2),
     'access callback' => TRUE,
   );
-	$items['schedule/month'] = array(
+  $items['schedule/month'] = array(
     'title' => 'Schedule - Month',
     'page callback' => 'work_schedule2_month',
     'access callback' => TRUE,
   );
-	$items['schedule/month/%'] = array(
+  $items['schedule/month/%'] = array(
     'title' => 'Schedule - Month',
     'page callback' => 'work_schedule2_month',
     'page arguments' => array(2),
@@ -63,88 +63,85 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
 }
 
 function work_schedule2_day($date = null) {
-	if(!isset($date)) {
-		$date = date("Y-m-d");
-	}
-	$sort_by = 'day';
-	$params = drupal_get_query_parameters();
-	$data = work_schedule2_query_database();
-	$sorted = sort_tables($data, $sort_by, $date);
-	$table = build_tables($sorted, $date, $sort_by);
-	return theme('schedule_day', array('table' => $table));
+  return theme('schedule_day',
+    array('table' => work_schedule2_get_table('day', $date)));
 }
 
 function work_schedule2_week($date = null) {
-	if(!isset($date)) {
-		$date = date("Y-m-d");
-	}
-	$sort_by = 'week';
-	$params = drupal_get_query_parameters();
-	$data = work_schedule2_query_database();
-	$sorted = sort_tables($data, $sort_by, $date);
-	$table = build_tables($sorted, $date, $sort_by);
-	return theme('schedule_week', array('table' => $table));
+  return theme('schedule_week',
+    array('table' => work_schedule2_get_table('week', $date)));
 }
 
 function work_schedule2_month($date = null) {
-	if(!isset($date)) {
-		$date = date("Y-m-d");
-	}
-	$sort_by = 'month';
-	$params = drupal_get_query_parameters();
-	$data = work_schedule2_query_database();
-	$table = build_tables_month($data, $date);
-	return theme('schedule_month', array('tasks' => $table));
+  return theme('schedule_month',
+    array('tasks' => work_schedule2_get_table('month', $date)));
 }
 
+
+function work_schedule2_get_table($sort_by, $date = null) {
+  $date = isset($date) ? $date : date("Y-m-d");
+  $sorted = sort_tables(work_schedule2_query_database(), $sort_by, $date);
+  $f = "build_tables_" . $sort_by;
+  return $f($sorted, $date);
+
+}
+
+
+
 function work_schedule2_query_database() {
-	$query = db_select('node', 'n');
-	$query->addField('st', 'field_schedule_time_value');
-	$query->addField('fd', 'field_date_value');
-	$query->addField('u', 'name');
-	$query->addField('n', 'title');
-	$query->addField('np', 'title');
-	$query->join('field_data_field_schedule', 's', 'n.nid = s.entity_id');
-	$query->join('field_data_field_schedule_time', 'st', 'st.entity_id = s.field_schedule_value');
-	$query->join('field_data_field_date', 'fd', 'fd.entity_id = st.entity_id');
-	$query->join('field_data_field_user', 'fu', 'fu.entity_id = st.entity_id');
-	$query->join('users', 'u', 'u.uid = fu.field_user_uid');
-	$query->join('field_data_field_project', 'fp', 'n.nid = fp.entity_id');
-	$query->join('node', 'np', 'np.nid = fp.field_project_nid');
-	$query->condition('n.type', 'task', '=');
-	$query->condition('n.status', '1', '=');
-	$data = $query->execute();
-	return $data;
+  global $user;
+
+
+  $data = db_query( "
+    SELECT st.field_schedule_time_value, fd.field_date_value, u.name, n.title,n.nid, np.title AS np_title, np.nid AS np_nid
+    FROM {node} AS n
+    INNER JOIN {field_data_field_schedule} AS s ON n.nid = s.entity_id
+    INNER JOIN {field_data_field_schedule_time} AS st ON st.entity_id = s.field_schedule_value
+    INNER JOIN {field_data_field_date} AS fd ON fd.entity_id = st.entity_id
+    INNER JOIN {field_data_field_user} AS fu ON fu.entity_id = st.entity_id
+    INNER JOIN {users} AS u ON u.uid = fu.field_user_uid
+    INNER JOIN {field_data_field_project} AS fp ON n.nid = fp.entity_id
+    INNER JOIN {node} as np ON np.nid = fp.field_project_nid
+    WHERE  n.type = 'task'
+    AND n.status = 1
+    AND u.uid = :uid",
+    array(":uid" => $user->uid));
+  return $data;
+
 }
 
 function sort_tables($data, $sort_by, $date) {
-	$tables = array('AM'=> null, 'PM'=>null, 'PM+'=>null);
-	$date = date("Y-m-d", strtotime($date));
-	$day = date('w', strtotime($date));
-	$day_month = date('m', strtotime($date));
-	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
-	$end_date = date('Y-m-d', strtotime('+'.(6 - $day).' days', strtotime($date)));
-	$start_month = date('Y-m-d', strtotime('first day of this month', strtotime($date)));
-	$end_month = date('Y-m-d', strtotime('last day of this month', strtotime($date)));
-	foreach($data as $d) {
-		$time = $d->field_schedule_time_value;
-		if($sort_by == 'day') {
-			if($date == date("Y-m-d", strtotime($d->field_date_value))) {
-				$tables[$time][$d->np_title][$d->name] = $d->title;
-			}
-		} elseif ($sort_by == 'week') {	
-			if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date && date("Y-m-d", strtotime($d->field_date_value)) <= $end_date) {
-				$tables[$time][date("Y-m-d", strtotime($d->field_date_value))][$d->name] = $d->title;
-			}
-		} elseif ($sort_by == 'month') {
-			if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_month && date("Y-m-d", strtotime($d->field_date_value)) <= $end_month) {
-				$tables[] = $d;
-			}
 
-		}
- 	}
-	ksort($tables);
-	return $tables;
+  $tables = $sort_by == "month" ? array() : array('AM'=> null, 'PM'=>null, 'PM+'=>null);
+  $date = date("Y-m-d", strtotime($date));
+  $day = date('w', strtotime($date));
+  $day_month = date('m', strtotime($date));
+  $start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
+  $end_date = date('Y-m-d', strtotime('+'.(6 - $day).' days', strtotime($date)));
+  $start_month = date('Y-m-d', strtotime('first day of this month', strtotime($date)));
+  $end_month = date('Y-m-d', strtotime('last day of this month', strtotime($date)));
+  foreach($data as $d) {
+    $time = $d->field_schedule_time_value;
+    if($sort_by == 'day') {
+      if($date == date("Y-m-d", strtotime($d->field_date_value))) {
+        $tables[$time][] = array(
+          'project_nid' => $d->np_nid,
+          'project_title' => $d->np_title,
+          'task_nid' => $d->nid,
+          'task_title' =>$d->title);
+      }
+    } elseif ($sort_by == 'week') { 
+      if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date && date("Y-m-d", strtotime($d->field_date_value)) <= $end_date) {
+        $tables[$time][date("Y-m-d", strtotime($d->field_date_value))][$d->name] = $d->title;
+      }
+    } elseif ($sort_by == 'month') {
+      if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_month && date("Y-m-d", strtotime($d->field_date_value)) <= $end_month) {
+        $tables[] = $d;
+      }
+    }
+  }
+  ksort($tables);
+  return $tables;
 }
 
 function objectToArray ($object) {
@@ -153,108 +150,95 @@ function objectToArray ($object) {
     return array_map('objectToArray', (array) $object);
 }
 
-function build_tables($data, $date, $sort_by) {
-	$tables = array();
-	if($sort_by == 'day') {
-		$tables = build_tables_day($data, $date);
-	} elseif ($sort_by == 'week') {
-		$tables = build_tables_week($data, $date);
-	} elseif($sort_by == 'month') {
-		$tables = build_tables_month($data, $date);
-	}
-	return $tables;
-
-}
-
 function build_tables_day($data, $date) {
-	$header = array('Project', 'User', 'Task');
-	foreach ($data as $key => $val) {
-		$rows = null;
-		$time = $key;
-		if($time == 'PM+'){
-			$time = 'Evening';
-		}
-		$table[] = "<h1> $time </h1>";
-		if(isset($val)) {
-			foreach($val as $k => $v) {
-				foreach($v as $l => $m) {
-					$rows[] = array($k, $l, $m);
-				}
-			}
-		} else {
-			$rows[] = array('', '', '');
-		}
-		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
-	}
-	$temp = array($date, $table);
-	return $temp;
+  $header = array('Project', 'Task');
+  foreach ($data as $key => $val) {
+    $rows = null;
+    $time = $key;
+    if($time == 'PM+'){
+      $time = 'Evening';
+    }
+    $table[] = "<h1> $time </h1>";
+    if(isset($val)) {
+      foreach($val as $v) {
+        $rows[] = array(
+          l($v['project_title'], drupal_get_path_alias("node/".$v['project_nid'])),
+          l("#".$v['task_nid'] ." " .$v['task_title'], drupal_get_path_alias("node/".$v['task_nid'])));
+      }
+    } else {
+      $rows[] = array('', '');
+    }
+    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+  }
+  $temp = array($date, $table);
+  return $temp;
 }
 
 function build_tables_week($data, $date) {
-	$dates = null;
-	$table = null;
-	$data_organized = array();
-	$day = date('w', strtotime($date));
-	$start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
-	$dates[] = $start_date;
-	//$table[] = '<h1><a href="/schedule/week/' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . '  -  ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="schedule/week/' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
-	for ($i = 0; $i < 6; $i++) {
-		$start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
-		$dates[] = $start_date;
-	}
-	$header = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
-	foreach($data as $h=>$d) {		
-		foreach($dates as $days) {
-			if(isset($d[$days])) {
-				foreach($d as $key=>$val) {
-					foreach($val as $k=>$v) {
-						$data_organized[$h][$key][] = array($k, $v);
-					}
-				}
-			} else {
-				$data_organized[$h][$days][][] = '';
-			}
-		}
-	}
-	foreach ($data_organized as $a=>$b) {
-		$time = $a;
-		if ($time == 'PM+') {
-			$time = 'Evening';
-		}
-		$rows = null;
-		$infos = null;
-		$table[] = "<h1> $time </h1>";
-		foreach ($b as $c) {
-			$info = null;
-			$info = "<ul>";
-			foreach ($c as $d) {
-				if($d[0]) {
-					$info .= "<li>";
-					foreach ($d as $e) {
-						$info .= "$e ";
-					}
-					$info .= "</li>";
-				}
-			}
-			$info .= "</ul>";
-			$infos[] = $info;
-		}
-		$rows[] = $infos;	
-		$table[] = theme('table', array('header'=> $header, 'rows' => $rows));
-	}	
-	$temp = array($date, $table);
-	return $temp;
+  $dates = null;
+  $table = null;
+  $data_organized = array();
+  $day = date('w', strtotime($date));
+  $start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
+  $dates[] = $start_date;
+  //$table[] = '<h1><a href="/schedule/week/' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . '  -  ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="schedule/week/' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
+  for ($i = 0; $i < 6; $i++) {
+    $start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
+    $dates[] = $start_date;
+  }
+  $header = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+  foreach($data as $h=>$d) {
+    foreach($dates as $days) {
+      if(isset($d[$days])) {
+        foreach($d as $key=>$val) {
+          foreach($val as $k=>$v) {
+            $data_organized[$h][$key][] = array($k, $v);
+          }
+        }
+      } else {
+        $data_organized[$h][$days][][] = '';
+      }
+    }
+  }
+  foreach ($data_organized as $a=>$b) {
+    $time = $a;
+    if ($time == 'PM+') {
+      $time = 'Evening';
+    }
+    $rows = null;
+    $infos = null;
+    $table[] = "<h1> $time </h1>";
+    foreach ($b as $c) {
+      $info = null;
+      $info = "<ul>";
+      foreach ($c as $d) {
+        if($d[0]) {
+          $info .= "<li>";
+          foreach ($d as $e) {
+            $info .= "$e ";
+          }
+          $info .= "</li>";
+        }
+      }
+      $info .= "</ul>";
+      $infos[] = $info;
+    }
+    $rows[] = $infos; 
+    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
+  } 
+  $temp = array($date, $table);
+  return $temp;
 }
 
 function build_tables_month($data, $date) {
-	$rows = array();
-	$start_date = date('Y-m-d', strtotime('first day of this month', strtotime($date)));
-	$end_date = date('Y-m-d', strtotime('last day of this month', strtotime($start_date)));
-	foreach($data as $d) {
-		if($d->field_date_value >= $start_date && $d->field_date_value <= $end_date) {
-			$rows[] = $d;
-		}
-	}
-	$temp = array($start_date, $rows);
-	return $temp;
+  $rows = array();
+  $start_date = date('Y-m-d', strtotime('first day of this month', strtotime($date)));
+  $end_date = date('Y-m-d', strtotime('last day of this month', strtotime($start_date)));
+  foreach($data as $d) {
+    if($d->field_date_value >= $start_date && $d->field_date_value <= $end_date) {
+      $rows[] = $d;
+    }
+  }
+  $temp = array($start_date, $rows);
+  return $temp;
 }
