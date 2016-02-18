@@ -131,18 +131,45 @@ function sort_tables($data, $sort_by, $date) {
           'task_title' =>$d->title);
       }
     } elseif ($sort_by == 'week') { 
-      if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date && date("Y-m-d", strtotime($d->field_date_value)) <= $end_date) {
-        $tables[$time][date("Y-m-d", strtotime($d->field_date_value))][$d->name] = $d->title;
+      if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date &&
+         date("Y-m-d", strtotime($d->field_date_value)) <= $end_date) {
+        $tables[$time][date("Y-m-d", strtotime($d->field_date_value))][]
+          = array(
+            'project_nid' => $d->np_nid,
+            'project_title' => $d->np_title,
+            'task_nid' => $d->nid,
+            'task_title' =>$d->title);
       }
     } elseif ($sort_by == 'month') {
-      if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_month && date("Y-m-d", strtotime($d->field_date_value)) <= $end_month) {
+      if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_month &&
+         date("Y-m-d", strtotime($d->field_date_value)) <= $end_month) {
         $tables[] = $d;
       }
     }
   }
-  ksort($tables);
+  
+  if ($sort_by == 'day') {
+    ksort($tables);
+  }
+  if ($sort_by == 'week') {
+    $temp = [];
+    foreach($tables as $k => $t) {
+      if ($t != NULL) {
+        ksort($t);
+      }
+      $temp[$k] = $t;
+    }
+    $tables = $temp;
+  }
   return $tables;
 }
+
+function pprint_r ($a) {
+  print "<pre>";
+  print_r($a);
+  print "</pre>";
+}
+
 
 function objectToArray ($object) {
     if(!is_object($object) && !is_array($object))
@@ -151,6 +178,7 @@ function objectToArray ($object) {
 }
 
 function build_tables_day($data, $date) {
+  
   $header = array('Project', 'Task');
   foreach ($data as $key => $val) {
     $rows = null;
@@ -181,53 +209,60 @@ function build_tables_week($data, $date) {
   $day = date('w', strtotime($date));
   $start_date = date('Y-m-d', strtotime('-' .$day. ' days', strtotime($date)));
   $dates[] = $start_date;
-  //$table[] = '<h1><a href="/schedule/week/' . date('Y-m-d',strtotime($start_date . '-7 days')) . '"><<</a> Week of: ' . date('l, M j, Y', strtotime($start_date)) . '  -  ' . date('l, M j, Y', strtotime($start_date . '+6 days')) .' <a href="schedule/week/' . date('Y-m-d',strtotime($end_date . ' + 1 days')) . '">>></a></h1>';
   for ($i = 0; $i < 6; $i++) {
     $start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
     $dates[] = $start_date;
   }
-  $header = array('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+  $header = array('Hours', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
   foreach($data as $h=>$d) {
     foreach($dates as $days) {
-      if(isset($d[$days])) {
-        foreach($d as $key=>$val) {
-          foreach($val as $k=>$v) {
-            $data_organized[$h][$key][] = array($k, $v);
-          }
-        }
-      } else {
-        $data_organized[$h][$days][][] = '';
-      }
+      $data_organized[$h][$days] = isset($d[$days]) ? $d[$days] : array();
     }
   }
-  foreach ($data_organized as $a=>$b) {
-    $time = $a;
-    if ($time == 'PM+') {
-      $time = 'Evening';
-    }
-    $rows = null;
-    $infos = null;
-    $table[] = "<h1> $time </h1>";
-    foreach ($b as $c) {
-      $info = null;
-      $info = "<ul>";
-      foreach ($c as $d) {
-        if($d[0]) {
-          $info .= "<li>";
-          foreach ($d as $e) {
-            $info .= "$e ";
-          }
-          $info .= "</li>";
+  $hours_rows = null;
+  
+  foreach ($data_organized as $hours => $date_tasks) {
+    $time = $hours == "PM+" ? "Evening" : $hours;
+    $infos = array($time);
+    // Now dealing with each table cell
+    foreach ($date_tasks as $tasks) {
+      $tasks_organized = work_schedule2_organized_week_tasks($tasks);
+      $info = "";
+      foreach ($tasks_organized as $project_nid => $cell_content) {
+        $info .= "<div class='weekly-schedule-project-item'><strong>" .
+          l($cell_content['project_title'], drupal_get_path_alias("node/".$project_nid)) .
+          "</strong><ul>";
+          
+        foreach($cell_content['tasks'] as $task) {
+          $info .= "<li>" .
+            l("#".$task['task_nid'] ." " .$task['task_title'], drupal_get_path_alias("node/".$task['task_nid']))."</li>";
         }
+        $info .="</ul></div>";
       }
-      $info .= "</ul>";
+
       $infos[] = $info;
     }
-    $rows[] = $infos; 
-    $table[] = theme('table', array('header'=> $header, 'rows' => $rows));
-  } 
+    $hours_rows[] = $infos;
+  }
+  $table[] = theme('table', array('header'=> $header, 'rows' => $hours_rows));
   $temp = array($date, $table);
   return $temp;
+}
+
+function work_schedule2_organized_week_tasks ($tasks) {
+  $result = [];
+  foreach ($tasks as $task){
+    if (isset($result[$task['project_nid']])) {
+      $result[$task['project_nid']]['tasks'][] = $task;
+    }
+    else {
+      $result[$task['project_nid']] = array(
+        'project_title' => $task['project_title'],
+        'tasks' => array($task),
+      );
+    }
+  }
+  return $result;
 }
 
 function build_tables_month($data, $date) {
