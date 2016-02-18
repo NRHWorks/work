@@ -12,6 +12,8 @@ function reset_height() {
 (function ($) {
 
   $(document).ready(function() {
+    schedule.assigned_to_me_toggle();
+    
     if ($("#task-left").height() > $('#task-right').height()) {
       $("#task-right").height($("#task-left").height() + 20);
     } else {
@@ -140,5 +142,19 @@ var work_log = (function ($) {
         $("#comments-container").html(data);
       });
     },
+  }
+}(jQuery));
+
+
+var schedule = (function ($) {
+  return {
+    assigned_to_me_toggle: function(){
+      if ($("input[name='assigned_to_me']").attr('checked')) {
+        $("li.not-assigned-to-me").hide();
+      }
+      else {
+        $("li.not-assigned-to-me").show();
+      }
+    }
   }
 }(jQuery));

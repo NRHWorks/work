@@ -4,16 +4,6 @@ $t = $table;
 $date = $t[0];
 ?>
 
-<form action="/schedule/day" method="get" style="float:right;" width="300px;">
-    <div style="float:left; margin-right: 10px;">
-        <label for="name">Date:</label>
-        <input type="text" id="date" name="date"/>
-   </div>
-   <div class="button" style="margin-top: 20px; float:left;">
-       <input type="submit" value="Submit" />
-   </div>
-</form>
-
 <?php print theme('schedule_menu'); ?>
 
 <div "clear:both; margin-top: 30px;">

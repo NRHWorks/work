@@ -272,7 +272,7 @@ function build_tables_week($data, $date) {
           $info .=">" .
             l("#".$task['task_nid'] ." " .
             $task['task_title'], drupal_get_path_alias("node/".$task['task_nid'])) .
-            "(".$task['assignee'].")</li>";
+            " (".$task['assignee'].")</li>";
         }
         $info .="</ul></div>";
       }

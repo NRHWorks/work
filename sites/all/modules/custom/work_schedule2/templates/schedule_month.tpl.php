@@ -6,17 +6,11 @@ $month = date('m', strtotime($date));
 $year = date('Y', strtotime($date));
 ?>
 
-<form action="/schedule/month" method="get" style="float:right;" width="300px;">
-    <div style="float:left; margin-right: 10px;">
-        <label for="name">Date:</label>
-        <input type="text" id="date" name="date"/>
-   </div>
-   <div class="button" style="float: left; margin-top: 20px;">
-       <input type="submit" value="Submit" />
-   </div>
-</form>
-
 <?php print theme('schedule_menu'); ?>
+<div>
+  <input name='assigned_to_me' type='checkbox' onchange='schedule.assigned_to_me_toggle();'></input>
+  <span>Only show tasks that are assigned to me</span>
+</div>
 <div style="clear:both; margin-bottom: 20px;">
 <h1>
   <div style = "float: left; width: 50px;">
@@ -38,17 +32,45 @@ print build_calendar($month, $year);
 
 function tasks_for_day($day) {
   global $t;
+  global $user;
   $data = $t[1];
-  $output = '';
-  $rows = array();
+  $today_events = array();
+  
   foreach($data as $val) {
     if($val->field_date_value == $day) {
-      $output .= "{$val->name}: {$val->title}<br />";
+      if (isset($today_events[$val->np_nid])) {
+        $today_events[$val->np_nid]['tasks'][] = $val;
+      }
+      else {
+        $today_events[$val->np_nid] = array(
+          'project_title' => $val->np_title,
+          'tasks' => array($val)
+        );
+      }
+      
     }
-    
   }
-    return $output;  
-  } 
+  
+  $info = "";
+  foreach ($today_events as $project_nid => $cell_content) {
+    $info .= "<div class='monthly-schedule-project-item'><strong>" .
+      l($cell_content['project_title'], drupal_get_path_alias("node/".$project_nid)) .
+      "</strong><ul>";
+      
+    foreach($cell_content['tasks'] as $task) {
+      $info .= "<li ";
+      if ($task->name != $user->name){
+        $info .=" class='not-assigned-to-me'";
+      }
+      $info .=">" .
+        l("#" . $task->nid, drupal_get_path_alias("node/".$task->nid)) .
+        " (".$task->name.")</li>";
+    }
+    $info .="</ul></div>";
+  }
+
+  return $info;  
+} 
 
 function build_calendar($month,$year) {
 
@@ -115,13 +137,11 @@ function build_calendar($month,$year) {
           $currentDayRel = str_pad($currentDay, 2, "0", STR_PAD_LEFT);
           
           $date = "$year-$month-$currentDayRel";
-
+          $link = l($currentDay, "schedule/day/$year-$month-$currentDayRel");
           $calendar .= "<td valign='top' class='day' rel='$date' style='padding:5px; height:100px;'>
-                        $currentDay <br />
+                        $link <br />
                         " . tasks_for_day($date . ' 00:00:00') . "
                         </td>";
-
-          // Increment counters
  
           $currentDay++;
           $dayOfWeek++;
