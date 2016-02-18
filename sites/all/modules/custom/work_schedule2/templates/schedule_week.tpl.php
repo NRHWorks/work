@@ -20,6 +20,28 @@ $end = date('l, M j, Y', strtotime('+6 days', strtotime($start_date))); ?>
 
 <?php print theme('schedule_menu'); ?>
 
+<script type='text/javascript'>
+(function ($) {
+  $(document).ready( function(){
+    assigned_to_me.toggle();
+ });
+}(jQuery));
+
+var assigned_to_me = (function ($) {
+  return {
+    toggle: function(){
+      if ($("input[name='assigned_to_me']").attr('checked')) {
+        $("li.not-assigned-to-me").hide();
+      }
+      else {
+        $("li.not-assigned-to-me").show();
+      }
+    }
+  }
+}(jQuery));
+
+</script>
+<input name='assigned_to_me' type='checkbox' onchange='assigned_to_me.toggle();'>Only show tasks that are assigned to me </input>
 <div style ="clear:both; margin-top: 10px;">
 <h1>
   <div style = "float: left; width: 50px;">

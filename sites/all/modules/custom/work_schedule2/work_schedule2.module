@@ -41,22 +41,22 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
   $theme = array();
   $theme['schedule_day'] = array(
     'template' => 'schedule_day',
-    'path' => drupal_get_path('module', 'work_schedule2'),
+    'path' => drupal_get_path('module', 'work_schedule2')."/templates",
     'variables' => array('table' => null),
    );
   $theme['schedule_week'] = array(
     'template' => 'schedule_week',
-    'path' => drupal_get_path('module', 'work_schedule2'),
+    'path' => drupal_get_path('module', 'work_schedule2')."/templates",
     'variables' => array('table' => null),
    );
   $theme['schedule_month'] = array(
     'template' => 'schedule_month',
     'variables' => array('tasks' => null),
-    'path' => drupal_get_path('module', 'work_schedule2'),
+    'path' => drupal_get_path('module', 'work_schedule2')."/templates",
    );
   $theme['schedule_menu'] = array(
     'template' => 'schedule_menu',
-    'path' => drupal_get_path('module', 'work_schedule2'),
+    'path' => drupal_get_path('module', 'work_schedule2')."/templates",
    );
 
   return $theme;
@@ -90,10 +90,24 @@ function work_schedule2_get_table($sort_by, $date = null) {
 
 function work_schedule2_query_database() {
   global $user;
-
-
-  $data = db_query( "
-    SELECT st.field_schedule_time_value, fd.field_date_value, u.name, n.title,n.nid, np.title AS np_title, np.nid AS np_nid
+  
+  // First get all the projects this user is involved.
+  $projects = db_query("
+    SELECT entity_id AS project_nid FROM {field_data_field_users} WHERE field_users_uid = :uid",
+    array(":uid" => $user->uid));
+  
+  $all_data = [];
+  foreach ($projects as $p) {
+    $data = db_query( "
+    SELECT
+      st.field_schedule_time_value,
+      fd.field_date_value,
+      u.name,
+      n.title,
+      n.nid,
+      np.title AS np_title,
+      np.nid AS np_nid,
+      at.field_assigned_to_uid AS assigned_to
     FROM {node} AS n
     INNER JOIN {field_data_field_schedule} AS s ON n.nid = s.entity_id
     INNER JOIN {field_data_field_schedule_time} AS st ON st.entity_id = s.field_schedule_value
@@ -102,11 +116,17 @@ function work_schedule2_query_database() {
     INNER JOIN {users} AS u ON u.uid = fu.field_user_uid
     INNER JOIN {field_data_field_project} AS fp ON n.nid = fp.entity_id
     INNER JOIN {node} as np ON np.nid = fp.field_project_nid
+    INNER JOIN {field_data_field_assigned_to} AS at ON at.entity_id = n.nid
     WHERE  n.type = 'task'
     AND n.status = 1
-    AND u.uid = :uid",
-    array(":uid" => $user->uid));
-  return $data;
+    AND np.nid = :nid",
+    array(":nid" => $p->project_nid))->fetchAll();
+    $all_data = array_merge($all_data, $data);
+  }
+  
+  
+  
+  return $all_data;
 
 }
 
@@ -128,7 +148,8 @@ function sort_tables($data, $sort_by, $date) {
           'project_nid' => $d->np_nid,
           'project_title' => $d->np_title,
           'task_nid' => $d->nid,
-          'task_title' =>$d->title);
+          'task_title' =>$d->title,
+          'assignee' => $d->name);
       }
     } elseif ($sort_by == 'week') { 
       if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date &&
@@ -138,7 +159,8 @@ function sort_tables($data, $sort_by, $date) {
             'project_nid' => $d->np_nid,
             'project_title' => $d->np_title,
             'task_nid' => $d->nid,
-            'task_title' =>$d->title);
+            'task_title' =>$d->title,
+            'assignee' => $d->name);
       }
     } elseif ($sort_by == 'month') {
       if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_month &&
@@ -179,7 +201,7 @@ function objectToArray ($object) {
 
 function build_tables_day($data, $date) {
   
-  $header = array('Project', 'Task');
+  $header = array('Project', 'Task', 'Assignee');
   foreach ($data as $key => $val) {
     $rows = null;
     $time = $key;
@@ -191,7 +213,9 @@ function build_tables_day($data, $date) {
       foreach($val as $v) {
         $rows[] = array(
           l($v['project_title'], drupal_get_path_alias("node/".$v['project_nid'])),
-          l("#".$v['task_nid'] ." " .$v['task_title'], drupal_get_path_alias("node/".$v['task_nid'])));
+          l("#".$v['task_nid'] ." " .$v['task_title'], drupal_get_path_alias("node/".$v['task_nid'])),
+          $v['assignee'],
+          );
       }
     } else {
       $rows[] = array('', '');
@@ -203,6 +227,7 @@ function build_tables_day($data, $date) {
 }
 
 function build_tables_week($data, $date) {
+  global $user;
   $dates = null;
   $table = null;
   $data_organized = array();
@@ -213,7 +238,13 @@ function build_tables_week($data, $date) {
     $start_date = date('Y-m-d', strtotime('+ 1 days', strtotime($start_date)));
     $dates[] = $start_date;
   }
-  $header = array('Hours', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+  $header = array('Hours');
+  $weekdays = array ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+  $counter = 0;
+  foreach ($dates as $d) {
+    $header[] = l($weekdays[$counter++], "schedule/day/".$d);
+  }
+
   foreach($data as $h=>$d) {
     foreach($dates as $days) {
       $data_organized[$h][$days] = isset($d[$days]) ? $d[$days] : array();
@@ -234,12 +265,17 @@ function build_tables_week($data, $date) {
           "</strong><ul>";
           
         foreach($cell_content['tasks'] as $task) {
-          $info .= "<li>" .
-            l("#".$task['task_nid'] ." " .$task['task_title'], drupal_get_path_alias("node/".$task['task_nid']))."</li>";
+          $info .= "<li ";
+          if ($task['assignee'] != $user->name){
+            $info .=" class='not-assigned-to-me'";
+          }
+          $info .=">" .
+            l("#".$task['task_nid'] ." " .
+            $task['task_title'], drupal_get_path_alias("node/".$task['task_nid'])) .
+            "(".$task['assignee'].")</li>";
         }
         $info .="</ul></div>";
       }
-
       $infos[] = $info;
     }
     $hours_rows[] = $infos;
