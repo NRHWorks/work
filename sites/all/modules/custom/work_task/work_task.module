@@ -622,9 +622,44 @@ function work_task_update_comment() {
   $entity->setHostEntity('node', $node);
   $entity->save();
 
+
+
+  $subject = $subject = "Comment added for task {$node->nid}.";
+
+  // Email everybody!
+  $creator  = &$node->field_creator['und'][0]['uid'];
+  $owner    = &$node->field_owner['und'][0]['uid'];
+  $mail_list = array();
+  foreach ($node->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  if (!in_array($owner, $mail_list)) {
+    $mail_list[] = $owner;
+  }
+
+  if (!in_array($creator, $mail_list)) {
+    $mail_list[] = $creator;
+  }
+
+  $mail_to = "";
+  foreach ($mail_list as $uid) {
+    $u = user_load($uid);
+    $mail_to .= $u->mail . ",";
+  }
+
+  $mail_to = rtrim($mail_to, ",");
+
+  $params['subject'] = $subject;
+  $params['body'] = $data['description'];
+  $params['id'] = $node->nid;
+
+  drupal_mail('work_notifications', 'task_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+
   work_log_create_log_entry($node->nid, "New comment added",
     "New comment added by " . $user->name .
     "<br/>Comment:<br/>".$entity->field_title['und'][0]['value']);
+
 
   $content = node_view($node);
   print render($content['field_comments']);
