@@ -161,6 +161,28 @@ function work_task_add_task($form, $form_state, $project) {
     '#default_value' => $user->uid,
   );
 
+
+  $priority_terms = db_query("
+    SELECT tid, name FROM {taxonomy_term_data}
+    WHERE vid = 6
+    ORDER BY weight ASC");
+
+  $priority_options = array();
+
+  foreach ($priority_terms as $p_term){
+    $priority_options[$p_term->tid] = $p_term->name;
+  }
+
+
+
+  $form['priority'] = array(
+    '#title' => 'Priority',
+    '#type' => 'select',
+    '#options' => $priority_options,
+    '#default_value' => 34,
+  );
+
+
   $form['due_date'] = array(
     '#type' => 'date_popup',
     '#date_format' => 'Y-m-d',
@@ -248,7 +270,12 @@ function work_task_add_task_submit($form, &$form_state) {
     $node->field_users['und'][1]['uid'] = $user->uid;
   }
 
-  $node->field_due_date['und'][0]['value'] = $v['due_date'] . ' 00:00:00';
+  $due_date = $v['due_date'] == "" ? date("Y-m-d", time() + 86400 * 7) : $v['due_date'];
+
+  $node->field_due_date['und'][0]['value'] = $due_date . ' 00:00:00';
+
+  $node->field_task_priority['und'][0]['tid'] = $v['priority'];
+
 
   node_save($node);
 
@@ -776,16 +803,6 @@ function work_task_update_status_ajax($nid, $new_status) {
       $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
       $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
       
-      $assigned_user = user_load($creator);
-
-      $to = $assigned_user->mail;
-
-      $params['subject'] = $subject;
-      $params['body'] = $body;
-      $params['id'] = $node->nid;
-
-      drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
-      
       node_save($node);
       break;
 
@@ -812,16 +829,6 @@ function work_task_update_status_ajax($nid, $new_status) {
 
         $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
         
-        $assigned_user = user_load($creator);
-
-        $to = $assigned_user->mail;
-
-        $params['subject'] = $subject;
-        $params['body'] = $body;
-        $params['id'] = $node->nid;
-
-        drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
-
         node_save($node);
 
       } else {
@@ -829,15 +836,15 @@ function work_task_update_status_ajax($nid, $new_status) {
         
         $assigned = $creator;
         
-        work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Resolved'); 
- 
+        work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Resolved');
+
         if (isset($data['status-text'])) {
           work_task_add_comment($node->nid, 'Resolved', $data['status-text']);
         }
 
-        // email creator 
+        // email creator
         $subject = " task {$node->nid} has been resolved.";
-        
+
         $body = "Task {$node->nid} has been resolved.<br /><br />";
         $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
 
@@ -846,16 +853,7 @@ function work_task_update_status_ajax($nid, $new_status) {
         }
 
         $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-        
-        $assigned_user = user_load($creator);
 
-        $to = $assigned_user->mail;
-
-        $params['subject'] = $subject;
-        $params['body'] = $body;
-        $params['id'] = $node->nid;
-
-        drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
 
         node_save($node);
 
@@ -886,16 +884,6 @@ function work_task_update_status_ajax($nid, $new_status) {
 
         $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
         
-        $assigned_user = user_load($assigned);
-
-        $to = $assigned_user->mail;
-
-        $params['subject'] = $subject;
-        $params['body'] = $body;
-        $params['id'] = $node->nid;
-
-        drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
-
         node_save($node);
 
       break;
@@ -925,15 +913,6 @@ function work_task_update_status_ajax($nid, $new_status) {
 
         $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
         
-        $assigned_user = user_load($assigned);
-
-        $to = $assigned_user->mail;
-
-        $params['subject'] = $subject;
-        $params['body'] = $body;
-        $params['id'] = $node->nid;
-
-        drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
 
         node_save($node);
 
@@ -953,22 +932,37 @@ function work_task_update_status_ajax($nid, $new_status) {
         }
 
         $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-        
-        $assigned_user = user_load($owner);
-
-        $to = $assigned_user->mail;
-
-        $params['subject'] = $subject;
-        $params['body'] = $body;
-        $params['id'] = $node->nid;
-
-        drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
-
         node_save($node);
-
       }
-
   }
+
+  
+  // Email everybody!
+  $mail_list = array();
+  foreach ($node->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  if (!in_array($owner, $mail_list)) {
+    $mail_list[] = $owner;
+  }
+
+  if (!in_array($creator, $mail_list)) {
+    $mail_list[] = $creator;
+  }
+
+  $mail_to = "";
+  foreach ($mail_list as $uid) {
+    $u = user_load($uid);
+    $mail_to .= $u->mail . ",";
+  }
+
+  $mail_to = rtrim($mail_to, ",");
+
+  $params['subject'] = $subject;
+  $params['body'] = $body;
+  $params['id'] = $node->nid;
+  drupal_mail('work_notifications', 'task_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
 
   $content = node_view($node);
 
