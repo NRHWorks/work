@@ -624,7 +624,14 @@ function work_task_update_comment() {
 
 
 
-  $subject = $subject = "Comment added for task {$node->nid}.";
+  $subject = "Comment added for task {$node->nid}.";
+
+  $body = "Comment added<br/>";
+  $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
+
+  $body . = $data['description']. "<br/>";
+  $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
+
 
   // Email everybody!
   $creator  = &$node->field_creator['und'][0]['uid'];
@@ -651,7 +658,7 @@ function work_task_update_comment() {
   $mail_to = rtrim($mail_to, ",");
 
   $params['subject'] = $subject;
-  $params['body'] = $data['description'];
+  $params['body'] = $body;
   $params['id'] = $node->nid;
 
   drupal_mail('work_notifications', 'task_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
