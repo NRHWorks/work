@@ -629,7 +629,7 @@ function work_task_update_comment() {
   $body = "Comment added<br/>";
   $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
 
-  $body . = $data['description']. "<br/>";
+  $body .= $data['description']. "<br/>";
   $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
 
 
