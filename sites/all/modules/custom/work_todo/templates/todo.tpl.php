@@ -44,7 +44,10 @@
         <?php print $t->title; ?>
       </div>
       <div class="todo-actions">
-        <a href="/todo/done/<?php print $t->nid; ?>">Done</a> | <a href="/todo/do-later/<?php print $t->nid; ?>">Do Later</a> | <a href="/todo/do-tomorrow/<?php print $t->nid; ?>">Do Tomorrow</a>
+        <a href="/todo/done/<?php print $t->nid; ?>">Done</a> | 
+        <a href="/todo/do-sooner/<?php print $t->nid; ?>">Sooner</a> | 
+        <a href="/todo/do-later/<?php print $t->nid; ?>">Later</a> | 
+        <a href="/todo/do-tomorrow/<?php print $t->nid; ?>">Tomorrow</a>
       </div>
     </div>
 

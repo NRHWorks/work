@@ -1,5 +1,18 @@
 <?php 
-  if (!isset($_GET['filter'])) { $_GET['filter'] = null; $_GET['start'] = null; $_GET['stop'] = null; }
+  $group    = $_GET['group'];
+  $invoiced = $_GET['invoiced'];
+  $paid     = $_GET['paid'];
+  $filter   = $_GET['filter'];
+  $start    = $_GET['start'];
+
+  if ($group == '')     $group = 'no-group';
+  if ($invoiced == '')  $invoiced = 'all';
+  if ($paid == '')      $paid = 'all';
+
+  if ($filter == '') {
+    $filter = 'month';
+    $start =  date('Y-m');
+  }
 
 ?>
 
@@ -11,10 +24,18 @@
 <table>
   <tr>
     <th>&nbsp;</th>
-    <th colspan="5" style="text-align:center;">Filter By</th>
+    <th colspan="7" style="text-align:center;">Filter By</th>
   </tr>
   <tr>
-    <th>Group By:</th>
+    <?php if ($version == 'admin' || $version == 'developer') : ?>
+      <th>Group By:</th>
+    <?php endif; ?>
+    <?php if ($version == 'admin' || $version == 'developer') : ?>
+      <th>Paid:</th>
+    <?php endif; ?>
+    <?php if ($version == 'admin' || $version == 'client') : ?>
+      <th>Invoiced:</th>
+    <?php endif; ?>
     <th>Day:</th>
     <th>Week:</th>
     <th>Pay Period:</th>
@@ -22,52 +43,76 @@
     <th>Year:</th>
   </tr>
   <tr>
-    <td>
+    <?php if ($version == 'admin' || $version == 'developer') : ?>
+    <td valign="top">
+      <?php $get = ''; foreach ($_GET as $k => $v) { if (!in_array($k, array('q', 'group'))) {$get .= "&$k=$v";} } $get .= "&group="; ?>
       <form>
-        <?php
-          $get = "?filter={$_GET['filter']}&start={$_GET['start']}&stop={$_GET['stop']}";
-        ?>
-
-        <input type="radio" name="group" value="no-group"   onclick="window.location='/timesheet<?php print $get; ?>'"           <?php if (arg(1) == '') {          print 'checked'; } ?> />   No Group<br />
-        <input type="radio" name="group" value="client"     onclick="window.location='/timesheet/client<?php print $get; ?>'"    <?php if (arg(1) == 'client') {    print 'checked'; } ?> />     Client<br />
-        <input type="radio" name="group" value="developer"  onclick="window.location='/timesheet/developer<?php print $get; ?>'" <?php if (arg(1) == 'developer') { print 'checked'; } ?> />  Developer<br />
-        <input type="radio" name="group" value="project"    onclick="window.location='/timesheet/project<?php print $get; ?>'"   <?php if (arg(1) == 'project') {   print 'checked'; } ?> />    Project<br />
+        <input type="radio" name="group" value="no-group"   onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'no-group'; ?>'"   <?php if ($group == 'no-group')  { print 'checked'; } ?> /> No Group<br />
+        <input type="radio" name="group" value="client"     onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'client'; ?>'"     <?php if ($group == 'client')    { print 'checked'; } ?> /> Client<br />
+        <?php if ($version == 'admin') : ?>
+          <input type="radio" name="group" value="developer"  onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'developer'; ?>'"  <?php if ($group == 'developer') { print 'checked'; } ?> /> Developer<br />
+        <?php endif; ?>
+        <input type="radio" name="group" value="project"    onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'project'; ?>'"    <?php if ($group == 'project')   { print 'checked'; } ?> /> Project<br />
       </form>
     </td>
-    <td <?php if ($_GET['filter'] == 'day') { print 'class="selected"'; }  ?>>
+    <?php endif; ?>
+    <?php if ($version == 'admin' || $version == 'developer') : ?>
+    <td valign="top">
+      <?php $get = ''; foreach ($_GET as $k => $v) { if (!in_array($k, array('q', 'paid'))) {$get .= "&$k=$v";} } $get .= "&paid="; ?>
+      <form>
+        <input type="radio" name="paid" value="all"      onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'all'; ?>'"       <?php if ($paid == 'all') {      print 'checked'; } ?> /> All<br />
+        <input type="radio" name="paid" value="Not Paid" onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Not Paid'; ?>'"  <?php if ($paid == 'Not Paid') { print 'checked'; } ?> /> Not Paid<br />
+        <input type="radio" name="paid" value="Paid"     onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Paid'; ?>'"      <?php if ($paid == 'Paid') {     print 'checked'; } ?> /> Paid<br />
+      </form>
+    </td>
+    <?php endif; ?>
+    <?php if ($version == 'admin' || $version == 'client') : ?>
+    <td valign="top">
+      <?php $get = ''; foreach ($_GET as $k => $v) { if (!in_array($k, array('q', 'invoiced'))) {$get .= "&$k=$v";} } $get .= "&invoiced="; ?>
+      <form>
+        <input type="radio" name="invoiced" value="all"         onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'all'; ?>'"        <?php if ($invoiced == 'all') {        print 'checked'; } ?> /> All<br />
+        <input type="radio" name="invoiced" value="Pending"     onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Pending'; ?>'"    <?php if ($invoiced == 'Pending') {    print 'checked'; } ?> /> Pending<br />
+        <input type="radio" name="invoiced" value="Invoiced"    onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Invoiced'; ?>'"   <?php if ($invoiced == 'Invoiced') {   print 'checked'; } ?> /> Invoiced<br />
+        <input type="radio" name="invoiced" value="Paid"        onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Paid'; ?>'"       <?php if ($invoiced == 'Paid') {       print 'checked'; } ?> /> Paid<br />
+        <input type="radio" name="invoiced" value="No Invoice"  onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'No Invoice'; ?>'" <?php if ($invoiced == 'No Invoice') { print 'checked'; } ?> /> No Invoice<br />
+      </form>
+    </td>
+    <?php endif; ?>
+    <?php $get = ''; foreach ($_GET as $k => $v) { if (!in_array($k, array('q', 'start', 'stop', 'filter'))) {$get .= "&$k=$v";} } ?>
+    <td <?php if ($filter == 'day') { print 'class="selected"'; }  ?>>
       <form>
         <select  onchange="window.location=jQuery(this).val();">
-          <option value="?filter=none&start=0&stop=9">-- select --</option>
+          <option value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">-- select --</option>
           <?php $day = -1;
                 while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
                   $day += 1;        
           ?>
-                <option   <?php if (($_GET['filter'] == 'day') && ($_GET['start'] == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?> 
-                          value="?filter=day&start=<?php print date('Y-m-d', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-m-d', (time() - (($day - 1) * 24 * 60 * 60))); ?>"><?php print date('M d Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
+                <option   <?php if (($filter == 'day') && ($start == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?> 
+                          value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=day&start=<?php print date('Y-m-d', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-m-d', (time() - (($day - 1) * 24 * 60 * 60))); ?>"><?php print date('M d Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
           <?php endwhile; ?>
         </select>
       </form>
     </td>
-    <td <?php if ($_GET['filter'] == 'week') { print 'class="selected"'; }  ?>>
+    <td <?php if ($filter == 'week') { print 'class="selected"'; }  ?>>
       <form>
         <select  onchange="window.location=jQuery(this).val();">
-          <option  value="?filter=none&start=0&stop=9">-- select --</option>
+          <option  value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">-- select --</option>
           <?php $day = -1;
                 while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
                   $day += 1;        
           ?>
                 <?php if (date('D', (time() - ($day * 24 * 60 * 60))) == 'Mon') : ?>
-                  <option <?php if (($_GET['filter'] == 'week') && ($_GET['start'] == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>  
-                          value="?filter=week&start=<?php print date('Y-m-d', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-m-d', (time() - (($day - 7) * 24 * 60 * 60))); ?>"><?php print date('M d Y', (time() - ($day * 24 * 60 * 60))) . ' - ' . date('M d Y', (time() - (($day - 6) * 24 * 60 * 60)));  ?></option>
+                  <option <?php if (($filter == 'week') && ($start == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>  
+                          value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=week&start=<?php print date('Y-m-d', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-m-d', (time() - (($day - 7) * 24 * 60 * 60))); ?>"><?php print date('M d', (time() - ($day * 24 * 60 * 60))) . ' - ' . date('M d Y', (time() - (($day - 6) * 24 * 60 * 60)));  ?></option>
                 <?php endif; ?>
           <?php endwhile; ?>
         </select>
       </form>
     </td>
-    <td <?php if ($_GET['filter'] == 'period') { print 'class="selected"'; }  ?>>
+    <td <?php if ($filter == 'period') { print 'class="selected"'; }  ?>>
       <form>
         <select onchange="window.location=jQuery(this).val();">
-          <option  value="?filter=none&start=0&stop=9">-- select --</option>
+          <option  value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">-- select --</option>
           <?php 
                 $start_payday = strtotime('November 14 2015');
                 $next_payday = $start_payday;
@@ -87,41 +132,41 @@
           ?>
 
             <?php if (in_array(date('M-d-Y', (time() - ($day * 24 * 60 * 60))), $paydays)) : ?>
-              <option <?php if (($_GET['filter'] == 'period') && ($_GET['start'] == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
-                      value="?filter=period&start=<?php print date('Y-m-d', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-m-d', (time() - (($day - 14) * 24 * 60 * 60))); ?>"><?php print date('M d Y', (time() - ($day * 24 * 60 * 60))) . ' - ' . date('M d Y', (time() - (($day - 13) * 24 * 60 * 60)));  ?></option>
+              <option <?php if (($filter == 'period') && ($start == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
+                      value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=period&start=<?php print date('Y-m-d', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-m-d', (time() - (($day - 14) * 24 * 60 * 60))); ?>"><?php print date('M d', (time() - ($day * 24 * 60 * 60))) . ' - ' . date('M d Y', (time() - (($day - 13) * 24 * 60 * 60)));  ?></option>
             <?php endif; ?>
 
           <?php endwhile; ?>
         </select>
       </form>
     </td>
-    <td <?php if ($_GET['filter'] == 'month') { print 'class="selected"'; }  ?>>
+    <td <?php if ($filter == 'month') { print 'class="selected"'; }  ?>>
       <form>
         <select  onchange="window.location=jQuery(this).val();">
-          <option  value="?filter=none&start=0&stop=9">-- select --</option>
+          <option  value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">- select -</option>
           <?php $day = -1;
                 while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
                   $day += 1;        
           ?>
             <?php if (date('j', (time() - ($day * 24 * 60 * 60))) == 1) : ?>
-                <option <?php if (($_GET['filter'] == 'month') && ($_GET['start'] == date('Y-m', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
-                        value="?filter=month&start=<?php print date('Y-m', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-', (time() - (($day) * 24 * 60 * 60))) . (date('m', (time() - (($day) * 24 * 60 * 60))) + 1); ?>"><?php print date('M Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
+                <option <?php if (($filter == 'month') && ($start == date('Y-m', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
+                        value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=month&start=<?php print date('Y-m', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-', (time() - (($day) * 24 * 60 * 60))) . sprintf("%02d",(date('m', (time() - (($day) * 24 * 60 * 60))) + 1)); ?>"><?php print date('M Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
             <?php endif; ?>
           <?php endwhile; ?>
         </select>
       </form>
     </td>
-    <td <?php if ($_GET['filter'] == 'year') { print 'class="selected"'; }  ?>>
+    <td <?php if ($filter == 'year') { print 'class="selected"'; }  ?>>
       <form>
         <select  onchange="window.location=jQuery(this).val();">
-          <option  value="?filter=none&start=0&stop=9">-- select --</option>
+          <option  value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">- select -</option>
           <?php $day = -1;
                 while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
                   $day += 1;        
           ?>
               <?php if (($day == 0) || (date('z', (time() - ($day * 24 * 60 * 60))) == 364)) : ?>
-                <option <?php if (($_GET['filter'] == 'year') && ($_GET['start'] == date('Y', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
-                        value="?filter=year&start=<?php print date('Y', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print (date('Y', (time() - (($day) * 24 * 60 * 60))) + 1); ?>"><?php print date('Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
+                <option <?php if (($filter == 'year') && ($start == date('Y', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
+                        value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=year&start=<?php print date('Y', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print (date('Y', (time() - (($day) * 24 * 60 * 60))) + 1); ?>"><?php print date('Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
               <?php endif; ?>
           <?php endwhile; ?>
         </select>

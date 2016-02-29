@@ -73,6 +73,14 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
   
+  $theme['field__field_task_priority'] = array(
+    'render element' => 'content',
+    'base hook' => 'field',
+    'template' => 'field--field-task-priority',
+    'path' => drupal_get_path('module', 'work_theme') . '/templates',
+   );
+  
+  
   $theme['field__field_users'] = array(
     'render element' => 'content',
     'base hook' => 'field',

@@ -489,6 +489,11 @@ button {
   font-size: 12px;
 }
 
+.field-name-field-task-priority .field-label, .field-name-field-task-priority #node-priority {
+  font-size: 16px !important;
+  color: rgb(59, 59, 59);
+}
+
 .field-name-field-password.field-label-inline .field-item {
     font-size: 7px;
     line-height: 20px;
@@ -592,3 +597,19 @@ th.blue-hover {
 .field-name-field-contact {
   font-weight: bold;
 }
+
+#task-status-update {
+  border-top: 1px solid #CCC;
+  border-bottom: 1px solid #CCC;
+  background-color: #f5f5f5;
+  margin: 10px -10px;
+  padding: 20px 10px 10px 10px;
+  display: none;
+}
+
+#task-status-update a {
+  font-weight: bold;
+  display: inline-block;
+  width: 60px;
+}
+

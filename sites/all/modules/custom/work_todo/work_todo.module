@@ -29,6 +29,13 @@ function work_todo_menu() {
     'access callback' => TRUE,
   );
   
+  $items['todo/do-sooner/%'] = array(
+    'title' => 'To Do',
+    'page callback' => 'work_todo_do_sooner',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+  
   $items['todo/do-tomorrow/%'] = array(
     'title' => 'To Do',
     'page callback' => 'work_todo_do_tomorrow',
@@ -202,11 +209,81 @@ function work_todo_done($nid) {
 }
 
 function work_todo_do_later($nid) {
-  $max_priority = db_query("SELECT max(field_priority_value) FROM field_data_field_priority")->fetchField();
+  global $user;
+
+  $result = db_query("SELECT nid FROM {node} WHERE type = 'todo' AND uid = {$user->uid}");
+
+  foreach ($result as $r) {
+    $node = node_load($r->nid);
+
+    if (($node->field_todo_status['und'][0]['value'] == 0) && ($node->field_date[LANGUAGE_NONE][0]['value'] <= date('Y-m-d 24:59:59'))) {
+      $todo[$r->nid] = $node->field_priority['und'][0]['value'];
+    }
+  }
   
-  $node = node_load($nid);
-  $node->field_priority[LANGUAGE_NONE][0]['value'] = $max_priority + 1;
-  node_save($node);
+  asort($todo);
+
+  $count = 0;
+  foreach ($todo as $k => $v) {
+    $count += 1;
+    $todo[$k] = $count;
+    if ($k == $nid) {
+      $current_sort = $count;
+    }
+  }
+
+  $todo = array_flip($todo);
+ 
+  if (isset($todo[($current_sort + 1)])) {
+    $todo[$current_sort] = $todo[($current_sort + 1)];
+    $todo[($current_sort + 1)] = $nid;
+  }
+  
+  foreach ($todo as $k => $v) {
+    $node = node_load($v);
+    $node->field_priority['und'][0]['value'] = $k;
+    node_save($node);
+  }
+
+  drupal_goto('todo');
+}
+
+function work_todo_do_sooner($nid) {
+  global $user;
+
+  $result = db_query("SELECT nid FROM {node} WHERE type = 'todo' AND uid = {$user->uid}");
+
+  foreach ($result as $r) {
+    $node = node_load($r->nid);
+
+    if (($node->field_todo_status['und'][0]['value'] == 0) && ($node->field_date[LANGUAGE_NONE][0]['value'] <= date('Y-m-d 24:59:59'))) {
+      $todo[$r->nid] = $node->field_priority['und'][0]['value'];
+    }
+  }
+  
+  asort($todo);
+
+  $count = 0;
+  foreach ($todo as $k => $v) {
+    $count += 1;
+    $todo[$k] = $count;
+    if ($k == $nid) {
+      $current_sort = $count;
+    }
+  }
+
+  $todo = array_flip($todo);
+ 
+  if (isset($todo[($current_sort - 1)])) {
+    $todo[$current_sort] = $todo[($current_sort - 1)];
+    $todo[($current_sort - 1)] = $nid;
+  }
+  
+  foreach ($todo as $k => $v) {
+    $node = node_load($v);
+    $node->field_priority['und'][0]['value'] = $k;
+    node_save($node);
+  }
 
   drupal_goto('todo');
 }
@@ -214,9 +291,10 @@ function work_todo_do_later($nid) {
 function work_todo_do_tomorrow($nid) {
   $node = node_load($nid);
   $node->field_date[LANGUAGE_NONE][0]['value'] = date('Y-m-d 01:00:00', (time() + 86400));
+  $node->field_priority['und'][0]['value'] = 999;
   node_save($node);
-  
-  work_todo_do_later($nid);
+
+  drupal_goto('todo');
 }
 
 function work_todo_do_today($nid) {

@@ -25,6 +25,9 @@
     <div class="row" id="status-row">
         <?php print render($content['field_status']); ?>
     </div>
+    <div class="row" id="priority-row">
+        <?php print render($content['field_task_priority']); ?>
+    </div>
     <div class="field-label gray">Users:</div>
     <br />
     <div id="assigned-to-container"><?php print render($content['field_assigned_to']); ?></div><br />

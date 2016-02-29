@@ -112,6 +112,14 @@ function work_task_menu() {
     'page arguments' => array(3),
     'access callback' => TRUE,
   );
+  
+  $items['tasks/priority/%/%'] = array(
+    'title' => 'Update Priority',
+    'page callback' => 'work_task_priority',
+    'page arguments' => array(2,3),
+    'access callback' => TRUE,
+  );
+
 
   return $items;
 }
@@ -1028,5 +1036,20 @@ function work_task_get_comments($nid) {
   print render($content['field_comments']);
 
   drupal_exit;
+
+}
+
+function work_task_priority($nid, $tid) {
+  $node = node_load($nid);
+
+  $node->field_task_priority['und'][0]['tid'] = $tid;
+
+  node_save($node);
+
+  $content = node_view($node);
+
+  print render($content['field_task_priority']);
+  
+  drupal_exit();
 
 }
