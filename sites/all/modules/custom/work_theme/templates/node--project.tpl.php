@@ -23,13 +23,23 @@
     <br /><br />
   </div>
 
+  <?php
+    $credentials_count = 0;
+    $assets_count = 0;
+    $resources_count = 0;
+
+    if (isset($node->field_credentials['und'])) { $credentials_count += count($node->field_credentials['und']); }
+    if (isset($node->field_assets['und'])) { $assets_count += count($node->field_assets['und']); }
+    if (isset($node->field_resources['und'])) { $resources_count += count($node->field_resources['und']); }
+  ?>
+
   <div id="task-right">
     <div class="tabs">
       <ul class="tabs primary task">
         <li class="active"><a href="#" data-show="log">Log</a></li>
-        <li><a href="#" data-show="credentials">Credentials</a></li>
-        <li><a href="#" id="assets-tab" data-show="assets">Assets</a></li>
-        <li><a href="#" data-show="resources">Resources</a></li>
+        <li><a href="#" data-show="credentials">Credentials (<?php print $credentials_count; ?>)</a></li>
+        <li><a href="#" id="assets-tab" data-show="assets">Assets (<?php print $assets_count; ?>)</a></li>
+        <li><a href="#" data-show="resources">Resources (<?php print $resources_count;?>)</a></li>
       </ul>
     </div>
     
