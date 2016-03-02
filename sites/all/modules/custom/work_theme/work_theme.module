@@ -66,6 +66,14 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
   
+  $theme['field_collection_item__field_assets'] = array(
+    'render element' => 'content',
+    'base hook' => 'field_collection',
+    'template' => 'field-collection-item--field-assets',
+    'path' => drupal_get_path('module', 'work_theme') . '/templates',
+   );
+
+
   $theme['field__field_status'] = array(
     'render element' => 'content',
     'base hook' => 'field',
