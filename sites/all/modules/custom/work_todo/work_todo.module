@@ -306,6 +306,9 @@ function work_todo_do_today($nid) {
 }
 
 function work_todo_cli($uid) {
+  $count = 0;
+  $item_count = 28;
+
   $result = db_query("  SELECT nid 
                         FROM {node} n 
                         INNER JOIN {field_data_field_date} d ON n.nid = d.entity_id 
@@ -319,8 +322,13 @@ function work_todo_cli($uid) {
 
   $todo = '';
   foreach ($result as $r) {
+    $count += 1;
+
     $node = node_load($r->nid); 
-    $todo .= "<span style='color:green'>({$node->nid}) {$node->title}</span><br />";
+
+    if ($count <= $item_count) {
+      $todo .= "<span style='color:green'>({$node->nid}) {$node->title}</span><br />";
+    }
   }
 
   $todo .= "<hr style='color:blue; border-color:blue;' />";
@@ -336,8 +344,13 @@ function work_todo_cli($uid) {
                         ORDER BY substr(d.field_date_value,0,11),  p.field_priority_value", array(':uid' => $uid));
 
   foreach ($result as $r) {
+    $count += 1;
+
     $node = node_load($r->nid); 
-    $todo .= "<span style='color:yellow;'>({$node->nid}) {$node->title}</span><br />";
+
+    if ($count <= $item_count) {
+      $todo .= "<span style='color:yellow;'>({$node->nid}) {$node->title}</span><br />";
+    }
   }
   
   $todo .= "<hr style='color:blue; border-color:blue;' />";
@@ -354,8 +367,13 @@ function work_todo_cli($uid) {
                         LIMIT 5", array(':uid' => $uid));
 
   foreach ($result as $r) {
+    $count += 1;
+
     $node = node_load($r->nid); 
-    $todo .= "<span style='color:red;'>({$node->nid}) <span style='text-decoration:line-through;'>{$node->title}</span></span><br />";
+
+    if ($count <= $item_count) {
+      $todo .= "<span style='color:red;'>({$node->nid}) <span style='text-decoration:line-through;'>{$node->title}</span></span><br />";
+    }
   }
   
   print $todo;
