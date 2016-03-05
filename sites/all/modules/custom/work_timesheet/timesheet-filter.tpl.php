@@ -1,15 +1,15 @@
 <?php 
-  $group    = $_GET['group'];
-  $invoiced = $_GET['invoiced'];
-  $paid     = $_GET['paid'];
-  $filter   = $_GET['filter'];
-  $start    = $_GET['start'];
+  if (isset($_GET['group']))     $group    = $_GET['group'];
+  if (isset($_GET['invoiced']))  $invoiced = $_GET['invoiced'];
+  if (isset($_GET['paid']))      $paid     = $_GET['paid'];
+  if (isset($_GET['filter']))    $filter   = $_GET['filter'];
+  if (isset($_GET['start']))     $start    = $_GET['start'];
 
-  if ($group == '')     $group = 'no-group';
-  if ($invoiced == '')  $invoiced = 'all';
-  if ($paid == '')      $paid = 'all';
+  if (!isset($group))     $group = 'no-group';
+  if (!isset($invoiced))  $invoiced = 'all';
+  if (!isset($paid))      $paid = 'all';
 
-  if ($filter == '') {
+  if (!isset($filter)) {
     $filter = 'month';
     $start =  date('Y-m');
   }
@@ -61,8 +61,8 @@
       <?php $get = ''; foreach ($_GET as $k => $v) { if (!in_array($k, array('q', 'paid'))) {$get .= "&$k=$v";} } $get .= "&paid="; ?>
       <form>
         <input type="radio" name="paid" value="all"      onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'all'; ?>'"       <?php if ($paid == 'all') {      print 'checked'; } ?> /> All<br />
-        <input type="radio" name="paid" value="Not Paid" onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Not Paid'; ?>'"  <?php if ($paid == 'Not Paid') { print 'checked'; } ?> /> Not Paid<br />
-        <input type="radio" name="paid" value="Paid"     onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Paid'; ?>'"      <?php if ($paid == 'Paid') {     print 'checked'; } ?> /> Paid<br />
+        <input type="radio" name="paid" value="not-paid" onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'not-paid'; ?>'"  <?php if ($paid == 'not-paid') { print 'checked'; } ?> /> Not Paid<br />
+        <input type="radio" name="paid" value="paid"     onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'paid'; ?>'"      <?php if ($paid == 'paid') {     print 'checked'; } ?> /> Paid<br />
       </form>
     </td>
     <?php endif; ?>

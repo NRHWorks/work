@@ -1,33 +1,6 @@
 <?php
 
 function work_timesheet_menu() {
-  /*
-  $items['timesheet'] = array(
-    'title' => 'Timesheet',
-    'page callback' => 'work_timesheet_updated',
-    'access callback' => TRUE,
-  );
-  
-  $items['timesheet/developer'] = array(
-    'title' => 'Timesheet',
-    'page callback' => 'work_timesheet_developer',
-    'access callback' => TRUE,
-  );
-  
-  $items['timesheet/client'] = array(
-    'title' => 'Timesheet',
-    'page callback' => 'work_timesheet_client',
-    'access callback' => TRUE,
-  );
-
-  $items['timesheet/project'] = array(
-    'title' => 'Timesheet',
-    'page callback' => 'work_timesheet_project',
-    'access callback' => TRUE,
-  );
-  
-  */
-
   $items['timesheet/admin'] = array(
     'title' => 'Timesheet',
     'page callback' => 'work_timesheet_page',
@@ -46,6 +19,20 @@ function work_timesheet_menu() {
     'title' => 'Timesheet',
     'page callback' => 'work_timesheet_page',
     'page arguments' => array('developer'),
+    'access callback' => TRUE,
+  );
+  
+  $items['timesheet/update-billed/%'] = array(
+    'title' => 'Update Timesheet',
+    'page callback' => 'work_timesheet_update_time',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+
+  $items['timesheet/update-paid/%'] = array(
+    'title' => 'Update Timesheet',
+    'page callback' => 'work_timesheet_update_paid',
+    'page arguments' => array(2),
     'access callback' => TRUE,
   );
 
@@ -67,13 +54,15 @@ function work_timesheet_theme($existing, $type, $theme, $path) {
 
 function work_timesheet_page($version = 'admin') {
   $output = theme('timesheet_filter', array('version' => $version));
-  
-  $output .= '[summary]';
  
   extract($_GET);
 
   if (!isset($group)) {
     $group = 'no-group';
+  }
+
+  if ($group != 'no-group') {
+    $output .= '[summary]';
   }
 
   if (!isset($paid)) {
@@ -106,8 +95,8 @@ function work_timesheet_page($version = 'admin') {
         'date' => 'Date',
         'hours' => 'Hours',
         'hours_billed' => 'Hours Billed',
-        'amount_billed' => 'Billed',
         'amount_paid' => 'Amount Paid',
+        'amount_billed' => 'Billed',
         'profit' => 'Profit',
       );
       break;
@@ -130,7 +119,7 @@ function work_timesheet_page($version = 'admin') {
         'task' => 'Task',
         'date' => 'Date',
         'hours' => 'Hours',
-        'amount_paid' => 'Amount Paid',
+        'amount_paid' => 'Paid',
       );
       break;
   }
@@ -152,13 +141,43 @@ function work_timesheet_page($version = 'admin') {
     foreach ($time as $t) {
 
       $row = array();
+
       foreach ($columns as $k => $v) {
-        $row[$k] = $t[$k];
+        if ($k != $group) {
+          $row_totals[$k] = $t[$k];
+
+          if ($k == 'hours_billed') {
+            if (!isset($t[$k]) || ($t[$k] == 0)) {
+              $row[$k]  = "<div style='white-space:nowrap;'>";  
+              $row[$k] .= " <form action='/timesheet/update-billed/{$t['time_id']}' method='get' style='display:inline-block;'><input type='text' name='hours_billed' size='3' style='font-size:1.4em;' /></form> ";
+              $row[$k] .= "&nbsp;&nbsp;&nbsp; <a href='/timesheet/update-billed/{$t['time_id']}' style='display:inline-block; color:#393;'><i class='fa fa-dollar fa-2x'></i></a>";
+              $row[$k] .= "</div>";
+            } else {
+              $row[$k] = "<a href='#' onclick='jQuery(this).toggle(); jQuery(\"#money-{$t['time_id']}\").toggle(); return false;' style='font-weight:bold;'>" . $t[$k] . '</a>';
+              $row[$k] .= " <form id='money-{$t['time_id']}' action='/timesheet/update-billed/{$t['time_id']}' method='get' style='display:none;'><input type='text' name='hours_billed' size='3' style='font-size:2em;' /></form> ";
+            }
+          } elseif ($k == 'amount_paid' && $version == 'admin') {
+            if ($t['paid'] == 'not-paid') {
+              $row[$k] = $t[$k] . "<a href='/timesheet/update-paid/{$t['time_id']}' style='float:right; color:#393;'><i class='fa fa-check fa-2x'></i></a>";
+            } else {
+              $row[$k] = '<span style="text-decoration:line-through;">$' . $t[$k] . '</span>';
+            }
+          } elseif ($k == 'amount_paid' && $version == 'developer') {
+            if ($t['paid'] == 'not-paid') {
+              $row[$k] = '$' .$t[$k];
+            } else {
+              $row[$k] = '<span style="font-weight:bold">$' . $t[$k] . '<i class="fa fa-check" style="float:right"></i></span>';
+            }
+          } else {
+              $row[$k] = $t[$k];
+          }
+        }
       }
         
-      work_timesheet_totals($row, $totals);
+      work_timesheet_totals($row_totals, $totals, $t);
       $rows[] = $row;
     }
+
 
     $rows[] = array(
                 array(
@@ -167,9 +186,9 @@ function work_timesheet_page($version = 'admin') {
                 ),
                 '<strong>' . $totals['hours'] . '</strong>',
                 '<strong>' . $totals['hours_billed'] . '</strong>',
-                '<strong>' . $totals['amount_billed'] . '</strong>',
-                '<strong>' . $totals['amount_paid'] . '</strong>',
-                '<strong>' . $totals['profit'] . '</strong>',
+                '<strong>$' . $totals['amount_billed'] . '</strong>',
+                '<strong>$' . $totals['amount_paid'] . '</strong>',
+                '<strong>$' . $totals['profit'] . '</strong>',
               );
 
     $output .= theme('table', array('header'=> $headers, 'rows' => $rows));
@@ -177,15 +196,24 @@ function work_timesheet_page($version = 'admin') {
   } else {
   
     $summary_table = array();
+    $summary_totals = array();
 
-    $summary_headers = array(
-      'group' => ucwords($group),
-      'hours' => 'Hours',
-      'hours_billed' => 'Hours Billed',
-      'amount_billed' => 'Billed',
-      'amount_paid' => 'Amount Paid',
-      'profit' => 'Profit',
-    );
+    if ($version == 'admin') {
+      $summary_headers = array(
+        'group' => ucwords($group),
+        'hours' => 'Hours',
+        'hours_billed' => 'Hours Billed',
+        'amount_billed' => 'Billed',
+        'amount_paid' => 'Amount Paid',
+        'profit' => 'Profit',
+      );
+    } elseif ($version == 'developer') {
+      $summary_headers = array(
+        'group' => ucwords($group),
+        'hours' => 'Hours',
+        'amount_paid' => 'Paid',
+      );
+    }
 
     foreach ($time as $g => $time_group) {
       
@@ -200,45 +228,113 @@ function work_timesheet_page($version = 'admin') {
         $row = array();
         foreach ($columns as $k => $v) {
           if ($k != $group) {
-            $row[$k] = $t[$k];
+            $row_totals[$k] = $t[$k];
+
+            if ($k == 'hours_billed') {
+              if (!isset($t[$k]) || ($t[$k] == 0)) {
+                $row[$k]  = "<div style='white-space:nowrap;'>";  
+                $row[$k] .= " <form action='/timesheet/update-billed/{$t['time_id']}' method='get' style='display:inline-block;'><input type='text' name='hours_billed' size='3' style='font-size:1.4em;' /></form> ";
+                $row[$k] .= "&nbsp;&nbsp;&nbsp; <a href='/timesheet/update-billed/{$t['time_id']}' style='display:inline-block; color:#393;'><i class='fa fa-dollar fa-2x'></i></a>";
+                $row[$k] .= "</div>";
+              } else {
+                $row[$k] = "<a href='#' onclick='jQuery(this).toggle(); jQuery(\"#money-{$t['time_id']}\").toggle(); return false;' style='font-weight:bold;'>" . $t[$k] . '</a>';
+                $row[$k] .= " <form id='money-{$t['time_id']}' action='/timesheet/update-billed/{$t['time_id']}' method='get' style='display:none;'><input type='text' name='hours_billed' size='3' style='font-size:2em;' /></form> ";
+              }
+            } elseif ($k == 'amount_paid' && $version == 'admin') {
+              if ($t['paid'] == 'not-paid') {
+                $row[$k] = $t[$k] . "<a href='/timesheet/update-paid/{$t['time_id']}' style='float:right; color:#393;'><i class='fa fa-check fa-2x'></i></a>";
+              } else {
+                $row[$k] = '<span style="text-decoration:line-through;">' . $t[$k] . '</span>';
+              }
+            } elseif ($k == 'amount_paid' && $version == 'developer') {
+              if ($t['paid'] == 'not-paid') {
+                $row[$k] = '$' .$t[$k];
+              } else {
+                $row[$k] = '<span style="font-weight:bold">$' . $t[$k] . '<i class="fa fa-check" style="float:right"></i></span>';
+              }
+            } else {
+              $row[$k] = $t[$k];
+            }
           }
         }
           
-        work_timesheet_totals($row, $totals);
+        work_timesheet_totals($row_totals, $totals, $t);
         $rows[] = $row;
       }
 
-      $rows[] = array(
-                  array(
-                    'data' => '<strong>Totals</strong>',
-                    'colspan' => (count($row) - 5),
-                  ),
-                  '<strong>' . $totals['hours'] . '</strong>',
-                  '<strong>' . $totals['hours_billed'] . '</strong>',
-                  '<strong>' . $totals['amount_billed'] . '</strong>',
-                  '<strong>' . $totals['amount_paid'] . '</strong>',
-                  '<strong>' . $totals['profit'] . '</strong>',
-                );
+      if ($version == 'admin') {
+        $rows[] = array(
+                    array(
+                      'data' => '<strong>Totals</strong>',
+                      'colspan' => (count($row) - 5),
+                    ),
+                    '<strong>' . $totals['hours'] . '</strong>',
+                    '<strong>' . $totals['hours_billed'] . '</strong>',
+                    '<strong>$' . $totals['amount_paid'] . '</strong>',
+                    '<strong>$' . $totals['amount_billed'] . '</strong>',
+                    '<strong>$' . $totals['profit'] . '</strong>',
+                  );
+      } elseif ($version == 'developer')  {
+        $rows[] = array(
+                    array(
+                      'data' => '<strong>Totals</strong>',
+                      'colspan' => 3,
+                    ),
+                    '<strong>' . $totals['hours'] . '</strong>',
+                    '<strong>$' . $totals['amount_paid'] . '</strong>',
+                  );
+      }
 
-      $summary_table[] = array(
-                  $g,
-                  '<strong>' . $totals['hours'] . '</strong>',
-                  '<strong>' . $totals['hours_billed'] . '</strong>',
-                  '<strong>' . $totals['amount_billed'] . '</strong>',
-                  '<strong>' . $totals['amount_paid'] . '</strong>',
-                  '<strong>' . $totals['profit'] . '</strong>',
-                );
+      if ($version == 'admin') {
+        $summary_table[] = array(
+                    $g,
+                    '<strong>' . $totals['hours'] . '</strong>',
+                    '<strong>' . $totals['hours_billed'] . '</strong>',
+                    '<strong>$' . $totals['amount_billed'] . '</strong>',
+                    '<strong>$' . $totals['amount_paid'] . '</strong>',
+                    '<strong>$' . $totals['profit'] . '</strong>',
+                  );
+      } elseif ($version == 'developer')  {
+        $summary_table[] = array(
+                    $g,
+                    '<strong>' . $totals['hours'] . '</strong>',
+                    '<strong>$' . $totals['amount_paid'] . '</strong>',
+                  );
+      }
+
+      work_timesheet_totals($totals, $summary_totals, $t);
 
       $output .= theme('table', array('header'=> $headers, 'rows' => $rows));
     }
-  }
 
-  $output = str_replace('[summary]', '<h2>Summary</h2>' . theme('table', array('header'=> $summary_headers, 'rows' => $summary_table)) ,  $output); 
+    if ($version == 'admin') {
+      $summary_table[] = array(
+                  '<strong>Totals:</strong>',
+                  '<strong>' . $summary_totals['hours'] . '</strong>',
+                  '<strong>' . $summary_totals['hours_billed'] . '</strong>',
+                  '<strong>$' . $summary_totals['amount_billed'] . '</strong>',
+                  '<strong>$' . $summary_totals['amount_paid'] . '</strong>',
+                  '<strong>$' . $summary_totals['profit'] . '</strong>',
+                );
+    } elseif ($version == 'developer') {
+      $summary_table[] = array(
+                  '<strong>Totals:</strong>',
+                  '<strong>' . $summary_totals['hours'] . '</strong>',
+                  '<strong>$' . $summary_totals['amount_paid'] . '</strong>',
+                );
+    }
+  }
+  
+
+  if ($group != 'no-group') {
+    $output = str_replace('[summary]', '<h2>Summary</h2>' . theme('table', array('header'=> $summary_headers, 'rows' => $summary_table)) ,  $output); 
+  }
 
   return $output;
 }
 
-function work_timesheet_totals($row, &$totals) {
+function work_timesheet_totals($row, &$totals, $t) {
+
   foreach ($row as $k => $v) {
     if (isset($totals[$k])) {
       $totals[$k] += $v;
@@ -246,6 +342,29 @@ function work_timesheet_totals($row, &$totals) {
       $totals[$k] = $v;
     }
   }
+
+  if ($t['retainer'] > 0) {
+    if ($_GET['group'] == 'project') {
+      switch($_GET['filter']) {
+        case 'day' :
+          $retainer = $t['retainer'] / 5;
+          break;
+        case 'week' :
+          $retainer = $t['retainer'];
+          break;
+        case 'month' :
+          $retainer = $t['retainer'] * 4;
+          break;
+        case 'period' :
+          $retainer = $t['retainer'] * 2;
+          break;
+      }
+
+      $totals['amount_billed'] = $retainer;
+      $totals['profit'] = $retainer - $totals['amount_paid'];
+    }
+  }
+
 }
 
 function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced = 'all', $start, $stop, $version = 'admin') {
@@ -263,12 +382,11 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
     $entity = entity_load('field_collection_item', array($r->entity_id));
     $e = array_pop($entity); 
 
-
-    if ($paid != 'all' && $e->field_paid['und'][0]['value'] != $paid) {
+    if ($paid == 'not-paid' && isset($e->field_paid['und']) && $e->field_paid['und'][0]['value'] == 'paid') {
       continue;
     }
 
-    if ($invoiced != 'all' && $e->field_invoice['und'][0]['value'] != $invoiced) {
+    if ($paid == 'paid' && (!isset($e->field_paid['und']) || $e->field_paid['und'][0]['value'] == 'not-paid')) {
       continue;
     }
 
@@ -284,10 +402,7 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
       }
     }
 
-
     $developer = user_load($e->field_user['und'][0]['uid']);
-
-
 
     $tnid = db_query("  SELECT entity_id 
                         FROM {field_data_field_time} 
@@ -346,13 +461,35 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
 
     $hours = $e->field_hours['und'][0]['value'];
 
-    $amount_billed  = $hours_billed * $p->field_bill_rate['und'][0]['value'];
+    $retainer = 0;
+    $flat_fee = 0;
 
+    if (isset($p->field_bill_rate['und'][0]['value'])) {
+      $amount_billed  = $hours_billed * $p->field_bill_rate['und'][0]['value'];
+    } elseif (isset($p->field_retainer['und'][0]['value'])) {
+      $amount_billed = 'retainer';
+      $retainer = $p->field_retainer['und'][0]['value'];
+    } elseif (isset($p->field_flat_fee['und'][0]['value'])) {
+      $amount_billed = 'flat fee';
+      $flat_fee = $p->field_flat_fee['und'][0]['value'];
+    }
+
+    $amount_paid = 0;
+    if (isset($developer->field_rate['und'][0]['value'])) { 
     $amount_paid = $e->field_hours['und'][0]['value'] * $developer->field_rate['und'][0]['value'];
+    }
 
-    $profit = $amount_billed - $amount_paid;
+    if (isset($p->field_bill_rate['und'][0]['value'])) {
+      $profit = $amount_billed - $amount_paid;
+    } elseif (isset($p->field_retainer['und'][0]['value'])) {
+      $profit = 'retainer';
+    } elseif (isset($p->field_flat_fee['und'][0]['value'])) {
+      $profit = 'flat fee';
+    }
 
     $item = array (
+      'time_id' => $e->item_id,
+
       'task'  => $task,
       'date'  => date('M d', strtotime($e->field_date['und'][0]['value'])),
       
@@ -365,7 +502,9 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
       'amount_billed' => $amount_billed,
       'amount_paid' => $amount_paid,
       'profit' => $profit,
-      'actions' => ""
+      
+      'flat-fee' => $flat_fee,
+      'retainer' => $retainer,
     );
 
     switch ($group) {
@@ -411,4 +550,36 @@ function work_timesheet_aasort (&$array, $key) {
         $ret[$ii]=$array[$ii];
     }
     $array=$ret;
+}
+
+function work_timesheet_update_time($entity_id) {
+  $entity = entity_load('field_collection_item', array($entity_id));
+  
+  $fc_item = reset($entity);
+
+  $fc_wrapper = entity_metadata_wrapper('field_collection_item', $fc_item);
+
+  if (isset($_GET['hours_billed'])) {
+    $fc_wrapper->field_hours_billed->set($_GET['hours_billed']);
+  } else {
+    $fc_wrapper->field_hours_billed->set($fc_wrapper->field_hours->value());
+  }
+
+  $fc_wrapper->save(true);
+
+  drupal_goto($_SERVER['HTTP_REFERER']);
+}
+
+function work_timesheet_update_paid($entity_id) {
+  $field_collection = field_collection_field_get_entity($entity_id);
+
+  $fc_item = reset(entity_load('field_collection_item', array($entity_id)));
+
+  $fc_wrapper = entity_metadata_wrapper('field_collection_item', $fc_item);
+
+  $fc_wrapper->field_paid->set('paid');
+
+  $fc_wrapper->save(true);
+
+  drupal_goto($_SERVER['HTTP_REFERER']);
 }

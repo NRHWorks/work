@@ -10,15 +10,15 @@
     $img_url = file_create_url($content['field_asset']["#items"][0]['uri']);
     $thumbnail
       = "<a href ='" . $img_url . "' target='_blank'><img src='" . $img_url .
-      "' width=200 /></a>";
+      "' width=400 /></a>";
   }
 ?>
 
 <div class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
   <div class="content"<?php print $content_attributes; ?>>
-    <?php
-      print render($content);
-      print $thumbnail;
-    ?>
+    <?php print render($content); ?>
+    <center>
+    <?php print $thumbnail; ?>
+    </center>
   </div>
 </div>
