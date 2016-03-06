@@ -1,0 +1,46 @@
+<?php
+
+function work_invoice_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'invoice_node_form') {
+    drupal_add_js(drupal_get_path('module', 'work_invoice') . '/work_invoice.js', array('type' => 'file'));
+
+    $result = db_query("SELECT nid FROM {node} WHERE type = 'task'");
+
+    $options = array();
+
+    foreach ($result as $r) {
+      $task = node_load($r->nid);
+
+      $hours = FALSE;
+
+      if (isset($task) && isset($task->field_project['und']) && (!isset($task->field_invoice_ref['und']) || ($task->field_invoice_ref['und'][0]['nid'] == arg(1)))) {
+        $project = node_load($task->field_project['und'][0]['nid']);
+
+        if (isset($project->nid)) {
+          $client = node_load($project->field_client['und'][0]['nid']);
+
+          $item = "{$project->title} [@{$client->nid}] {$task->title}";
+
+          if (isset($task->field_time['und'])) {
+            foreach ($task->field_time['und'] as $t) {
+              $entity = entity_load('field_collection_item', array($t['value']));
+              $e = array_pop($entity);
+
+              if (isset($e->field_description['und']) && isset($e->field_hours_billed['und']) && ($e->field_hours_billed['und'] > 0)) {
+                $hours = TRUE;
+                $item .= "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - <strong>{$e->field_hours_billed['und'][0]['value']}</strong>: {$e->field_description['und'][0]['value']}";    
+              }
+            }
+          }
+        }
+      }
+
+      if ((isset($item)) && ($hours == TRUE)) {
+        $options[$task->nid] = $item;
+      }
+    }
+
+
+    $form['field_invoice_task']['und']['#options'] = $options;
+  }
+}

@@ -1,0 +1,6 @@
+name = Work Invoice
+description = Sets up functions for work invoices.
+core = 7.x
+package = NHR Works
+
+version = 7.x-1.0
