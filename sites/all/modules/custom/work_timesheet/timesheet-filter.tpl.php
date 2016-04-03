@@ -70,11 +70,11 @@
     <td valign="top">
       <?php $get = ''; foreach ($_GET as $k => $v) { if (!in_array($k, array('q', 'invoiced'))) {$get .= "&$k=$v";} } $get .= "&invoiced="; ?>
       <form>
-        <input type="radio" name="invoiced" value="all"         onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'all'; ?>'"        <?php if ($invoiced == 'all') {        print 'checked'; } ?> /> All<br />
-        <input type="radio" name="invoiced" value="Pending"     onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Pending'; ?>'"    <?php if ($invoiced == 'Pending') {    print 'checked'; } ?> /> Pending<br />
-        <input type="radio" name="invoiced" value="Invoiced"    onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Invoiced'; ?>'"   <?php if ($invoiced == 'Invoiced') {   print 'checked'; } ?> /> Invoiced<br />
-        <input type="radio" name="invoiced" value="Paid"        onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Paid'; ?>'"       <?php if ($invoiced == 'Paid') {       print 'checked'; } ?> /> Paid<br />
-        <input type="radio" name="invoiced" value="No Invoice"  onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'No Invoice'; ?>'" <?php if ($invoiced == 'No Invoice') { print 'checked'; } ?> /> No Invoice<br />
+        <input type="radio" name="invoiced" value="all"          onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'all'; ?>'"          <?php if ($invoiced == 'all') {           print 'checked'; } ?> /> All<br />
+        <input type="radio" name="invoiced" value="Not Invoiced" onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Not Invoiced'; ?>'" <?php if ($invoiced == 'Not Invoiced') {  print 'checked'; } ?> /> Waiting<br />
+        <input type="radio" name="invoiced" value="Invoiced"     onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Invoiced'; ?>'"     <?php if ($invoiced == 'Invoiced') {      print 'checked'; } ?> /> Invoiced<br />
+        <input type="radio" name="invoiced" value="Pending"      onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Pending'; ?>'"      <?php if ($invoiced == 'Pending') {       print 'checked'; } ?> /> Pending<br />
+        <input type="radio" name="invoiced" value="Paid"         onclick="window.location='/timesheet/<?php print $version; ?>/?<?php print $get . 'Paid'; ?>'"         <?php if ($invoiced == 'Paid') {          print 'checked'; } ?> /> Paid<br />
       </form>
     </td>
     <?php endif; ?>

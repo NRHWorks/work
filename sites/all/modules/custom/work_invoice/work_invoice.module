@@ -26,9 +26,9 @@ function work_invoice_form_alter(&$form, &$form_state, $form_id) {
               $entity = entity_load('field_collection_item', array($t['value']));
               $e = array_pop($entity);
 
-              if (isset($e->field_description['und']) && isset($e->field_hours_billed['und']) && ($e->field_hours_billed['und'] > 0)) {
+              if (isset($e->field_hours_billed['und']) && ($e->field_hours_billed['und'] > 0)) {
                 $hours = TRUE;
-                $item .= "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - <strong>{$e->field_hours_billed['und'][0]['value']}</strong>: {$e->field_description['und'][0]['value']}";    
+                $item .= "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - " . date('M d', strtotime($e->field_date['und'][0]['value'])) . " <strong>{$e->field_hours_billed['und'][0]['value']} hours</strong>: {$e->field_description['und'][0]['value']}";    
               }
             }
           }
@@ -40,6 +40,7 @@ function work_invoice_form_alter(&$form, &$form_state, $form_id) {
       }
     }
 
+    asort($options);
 
     $form['field_invoice_task']['und']['#options'] = $options;
   }

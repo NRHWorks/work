@@ -61,7 +61,7 @@
                      return false;">
       <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Why is the work being rejected?" /></textarea><br />
       <input type="submit" value="Reject!!!!!"/>
-      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();"/>Cancel</button>
+      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();" >Cancel</button>
     </form>
   </div>
   <div id="give-feedback-comment" style="display:none;" class="status-form hidden-form">
@@ -72,7 +72,7 @@
                      return false;">
       <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Provide feedback..." /></textarea><br />
       <input type="submit" value="Give Feedback"/>
-      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();"/>Cancel</button>
+      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();" >Cancel</button>
     </form>
   </div>
   <div id="feedback-comment" style="display:none;" class="status-form hidden-form">
@@ -83,7 +83,7 @@
                      return false;">
       <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Ask questions..." /></textarea><br />
       <input type="submit" value="Request Feedback"/>
-      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();"/>Cancel</button>
+      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();" >Cancel</button>
     </form>
   </div>
   <div id="resolve-comment" style="display:none;" class="status-form hidden-form">
@@ -94,7 +94,7 @@
                      return false;">
       <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Add comments..." /></textarea><br />
       <input type="submit" value="Resolve Task"/>
-      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();"/>Cancel</button>
+      <button type="button" value="Cancel" onclick="jQuery('.status-form').hide();" >Cancel</button>
     </form>
   </div>
 

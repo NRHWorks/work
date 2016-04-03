@@ -13,6 +13,17 @@
         }
       });
     });
+
+    var client_id = $('#edit-field-client-und').val();
+    
+    $('#edit-field-invoice-task-und .form-type-checkbox').each( function() {
+      if ($(this).children('label').html().indexOf('@' + client_id) !== -1) {
+        $(this).show();
+      } else {
+        $(this).hide();
+      }
+    });
+
   });
 
 }(jQuery));

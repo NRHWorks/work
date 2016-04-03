@@ -93,9 +93,16 @@ function work_task_menu() {
   );
 
   $items['tasks/add/%'] = array(
-    'title' => 'Add Tasks',
+    'title' => 'Add Task',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('work_task_add_task', 2),
+    'access callback' => TRUE,
+  );
+  
+  $items['tasks/add-time/%'] = array(
+    'title' => 'Add Time',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('work_task_add_time', 2),
     'access callback' => TRUE,
   );
   
@@ -173,8 +180,6 @@ function work_task_add_task($form, $form_state, $project) {
     $priority_options[$p_term->tid] = $p_term->name;
   }
 
-
-
   $form['priority'] = array(
     '#title' => 'Priority',
     '#type' => 'select',
@@ -182,13 +187,20 @@ function work_task_add_task($form, $form_state, $project) {
     '#default_value' => 34,
   );
 
-
   $form['due_date'] = array(
     '#type' => 'date_popup',
     '#date_format' => 'Y-m-d',
     '#date_year_range' => '-3:+3',
     '#title' => 'Due Date',
   );
+ 
+  if (in_array('administrator', $user->roles)) {
+    $form['estimate'] = array(
+      '#title' => 'Estimate',
+      '#type' => 'textfield',
+      '#size' => 5,
+    );
+  }
 
   $form['description'] = array(
     '#title' => 'Description',
@@ -270,6 +282,12 @@ function work_task_add_task_submit($form, &$form_state) {
     $node->field_users['und'][1]['uid'] = $user->uid;
   }
 
+  if (isset($v['estimate']) && ($v['estimate'] != '')) {
+    $node->field_estimate['und'][0]['value'] = $v['estimate'];
+  } else {
+    $node->field_estimate['und'][0]['value'] = 0;
+  }
+
   $due_date = $v['due_date'] == "" ? date("Y-m-d", time() + 86400 * 7) : $v['due_date'];
 
   $node->field_due_date['und'][0]['value'] = $due_date . ' 00:00:00';
@@ -302,17 +320,17 @@ function work_task_add_task_submit($form, &$form_state) {
   $subject = " new task for {$project->title}.";
   
   $body = "A new task has been assigned to you for {$project->title}.<br /><br />";
-  $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
+  $body .= "<br /><br /><strong>Task:</strong> {$node->title}<br /><br />";
 
   if (isset($v['description'])) {
-    $body .= "{$v['description']}<br /><br />";    
+    $body .= nl2br($v['description']) . "<br /><br />";    
   }
   
   foreach($v['action_items']['action_items_fieldset']['items'] as $i) { 
     $body .= "<strong>Action Item:</strong> $i<br /><br />";
   }
 
-  $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
+  $body .= "<br /><br />View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
   
   $assigned_user = user_load($v['assigned_to']);
 
@@ -328,7 +346,109 @@ function work_task_add_task_submit($form, &$form_state) {
   work_log_create_log_entry($v['project'], "Task Added: " . l($node->title, 'node/' . $node->nid), "Task Added: " . l($node->title, 'node/' . $node->nid));
   drupal_set_message("Task Added: " . l($node->title, 'node/' . $node->nid) . "<br />" . l ('Add Another Task', 'tasks/add/' . $v['project']));
 
-  drupal_goto('<front>');
+  drupal_goto('node/' . $node->field_project['und'][0]['nid']);
+}
+
+function work_task_add_time($form, $form_state, $project) {
+  $form['#tree'] = TRUE;
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+
+  $p = node_load($project);
+
+  $form['title'] = array(
+    '#type' => 'item',
+    '#markup' => "<h3>Adding time for <strong>" . l($p->title, 'node/' . $p->nid) . "</strong></h3>",
+  );
+
+  $form['project'] = array(
+    '#type' => 'hidden',
+    '#value' => $project,
+  );
+
+  $form['task'] = array(
+    '#title' => 'Task',
+    '#type' => 'textfield',
+  );
+
+  $form['description'] = array(
+    '#title' => 'Description',
+    '#type' => 'textarea',
+  );
+  
+  $form['time_date'] = array(
+    '#type' => 'date_popup',
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '-3:+3',
+  );
+  
+  $form['time'] = array(
+    '#title' => 'Hours',
+    '#type' => 'textfield',
+    '#size' => 4,
+  );
+
+  $form['example_entry']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  return $form;
+}
+
+function work_task_add_time_submit($form, &$form_state) {
+  $v = $form_state['values'];
+
+  global $user;
+
+  $node = new stdClass();
+  $node->title = $v['task'];
+  $node->type = 'task';
+  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+  $node->uid = $user->uid; 
+  $node->status = 1; 
+  $node->promote = 0; 
+  $node->comment = 0; 
+
+  $node->field_status['und'][0]['tid'] = 7;
+  
+  $node->body['und'][0]['value'] = $v['description'];
+
+  $node->field_project['und'][0]['nid'] = $v['project'];
+
+  $node->field_creator['und'][0]['uid'] = $node->uid;
+
+  $node->field_owner['und'][0]['uid'] = $user->uid;
+
+  $node->field_assigned_to['und'][0]['uid'] = $user->uid;
+
+  $node->field_users['und'][0]['uid'] = $user->uid;
+
+  $node->field_users['und'][1]['uid'] = $user->uid;
+
+  $node->field_task_priority['und'][0]['tid'] = 34;
+
+  node_save($node);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc['field_name'] = 'field_time';
+  $fc['field_date']['und'][0]['value'] = $v['time_date'] . ' 00:00:00';  
+ 
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $fc['field_hours']['und'][0]['value'] = $v['time'];
+  $fc['field_description']['und'][0]['value'] = $v['task'];
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  node_save($node);
+
+  drupal_set_message("Time Added ({$v['time']} hours): " . l($node->title, 'node/' . $node->nid) . "<br />" . l ('Add Another Task', 'tasks/add/' . $v['project']));
+
+  drupal_goto('node/' . $node->field_project['und'][0]['nid']);
 }
 
 function action_add_one($form, &$form_state) {
@@ -624,7 +744,7 @@ function work_task_update_comment() {
 
 
 
-  $subject = "Comment added for task {$node->nid}.";
+  $subject = "Comment added for task {$node->nid} ({$node->title}).";
 
   $body = "Comment added<br/>";
   $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
@@ -813,6 +933,8 @@ function work_task_progress($nid) {
 }
 
 function work_task_update_status_ajax($nid, $new_status) {
+  global $user;
+
   $data = array();
   parse_str($_POST['data'], $data);
 
@@ -835,98 +957,37 @@ function work_task_update_status_ajax($nid, $new_status) {
   switch ($status) {
     case 1: 
       $status = 2;
-
       work_log_create_log_entry($node->nid, 'Status Updated: New => In Progress'); 
-
-      // email creator
-      $subject = " work has started on task {$node->nid}.";
-      
-      $body = "Work has started on task {$node->nid}.<br /><br />";
-      $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
-      $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-      
-      node_save($node);
       break;
 
    case 2:
 
       if ($new_status == 'feedback') {
         $status = 5;
-
         $assigned = $creator;
-
         work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Feedback Requested'); 
-
         work_task_add_comment($node->nid, 'Feedback Requested', $data['status-text']);
-
-        // email creator 
-        $subject = " feedback requested for task {$node->nid}.";
-        
-        $body = "Feedback has been requested for task {$node->nid}.<br /><br />";
-        $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
-
-        if (isset($data['status-text'])) {
-          $body .= "{$data['status-text']}<br /><br />";
-        }
-
-        $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-        
-        node_save($node);
 
       } else {
         $status = 6;
-        
         $assigned = $creator;
-        
         work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Resolved');
 
         if (isset($data['status-text'])) {
           work_task_add_comment($node->nid, 'Resolved', $data['status-text']);
         }
-
-        // email creator
-        $subject = " task {$node->nid} has been resolved.";
-
-        $body = "Task {$node->nid} has been resolved.<br /><br />";
-        $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
-
-        if (isset($data['status-text'])) {
-          $body .= "{$data['status-text']}<br /><br />";
-        }
-
-        $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-
-
-        node_save($node);
-
       }
 
     break;
 
     case 5:
         $status = 2;
-       
         $assigned = $owner;
-
         work_log_create_log_entry($node->nid, 'Status Updated: Feedback Requested => In Progress'); 
 
         if (isset($data['status-text'])) {
           work_task_add_comment($node->nid, 'Feedback', $data['status-text']);
         }
-
-        // email owner 
-        $subject = " feedback provided for task {$node->nid}.";
-        
-        $body = "Feedback has been provided for task {$node->nid}.<br /><br />";
-        $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
-
-        if (isset($data['status-text'])) {
-          $body .= "{$data['status-text']}<br /><br />";
-        }
-
-        $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-        
-        node_save($node);
 
       break;
 
@@ -934,50 +995,42 @@ function work_task_update_status_ajax($nid, $new_status) {
 
       if ($new_status == 'reject') {
         $status = 2;
-      
         $assigned = $owner;
-        
         work_log_create_log_entry($node->nid, 'Status Updated: Resolved => In Progress'); 
         
         if (isset($data['status-text'])) {
           work_task_add_comment($node->nid, 'Task Rejected', $data['status-text']);
         }
 
-        // email owner 
-        $subject = " task {$node->nid} has been rejected.";
-        
-        $body = "Task {$node->nid} has been rejected.<br /><br />";
-        $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
-
-        if (isset($data['status-text'])) {
-          $body .= "{$data['status-text']}<br /><br />";
-        }
-
-        $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-        
-
-        node_save($node);
-
       } else {
         $status = 7;
-        
         work_log_create_log_entry($node->nid, 'Status Updated: Resolved => Closed'); 
-
-        // email owner 
-        $subject = " task {$node->nid} has been closed.";
-        
-        $body = "Task {$node->nid} has been closed.<br /><br />";
-        $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
-
-        if (isset($data['status-text'])) {
-          $body .= "{$data['status-text']}<br /><br />";
-        }
-
-        $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-        node_save($node);
       }
   }
+ 
+  node_save($node);
 
+  $status_term = taxonomy_term_load($status);
+  $subject = " status " . strtoupper($status_term->name) . " : {$node->title}";
+        
+  $body = "Task {$node->nid} has been updated to " . strtoupper($status_term->name)  . ".<br /><br />";
+        
+  if (isset($data['status-text'])) {
+    $body .= "{$data['status-text']}<br /><br />";
+  }
+
+  $project = node_load($node->field_project['und'][0]['nid']);
+
+  $client = node_load($project->field_client['und'][0]['nid']);
+
+  $body .= "-----------------------------------------------------------------------------<br /><br />";
+
+  $body .= "<strong>Client:</strong> {$client->title}<br /><br />";
+  $body .= "<strong>Project:</strong> {$project->title}<br /><br />";
+  $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
+  $body .= "<strong>User:</strong> {$user->name}<br /><br />";
+
+  $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
   
   // Email everybody!
   $mail_list = array();

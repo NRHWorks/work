@@ -1,0 +1,48 @@
+<?php
+
+function work_payment_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'payment_node_form') {
+    drupal_add_js(drupal_get_path('module', 'work_payment') . '/work_payment.js', array('type' => 'file'));
+
+    foreach ($form['field_payment_time']['und']['#options'] as $k => $v) {
+      $entity = entity_load('field_collection_item', array($k));           
+      $e = array_pop($entity);
+
+      if (isset($e->field_user['und'])) {
+        $u = user_load($e->field_user['und'][0]['uid']);
+
+        $he = $e->hostEntity();
+
+        $project = node_load($he->field_project['und'][0]['nid']);
+
+        $form['field_payment_time']['und']['#options'][$k] = "[{$u->name} {$e->field_user['und'][0]['uid']}] " . date('M d', strtotime($e->field_date['und'][0]['value'])) . " - <strong>{$e->field_hours['und'][0]['value']} hours</strong> - {$project->title} - {$he->title}";
+
+        $index[$k] = "{$u->name} " . date('m', strtotime($e->field_date['und'][0]['value'])) . " {$project->title} {$he->title} {$e->field_date['und'][0]['value']}" ; 
+
+      } else {
+        unset($form['field_payment_time']['und']['#options'][$k]);
+      }
+
+      asort($index);
+     
+      $sorted = array();
+
+      foreach ($index as $k => $v ) {
+
+        $id = arg(1);
+
+        if (isset($id)) {
+          $count = db_query("SELECT count(*) FROM {field_data_field_payment_time} WHERE field_payment_time_target_id = :id AND entity_id != :eid", array(':id' => $k, ':eid' => $id))->fetchField();
+        } else {
+          $count = db_query("SELECT count(*) FROM {field_data_field_payment_time} WHERE field_payment_time_target_id = :id", array(':id' => $k))->fetchField();
+        }
+
+        if ($count == 0) {
+          $sorted[$k] = $form['field_payment_time']['und']['#options'][$k];
+        }
+      }
+
+      $form['field_payment_time']['und']['#options'] = $sorted;
+    }
+  }
+}

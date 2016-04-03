@@ -37,6 +37,27 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'template' => 'node--browser-test',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
+
+  $theme['node__payment'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--payment',
+    'path' => drupal_get_path('module', 'work_theme') . '/templates',
+   );
+
+  $theme['node__invoice'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--invoice',
+    'path' => drupal_get_path('module', 'work_theme') . '/templates',
+   );
+
+  $theme['node__invoice'] = array(
+    'render element' => 'content',
+    'base hook' => 'node',
+    'template' => 'node--invoice',
+    'path' => drupal_get_path('module', 'work_theme') . '/templates',
+   );
   
   $theme['field_collection_item__field_to_do'] = array(
     'render element' => 'content',
@@ -112,3 +133,48 @@ function work_theme_theme($existing, $type, $theme, $path) {
 
   return $theme;
 }
+
+function work_theme_aasort (&$array, $key) {
+    $sorter=array();
+    $ret=array();
+    reset($array);
+    foreach ($array as $ii => $va) {
+        $sorter[$ii]=$va[$key];
+    }
+    asort($sorter);
+    foreach ($sorter as $ii => $va) {
+        $ret[$ii]=$array[$ii];
+    }
+    $array=$ret;
+}
+
+function work_theme_sort($data, $key, $type = 'string') {
+  $sorted = TRUE;
+
+  foreach ($data as $k => $d) { 
+    if (isset($data[$k+1])) {
+      $sort_a = $data[$k][$key];
+      $sort_b = $data[$k + 1][$key];
+
+      if ($type == 'date') {
+        $sort_a = strtotime($sort_a);
+        $sort_b = strtotime($sort_b);
+      }
+
+      if ($sort_a > $sort_b) {
+        $sorted = FALSE;
+        $holder = $data[$k+1];
+
+        $data[$k+1] = $data[$k];
+        $data[$k] = $holder;
+      }
+    } 
+  }
+
+  if ($sorted == TRUE) {
+    return $data;
+  } else {
+    return work_theme_sort($data, $key, $type);
+  }
+}
+

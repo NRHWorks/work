@@ -307,7 +307,7 @@ function work_todo_do_today($nid) {
 
 function work_todo_cli($uid) {
   $count = 0;
-  $item_count = 28;
+  $item_count = 32;
 
   $result = db_query("  SELECT nid 
                         FROM {node} n 
@@ -364,7 +364,7 @@ function work_todo_cli($uid) {
                         WHERE n.type = 'todo' AND u.bundle = 'todo' AND s.field_todo_status_value = 1 AND s.bundle = 'todo' 
                         GROUP BY nid
                         ORDER BY n.changed DESC
-                        LIMIT 5", array(':uid' => $uid));
+                        LIMIT 20", array(':uid' => $uid));
 
   foreach ($result as $r) {
     $count += 1;

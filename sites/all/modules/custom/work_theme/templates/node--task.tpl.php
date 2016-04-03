@@ -21,6 +21,13 @@
         <?php print render($content['field_due_date']); ?>
     </div>
     <br />
+
+    <?php if (isset($node->field_estimate['und'])) : ?>
+    <div class="row">
+      <strong>Estimate:</strong> <?php print $node->field_estimate['und'][0]['value']; ?> hours
+    </div>
+    <?php endif; ?>
+
     <?php print render($content['body']); ?><br />
     <div class="row" id="priority-row">
         <?php print render($content['field_task_priority']); ?>
@@ -36,7 +43,11 @@
     <div id="owner-container"><?php print render($content['field_owner']); ?></div><br />
     <div id="users-container"><?php print render($content['field_users']); ?></div><br /> 
 
-    <div class="field-label gray">To Do:</div>
+    <div class="field-label gray">To Do:
+      <div style="float:right;"> 
+        <a href="#" onclick="jQuery('.todo-done').parent().toggle(); return false;">Toggle Complete</a>
+      </div>
+    </div>
 
     <div id="todo-wrapper">
       <?php print render($content['field_to_do']); ?><br />
