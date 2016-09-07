@@ -5,21 +5,21 @@ function work_timesheet_menu() {
     'title' => 'Timesheet',
     'page callback' => 'work_timesheet_page',
     'page arguments' => array('admin'),
-    'access callback' => TRUE,
+    'access arguments' => array('access admin timesheet'),
   );
 
   $items['timesheet/client'] = array(
     'title' => 'Timesheet',
     'page callback' => 'work_timesheet_page',
     'page arguments' => array('client'),
-    'access callback' => TRUE,
+    'access arguments' => array('access client timesheet'),
   );
 
   $items['timesheet/developer'] = array(
     'title' => 'Timesheet',
     'page callback' => 'work_timesheet_page',
     'page arguments' => array('developer'),
-    'access callback' => TRUE,
+    'access arguments' => array('access developer timesheet'),
   );
   
   $items['timesheet/update-billed/%'] = array(
@@ -32,6 +32,13 @@ function work_timesheet_menu() {
   return $items;
 }
 
+function work_timesheet_permission() {
+  return array(
+    'access admin timesheet' => array('title' => 'Access Admin Timesheet'),
+    'access client timesheet' => array('title' => 'Access Client Timesheet'),
+    'access developer timesheet' => array('title' => 'Access Developer Timesheet'),
+  );
+}
 
 function work_timesheet_theme($existing, $type, $theme, $path) {
   $theme = array();
@@ -469,9 +476,9 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
       }
     }
 
-    $task    = l($t->title, 'node/' . $t->nid);
-    $project = l($p->title, 'node/' . $p->nid);
-    $client  = l($c->title, 'node/' . $c->nid);
+    $task    = "<!-- {$t->title}  -->" . l($t->title, 'node/' . $t->nid);
+    $project = "<!-- " . strtoupper($p->title) . " -->" . l($p->title, 'node/' . $p->nid);
+    $client  = "<!-- {$c->title}  -->" . l($c->title, 'node/' . $c->nid);
 
     $task_inv = db_query("SELECT entity_id FROM {field_data_field_invoice_task} WHERE field_invoice_task_nid = :nid", array(':nid' => $t->nid))->fetchField();
 
@@ -503,8 +510,6 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
     if ($invoiced == 'Paid' && $grid_invoiced != 'paid') {
       continue;
     }
-
-
 
     if ($paid_query == 1) {
       $grid_paid = 'paid';
@@ -597,6 +602,8 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
         $time[] = $item;
     }
   }
+
+  ksort($time);
 
   return $time;
 }

@@ -1,0 +1,46 @@
+<?php
+
+function work_expense_menu() {
+  $items['expense'] = array(
+    'title' => 'Expense Report',
+    'page callback' => 'work_expense_page',
+    'access arguments' => array('access expense'),
+  );
+
+  return $items;
+}
+
+function work_expense_permission() {
+  return array(
+    'access expense' => array('title' => 'Access Expense'),
+  );
+}
+
+
+function work_expense_page() {
+  
+  $headers = array('Day' , 'Fixed Fee', 'Retainer', 'Hourly', 'Expenses', 'Total');
+
+  $rows = array();
+
+  $first_day = strtotime('2016-01-01');
+
+  for ($x=1;$x<=date('z');$x++) {
+    $rows[] = array(
+      date('M d, Y', ($first_day + ((60 * 60 * 24) * ($x - 1)))),
+      'fee',
+      'fee',
+      'fee',
+      'fee',
+      'fee',
+    );
+
+  }
+
+  return theme('table', array('header'=> $headers, 'rows' => $rows));
+}
+
+
+
+
+

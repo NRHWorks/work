@@ -28,7 +28,21 @@
  * @see template_process()
  */
 ?>
-<div class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
+<?php 
+  $e = $variables['elements']['#entity'];
+  $title = $e->field_title['und'][0]['value'];
+  
+  preg_match('/To Do: #(\d\d\d\d)/',$title,$todoid);
+
+  if (isset($todoid[1])) {
+    $tdid = $todoid[1];
+  }
+?>
+<div class="<?php print $classes; ?> clearfix <?php if (isset($tdid)) { print " todo-$tdid"; } ?> "<?php print $attributes; ?> 
+     <?php if (isset($tdid)) : ?>
+      onmouseover="jQuery('.todo-<?php print $tdid; ?>').parent().css('background-color','#FFC');" 
+      onmouseout="jQuery('.todo-<?php print $tdid ?>').parent().css('background-color','transparent');"
+    <?php endif; ?>>
   <div class="content"<?php print $content_attributes; ?>>
     <a class="comment-show-hide" href="#" onclick="jQuery(this).siblings('.field-name-field-comment-description').toggle(); return false;">Show/Hide</a>
     <?php

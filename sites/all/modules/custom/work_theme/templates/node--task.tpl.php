@@ -22,9 +22,9 @@
     </div>
     <br />
 
-    <?php if (isset($node->field_estimate['und'])) : ?>
+    <?php if (isset($node->field_estimate['und']) && ($node->field_estimate['und'][0]['value'] > 0)) : ?>
     <div class="row">
-      <strong>Estimate:</strong> <?php print $node->field_estimate['und'][0]['value']; ?> hours
+      <strong>Estimate:</strong> <?php print $node->field_estimate['und'][0]['value']; ?> hours<br /><br />
     </div>
     <?php endif; ?>
 
@@ -38,10 +38,16 @@
 
     <div class="field-label gray">Users:</div>
     <br />
-    <div id="assigned-to-container"><?php print render($content['field_assigned_to']); ?></div><br />
-    <div id="creator-container"><?php print render($content['field_creator']); ?></div><br />
-    <div id="owner-container"><?php print render($content['field_owner']); ?></div><br />
-    <div id="users-container"><?php print render($content['field_users']); ?></div><br /> 
+    <div id="users-container">
+      <div id="assigned-to-container"><?php print render($content['field_assigned_to']); ?></div><br />
+      <div id="creator-container"><?php print render($content['field_creator']); ?></div><br />
+      <div id="owner-container"><?php print render($content['field_owner']); ?></div><br />
+      <div id="users-container"><?php print render($content['field_users']); ?></div><br /> 
+
+      <?php global $user; if ($user->uid != $node->field_assigned_to['und'][0]['uid']) : ?>
+        <div id="takeover-container"><a href="#" onclick="jQuery('#users-container').html('<img src=\'/sites/all/modules/custom/work_theme/images/loading.gif\' style=\'width: 20px; height: auto;\' />'); jQuery('#users-container').load('/tasks/update-assigned/<?php print $node->nid; ?>/<?php print $user->uid; ?>');  return false;">Assign to Me</a></div><br />
+      <?php endif; ?>
+    </div>
 
     <div class="field-label gray">To Do:
       <div style="float:right;"> 
@@ -151,6 +157,13 @@
                          reset_height();
                          return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
+          <span style="color:#555;">Reference To Do:</span> 
+          <select name="todo" style="margin-bottom: 10px;">
+            <option>-- none --</option>
+            <?php if (isset($node->field_to_do['und'])) foreach ($node->field_to_do['und'] as $todo_id) : ?>
+              <option><?php print $todo_id['value']; ?></option>
+            <?php endforeach; ?>
+          </select>
           <!-- <input type="text" id="title" name="title" size="50" placeholder="Subject"  /><br /><br /> -->
           <textarea id="description" name="description" class="init" cols="50" rows="10" placeholder="Comment" /></textarea>
           <input type="submit" value="Add Comment"/>

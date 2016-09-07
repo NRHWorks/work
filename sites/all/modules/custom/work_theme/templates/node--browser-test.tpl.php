@@ -41,9 +41,14 @@
   }
 ?>
 
-<table>
+<?php drupal_add_js('misc/tableheader.js'); ?>
+
+<strong><a href="/node/<?php print $node->field_project['und'][0]['nid']; ?>"> &lt;&lt; Back to Project</a></strong>
+
+<table class="sticky-enabled">
+  <thead>
   <tr>
-    <td>&nbsp;</td>
+    <td style="width:260px;">&nbsp;</td>
     <?php 
       foreach ($t as $k => $v) {
         print "<th colspan='" . count($v['resolutions']) . "'>{$v['browser']}</th>";
@@ -62,7 +67,7 @@
       }
     ?>
   </tr>
-
+  </thead>
   <?php 
     foreach ($pages as $k => $p) {
       $count = 0;
@@ -102,40 +107,56 @@
 
             case 'Needs Tested' :
               print '<td class="in-progress browser_test col-'.$count.'" data-col="'.$count.'">
-                        <i  class="icon-ok-circle"  
+                        <i  class="icon-ok-circled"  
                             data-nid="' . $node->nid . '" 
                             data-page="' . $p . '" 
                             data-browser="' . $k . '" 
                             data-resolution="' . $kk . '" 
                             data-status="Passed" 
                             style="color:green;" id="$k-$kk"></i><br />
-                        <i  class="icon-cancel-circle" 
+                        <i  class="icon-cancel-circled" 
                             data-nid="' . $node->nid . '" 
                             data-page="' . $p . '" 
                             data-browser="' . $k . '" 
                             data-resolution="' . $kk . '" 
                             data-status="Failed" 
                             style="color:red;">
+                        </i><br />
+                        <i  class="icon-ticket" 
+                            data-nid="' . $node->nid . '" 
+                            data-page="' . $p . '" 
+                            data-browser="' . $k . '" 
+                            data-resolution="' . $kk . '" 
+                            data-status="Failed-Ticket" 
+                            style="color:blue;">
                         </i>
                       </td>';
               break;
 
             default:
               print '<td class="needs-tested browser_test col-'.$count.'" data-col="'.$count.'">
-                        <i  class="icon-ok-circle"  
+                        <i  class="icon-ok-circled"  
                             data-nid="' . $node->nid . '" 
                             data-page="' . $p . '" 
                             data-browser="' . $k . '" 
                             data-resolution="' . $kk . '" 
                             data-status="Passed" 
                             style="color:green;" id="$k-$kk"></i><br />
-                        <i  class="icon-cancel-circle" 
+                        <i  class="icon-cancel-circled" 
                             data-nid="' . $node->nid . '" 
                             data-page="' . $p . '" 
                             data-browser="' . $k . '" 
                             data-resolution="' . $kk . '" 
                             data-status="Failed" 
                             style="color:red;">
+                        </i><br />
+                        <i  class="icon-ticket" 
+                            data-nid="' . $node->nid . '" 
+                            data-page="' . $p . '" 
+                            data-browser="' . $k . '" 
+                            data-resolution="' . $kk . '" 
+                            data-status="Failed-Ticket" 
+                            style="color:blue;">
                         </i>
                       </td>';
           }

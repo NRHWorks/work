@@ -26,7 +26,7 @@ function work_invoice_form_alter(&$form, &$form_state, $form_id) {
               $entity = entity_load('field_collection_item', array($t['value']));
               $e = array_pop($entity);
 
-              if (isset($e->field_hours_billed['und']) && ($e->field_hours_billed['und'] > 0)) {
+              if (isset($e->field_hours_billed['und']) && ($e->field_hours_billed['und'][0]['value'] > 0)) {
                 $hours = TRUE;
                 $item .= "<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - " . date('M d', strtotime($e->field_date['und'][0]['value'])) . " <strong>{$e->field_hours_billed['und'][0]['value']} hours</strong>: {$e->field_description['und'][0]['value']}";    
               }
@@ -43,5 +43,45 @@ function work_invoice_form_alter(&$form, &$form_state, $form_id) {
     asort($options);
 
     $form['field_invoice_task']['und']['#options'] = $options;
+    
+    if ($form['title']['#default_value'] == '') {
+      $form['title']['#default_value'] = 'Title will be auto-generated.';
+    }
+  }
+}
+
+function work_invoice_node_presave($node) {
+
+  if ($node->type == 'invoice') {
+    $client = node_load($node->field_client['und'][0]['nid']);
+  
+    $projects = array();
+
+    if (isset($node->field_invoice_task['und'])) {
+      foreach ($node->field_invoice_task['und'] as $t) {
+        $task_node = node_load($t['nid']);
+        $task_project_node = node_load($task_node->field_project['und'][0]['nid']);
+
+        $projects[] = $task_project_node->title;
+      }
+    }
+
+    if (isset($node->field_retainer_project['und'][0])) {
+      $retainer_project = node_load($node->field_retainer_project['und'][0]['nid']);
+      $projects[] = $retainer_project->title;
+    }
+    
+    if (isset($node->field_fixed_fee_project['und'][0])) {
+      $fixed_fee_project = node_load($node->field_fixed_fee_project['und'][0]['nid']);
+      $projects[] = $fixed_fee_project->title;
+    }
+
+    if (isset($node->field_invoice_number['und'][0]['value'])) {
+      $title = '#' . $node->field_invoice_number['und'][0]['value'] . ' - ' . date('M d, Y', strtotime($node->field_date['und'][0]['value'])) . ': ' . join(', ', array_unique(array_filter($projects)));
+    } else {
+      $title = '#001' . ' - ' . date('M d, Y', strtotime($node->field_date['und'][0]['value'])) . ': ' . join(', ', array_unique(array_filter($projects)));
+    }
+
+    $node->title = $title;
   }
 }

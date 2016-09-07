@@ -13,7 +13,11 @@ function reset_height() {
 
   $(document).ready(function() {
     schedule.assigned_to_me_toggle();
-    
+
+    $('.status-link').click(function() {
+      $(this).parent().html('<img src="/sites/all/modules/custom/work_theme/images/loading.gif" style="width: 20px; height: auto;" />');
+    });
+
     if ($("#task-left").height() > $('#task-right').height()) {
       $("#task-right").height($("#task-left").height() + 20);
     } else {
@@ -105,12 +109,21 @@ var work_browser_test =(function ($) {
         $(clicked).parent().removeClass('needs-tested');
         $(clicked).parent().html(' <i  class="icon-cancel" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Needs Tested"> </i>');
       } 
+      
+      if ($(clicked).data('status') == 'Failed-Ticket') {
+        $(clicked).parent().addClass('fail');
+        $(clicked).parent().removeClass('in-progress');
+        $(clicked).parent().removeClass('needs-tested');
+        $(clicked).parent().html(' <i  class="icon-cancel" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Needs Tested"> </i>');
+       
+        window.open('http://work.nrhworks.com/tasks/add/' + $(clicked).data('nid') + '?task=Browser Test&browser=' + $(clicked).data('browser') + '&resolution=' + $(clicked).data('resolution') + '&page=' + $(clicked).data('page'));
+      } 
 
       if ($(clicked).data('status') == 'Needs Tested') {
         $(clicked).parent().addClass('in-progress');
         $(clicked).parent().removeClass('pass');
         $(clicked).parent().removeClass('fail');
-        $(clicked).parent().html(' <i style="color:green;" class="icon-ok-circle" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Passed"> </i><br /><i style="color:red;" class="icon-cancel-circle" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Failed"> </i>');
+        $(clicked).parent().html(' <i style="color:green;" class="icon-ok-circled" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Passed"> </i><br /><i style="color:red;" class="icon-cancel-circled" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Failed"> </i> <br /><i style="color:blue;" class="icon-ticket" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Failed-Ticket"> </i>');
       } 
 
       $('.browser_test i').unbind('click');

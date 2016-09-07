@@ -226,6 +226,7 @@ button {
 .todo-item {
   margin-top: 10px;
   clear:both;
+  padding: 5px 7px;
 }
 
 .gray,
@@ -394,7 +395,9 @@ button {
 .field-name-field-resources > .field-items >  .field-item {
   border-bottom: 1px dashed #DDD;
   padding-bottom: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  padding-top: 5px;
+  padding-left: 5px;
 }
 
 .field-name-field-comments .field-name-field-title {
@@ -613,3 +616,7 @@ th.blue-hover {
   width: 60px;
 }
 
+
+.field-name-field-rate {
+  display: none;
+}

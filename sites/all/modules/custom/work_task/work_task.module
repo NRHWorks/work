@@ -147,9 +147,18 @@ function work_task_add_task($form, $form_state, $project) {
     '#value' => $project,
   );
 
+  $task = null;
+
+  if (isset($_GET['task']) && ($_GET['task'] == 'Browser Test')) {
+    $browser = taxonomy_term_load($_GET['browser']);
+    $resolution = taxonomy_term_load($_GET['resolution']);
+    $task = "BROWSER TEST ({$browser->name} : {$resolution->name}) => {$_GET['page']}";
+  }
+
   $form['task'] = array(
     '#title' => 'Task',
     '#type' => 'textfield',
+    '#default_value' => $task
   );
 
   global $user;
@@ -634,12 +643,40 @@ function work_task_update_status($nid, $tid) {
 
 function work_task_update_assigned($nid, $uid) {
   $node = node_load($nid);
+
+  if (($uid != $node->field_owner['und'][0]['uid']) && ($uid != $node->field_creator['und'][0]['uid'])) {
+    $node->field_owner['und'][0]['uid'] = $uid;
+  }
+
+  $add_to_users = TRUE;
+
+  foreach ($node->field_users['und'] as $u) {
+    if ($u['uid'] == $uid) {
+      $add_to_users = FALSE;
+    }
+  }
+
+  if ($add_to_users) {
+    $node->field_users['und'][]['uid'] = $uid; 
+  }
+
   $node->field_assigned_to['und'][0]['uid'] = $uid;
+
   node_save($node);
 
   $u = db_query("SELECT name FROM {users} WHERE uid = :uid", array(":uid" => $uid))->fetchField();
   work_log_create_log_entry($node->nid,"Assignee changed",
-    "Task assigned to <strong>" . $u ."</strong>");
+  "Task assigned to <strong>" . $u ."</strong>");
+
+  $content = node_view($node);
+
+  print '
+    <div id="assigned-to-container">' . render($content['field_assigned_to']) . '</div><br />
+    <div id="creator-container">' . render($content['field_creator']) . '</div><br />
+    <div id="owner-container">' . render($content['field_owner']) . '</div><br />
+    <div id="users-container">' . render($content['field_users']) . '</div><br />';
+
+  drupal_exit();
 }
 
 function work_task_update_users_add($nid, $uid) {
@@ -733,7 +770,13 @@ function work_task_update_comment() {
 
   $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');  
 
-  $fc['field_title']['und'][0]['value'] = 'Comment';
+  
+  if (isset($data['todo'])) {
+    $fc['field_title']['und'][0]['value'] = 'Comment for To Do: #' . $data['todo'];
+  } else {
+    $fc['field_title']['und'][0]['value'] = 'Comment';
+  }
+
   $fc['field_comment_description']['und'][0]['value'] = $data['description'];
 
   $node = node_load($data['nid']);
@@ -742,22 +785,39 @@ function work_task_update_comment() {
   $entity->setHostEntity('node', $node);
   $entity->save();
 
+  $project = node_load($node->field_project['und'][0]['nid']);
+
+  $client = node_load($project->field_client['und'][0]['nid']);
 
 
   $subject = "Comment added for task {$node->nid} ({$node->title}).";
 
-  $body = "Comment added<br/>";
+  $body = "Comment added for task #{$node->nid}:<br><br/>";
+  $body .= nl2br($data['description']). "<br/><br />";
+
+  $body .= "-----------------------------------------------------------------------------<br /><br />";
+
+  $body .= "<strong>Client:</strong> {$client->title}<br /><br />";
+  $body .= "<strong>Project:</strong> {$project->title}<br /><br />";
   $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
+  $body .= "<strong>User:</strong> {$user->name}<br /><br />";
 
-  $body .= $data['description']. "<br/>";
   $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-
 
   // Email everybody!
   $creator  = &$node->field_creator['und'][0]['uid'];
   $owner    = &$node->field_owner['und'][0]['uid'];
   $mail_list = array();
+
   foreach ($node->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($client->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($project->field_users['und'] as $u) {
     $mail_list[] = $u['uid'];
   }
 
@@ -770,7 +830,8 @@ function work_task_update_comment() {
   }
 
   $mail_to = "";
-  foreach ($mail_list as $uid) {
+
+  foreach (array_unique($mail_list) as $uid) {
     $u = user_load($uid);
     $mail_to .= $u->mail . ",";
   }
@@ -1037,6 +1098,18 @@ function work_task_update_status_ajax($nid, $new_status) {
   foreach ($node->field_users['und'] as $u) {
     $mail_list[] = $u['uid'];
   }
+  
+  foreach ($node->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($client->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($project->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
 
   if (!in_array($owner, $mail_list)) {
     $mail_list[] = $owner;
@@ -1047,7 +1120,7 @@ function work_task_update_status_ajax($nid, $new_status) {
   }
 
   $mail_to = "";
-  foreach ($mail_list as $uid) {
+  foreach (array_unique($mail_list) as $uid) {
     $u = user_load($uid);
     $mail_to .= $u->mail . ",";
   }

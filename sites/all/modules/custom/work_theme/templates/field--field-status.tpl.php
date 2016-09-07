@@ -9,7 +9,7 @@
       <?php
          global $user;
 
-         if ($user->uid == $node->field_assigned_to['und'][0]['uid']) {
+         if (($user->uid == $node->field_assigned_to['und'][0]['uid']) || ($user->uid == 27)) {
 
             switch ($items[0]['#markup']) {
               case 'New' :
