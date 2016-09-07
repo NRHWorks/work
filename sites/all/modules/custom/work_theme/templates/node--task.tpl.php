@@ -10,11 +10,25 @@
 
   <div id="task-left">
     <div id="task-project">
-    <strong>Project:</strong>
-    <?php
-      $project = node_load($node->field_project['und'][0]['nid']);
-      print l($project->title, 'node/' . $project->nid);
-    ?>
+      <strong>Project:</strong>
+      <?php
+        $project = node_load($node->field_project['und'][0]['nid']);
+        print l($project->title, 'node/' . $project->nid);
+      ?>
+    </div>
+
+    <div id="task-sprint">
+      <strong>Sprint:</strong>
+      <?php
+        if (isset($node->field_sprint['und'])) {
+          $sprint_title = db_query("SELECT title FROM node WHERE nid = :nid", array(":nid" => $node->field_sprint['und'][0]['nid']))->fetchField();
+          print l($sprint_title, 'node/' . $node->field_sprint['und'][0]['nid']);
+        }
+        else {
+          print "Not Assigned";
+        }
+
+      ?>
     </div>
 
     <div class="row">
