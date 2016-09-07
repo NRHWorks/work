@@ -161,6 +161,7 @@ function work_task_add_task($form, $form_state, $project) {
     '#default_value' => $task
   );
 
+
   global $user;
 
   $users = db_query("SELECT uid, name FROM {users} WHERE uid IN (SELECT uid FROM {users_roles} WHERE rid IN (3, 4, 5))");
@@ -196,6 +197,26 @@ function work_task_add_task($form, $form_state, $project) {
     '#default_value' => 34,
   );
 
+  $sprints = array("--NONE--");
+  $sprint_nodes = db_query("
+    SELECT n.nid, n.title FROM {node} AS n
+    INNER JOIN {field_data_field_project} AS p
+    ON n.nid = p.entity_id
+    WHERE n.type = 'sprint'
+    AND p.field_project_nid = :pnid",
+    array(":pnid" => $project));
+  
+  foreach ($sprint_nodes as $s) {
+    $sprints[$s->nid] = $s->title;
+  }
+
+  $form['sprint'] = array(
+    '#title' => 'Sprint',
+    '#type' => 'select',
+    '#options' => $sprints,
+    '#default_value' => 0,
+  );
+  
   $form['due_date'] = array(
     '#type' => 'date_popup',
     '#date_format' => 'Y-m-d',
@@ -274,7 +295,9 @@ function work_task_add_task_submit($form, &$form_state) {
   $node->comment = 0; 
 
   $node->field_status['und'][0]['tid'] = 1;
-  
+  if ($v['sprint'] != 0) {
+    $node->field_sprint['und'][0]['nid'] = $v['sprint'];
+  }
   $node->body['und'][0]['value'] = $v['description'];
 
   $node->field_project['und'][0]['nid'] = $v['project'];

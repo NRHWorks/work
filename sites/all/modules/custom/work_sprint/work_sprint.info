@@ -1,0 +1,6 @@
+name = Work Sprint
+description = Sets up functions for work sprints.
+core = 7.x
+package = NHR Works
+
+version = 7.x-1.0

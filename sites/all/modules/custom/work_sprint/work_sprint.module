@@ -1,0 +1,110 @@
+<?php
+
+function work_sprint_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id != "task_node_form") {
+    return;
+  }
+
+  $sprints = array('_none' => "- NONE -");
+  $sprint_nodes = db_query("
+    SELECT n.nid, n.title FROM {node} AS n
+    INNER JOIN {field_data_field_project} AS p
+    ON n.nid = p.entity_id
+    WHERE n.type = 'sprint'
+    AND p.field_project_nid = :pnid",
+    array(":pnid" => $form['#node']->field_project['und'][0]['nid']));
+
+  foreach ($sprint_nodes as $s) {
+    $sprints[$s->nid] = $s->title;
+  }
+
+  $form['field_sprint']['und']['#options'] = $sprints;
+
+}
+function work_sprint_menu() {
+
+  $items['sprints/add/%'] = array(
+    'title' => 'Add Sprint',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('work_sprint_add_sprint', 2),
+    'access callback' => TRUE,
+  );
+  
+  return $items;
+}
+
+function work_sprint_add_sprint($form, $form_state, $project) {
+  //$form['#tree'] = TRUE;
+  //$form['#attributes']['enctype'] = 'multipart/form-data';
+
+  $p = node_load($project);
+
+  $form['title'] = array(
+    '#type' => 'item',
+    '#markup' => "<h3>Adding Sprint for <strong>" . l($p->title, 'node/' . $p->nid) . "</strong></h3>",
+  );
+
+  $form['project'] = array(
+    '#type' => 'hidden',
+    '#value' => $project,
+  );
+
+
+  $form['sprint'] = array(
+    '#title' => 'Sprint Name',
+    '#type' => 'textfield',
+  );
+
+  
+  $form['start_date'] = array(
+    '#type' => 'date_popup',
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '-3:+3',
+    '#title' => 'Start Date',
+  );
+
+  $form['end_date'] = array(
+    '#type' => 'date_popup',
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '-3:+3',
+    '#title' => 'End Date',
+  );
+ 
+  $form['example_entry']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  return $form;
+}
+
+function work_sprint_add_sprint_submit($form, &$form_state) {
+  $v = $form_state['values'];
+
+  global $user;
+
+  $node = new stdClass();
+  $node->title = $v['sprint'];
+  $node->type = 'sprint';
+  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+  $node->uid = $user->uid; 
+  $node->status = 1; 
+  $node->promote = 0; 
+  $node->comment = 0; 
+
+  $node->field_project['und'][0]['nid'] = $v['project'];
+
+  $start_date = $v['start_date'] == "" ? time() : strtotime($v['start_date']);
+  $node->field_sprint_start_date['und'][0]['value'] = $start_date;
+
+  $end_date = $v['end_date'] == "" ? time() + 86400 * 7 : strtotime($v['end_date']);
+  $node->field_sprint_end_date['und'][0]['value'] = $end_date + 86340;
+
+  node_save($node);
+
+  work_log_create_log_entry($v['project'], "Sprint Added: " . l($node->title, 'node/' . $node->nid), "Sprint Added: " . l($node->title, 'node/' . $node->nid));
+  drupal_set_message("Sprint Added: " . l($node->title, 'node/' . $node->nid) . "<br />" . l ('Add Another Sprint', 'sprints/add/' . $v['project']));
+
+  drupal_goto('node/' . $node->field_project['und'][0]['nid']);
+}
