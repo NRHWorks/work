@@ -108,3 +108,65 @@ function work_sprint_add_sprint_submit($form, &$form_state) {
 
   drupal_goto('node/' . $node->field_project['und'][0]['nid']);
 }
+
+
+function work_sprint_current_sprint_of_project($project_nid) {
+  $sprint = db_query("
+    SELECT n.nid, n.title FROM {node} AS n
+    INNER JOIN {field_data_field_project} AS p
+    ON n.nid = p.entity_id
+    INNER JOIN {field_data_field_sprint_end_date} AS e
+    ON e.entity_id = n.nid
+    WHERE p.bundle = 'sprint'
+    AND p.field_project_nid = :pnid
+    AND e.field_sprint_end_date_value > :now
+    ORDER BY e.field_sprint_end_date_value ASC LIMIT 1",
+    array(":pnid" => $project_nid, ":now" => time()));
+
+  if ($sprint->rowCount() == 0) {
+    return "No Sprint In Progress";
+  }
+
+  else {
+    $sprint = $sprint->fetchObject();
+    $n = node_load($sprint->nid);
+    $node_content = node_view($n, 'full');
+    return $node_content;
+  }
+}
+function work_sprint_detail_by_sprint($sprint_nid) {
+  $task_statuses = db_query("
+    SELECT * FROM {taxonomy_term_data}
+    WHERE vid = 2
+    ORDER BY weight ASC");
+
+  $tasks = db_query("
+    SELECT n.title, n.nid, st.field_status_tid FROM {node} AS n
+    INNER JOIN {field_data_field_status} AS st
+    ON n.nid = st.entity_id
+    INNER JOIN {field_data_field_sprint} AS sp
+    ON n.nid = sp.entity_id
+    WHERE sp.field_sprint_nid = :spnid",
+    array(":spnid" => $sprint_nid))->fetchAll();
+
+  $tasks_arrange_by_status = array();
+
+  foreach ($tasks as $t) {
+    $tasks_arrange_by_status[$t->field_status_tid][] = $t;
+  }
+  $table_header = array();
+  $row = array();
+  foreach ($task_statuses as $status) {
+    $table_header[] = $status->name;
+    $data = "";
+    if (array_key_exists($status->tid, $tasks_arrange_by_status)) {
+      foreach($tasks_arrange_by_status[$status->tid] as $task) {
+        $data .= "<div><a href='/node/" . $task->nid . "'>" . $task->title . "</a></div>";
+      }
+    }
+    $row[] = $data;
+  }
+  $task_table = theme('table', array('header' => $table_header, 'rows' => array($row)));
+
+  return $task_table;
+}
