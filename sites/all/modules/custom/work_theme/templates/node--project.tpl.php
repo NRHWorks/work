@@ -237,3 +237,63 @@
   }(jQuery));
 </script>
 <?php endif; ?>
+
+
+<div class='task-tabs tabs'>
+  <ul class='tabs primary'>
+  <li class='task-tab task-tab-0 tab active' onclick='p.switch_to(0);'>
+    <a>List Of Tasks</a>
+  </li>
+  <li class='task-tab task-tab-1 tab' onclick='p.switch_to(1);'>
+    <a>Sprint Backlog</a>
+  </li>
+  <li class='task-tab task-tab-2 tab' onclick='p.switch_to(2);'>
+    <a>Current Sprint</a>
+  </li>
+  </ul>
+</div>
+<div id='task-tab-content' style="padding:0 20px;">
+  <div class='task-tab-content task-tab-content-0 active' >
+  </div>
+  <div class='task-tab-content task-tab-content-1'>
+  </div>
+  <div class='task-tab-content task-tab-content-2'>
+  </div>
+</div>
+<?php
+ // content of above elements are placed by the script below
+?>
+<style>
+  .task-tab-content{
+    display:none;
+  }
+  .task-tab-content.active{
+    display:block;
+  }
+</style>
+<script type="text/javascript">
+(function ($) {
+  $(document).ready( function(){
+    $("#block-views-tasks-block-3").appendTo(".task-tab-content-0");
+    $("#block-views-tasks-block-1").appendTo(".task-tab-content-0");
+    $("#block-views-tasks-block-2").appendTo(".task-tab-content-0");
+
+    $("#block-views-sprint-backlog-block").appendTo(".task-tab-content-1");
+    $("#block-views-tasks-block-5").appendTo(".task-tab-content-1");
+
+    $("#block-block-1").appendTo(".task-tab-content-2");
+ });
+}(jQuery));
+
+var p = (function ($) {
+  return {
+    switch_to: function(index){
+      $(".task-tab-content").removeClass("active");
+      $(".task-tab-content-" + index).addClass("active");
+
+      $(".task-tab").removeClass("active");
+      $(".task-tab-" + index).addClass("active");
+    }
+  }
+}(jQuery));
+</script>
