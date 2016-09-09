@@ -241,10 +241,10 @@
 
 <div class='task-tabs tabs'>
   <ul class='tabs primary'>
-  <li class='task-tab task-tab-0 tab active' onclick='p.switch_to(0);'>
+  <li class='task-tab task-tab-0 tab ' onclick='p.switch_to(0);'>
     <a>List Of Tasks</a>
   </li>
-  <li class='task-tab task-tab-1 tab' onclick='p.switch_to(1);'>
+  <li class='task-tab task-tab-1 tab active' onclick='p.switch_to(1);'>
     <a>Sprint Backlog</a>
   </li>
   <li class='task-tab task-tab-2 tab' onclick='p.switch_to(2);'>
@@ -253,9 +253,10 @@
   </ul>
 </div>
 <div id='task-tab-content' style="padding:0 20px;">
-  <div class='task-tab-content task-tab-content-0 active' >
+  <div class='task-tab-content task-tab-content-0 ' >
   </div>
-  <div class='task-tab-content task-tab-content-1'>
+  <div class='task-tab-content task-tab-content-1 active'>
+  <div><a href="/sprints/add/<?php print $node->nid;?>">Add Sprint</a> | <a href="/tasks/add/<?php print $node->nid;?>">Add Task</a></div>
   </div>
   <div class='task-tab-content task-tab-content-2'>
   </div>
