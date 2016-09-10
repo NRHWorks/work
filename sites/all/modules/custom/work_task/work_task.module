@@ -14,7 +14,7 @@ function work_task_menu() {
     'page arguments' => array(2),
     'access callback' => TRUE,
   );
-  3
+
   $items['tasks/update-todo/add'] = array(
     'title' => 'add todo',
     'page callback' => 'work_task_update_todo_add',
@@ -860,6 +860,7 @@ function work_task_update_comment() {
       $u->field_receive_email_notification['und'][0]['value'] == 1) {
       $mail_to .= $u->mail . ",";
     }
+  }
 
   $mail_to = rtrim($mail_to, ",");
 
