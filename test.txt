@@ -1,0 +1,6 @@
+Array
+(
+    [subject] => Comment added for task 2258.
+    [body] => ttttttest
+    [id] => 2258
+)
