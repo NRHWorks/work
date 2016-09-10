@@ -7,27 +7,27 @@ function work_task_menu() {
     'page arguments' => array(2),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-todo/%'] = array(
     'title' => 'update todo',
     'page callback' => 'work_task_update_todo',
     'page arguments' => array(2),
     'access callback' => TRUE,
   );
-  
+  3
   $items['tasks/update-todo/add'] = array(
     'title' => 'add todo',
     'page callback' => 'work_task_update_todo_add',
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-status/%/%'] = array(
     'title' => 'update status',
     'page callback' => 'work_task_update_status',
     'page arguments' => array(2, 3),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-assigned/%/%'] = array(
     'title' => 'update assigned',
     'page callback' => 'work_task_update_assigned',
@@ -41,51 +41,51 @@ function work_task_menu() {
     'page arguments' => array(3, 4),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-schedule/add'] = array(
     'title' => 'add schedule',
     'page callback' => 'work_task_update_schedule',
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-schedule/delete/%/%'] = array(
     'title' => 'update schedule',
     'page callback' => 'work_task_update_schedule_delete',
     'page arguments' => array(3, 4),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-time/add'] = array(
     'title' => 'add time',
     'page callback' => 'work_task_update_time',
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-time/delete/%/%'] = array(
     'title' => 'update time',
     'page callback' => 'work_task_update_time_delete',
     'page arguments' => array(3, 4),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-comment/add'] = array(
     'title' => 'update comments',
     'page callback' => 'work_task_update_comment',
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-credentials/add'] = array(
     'title' => 'update credentials',
     'page callback' => 'work_task_update_credentials',
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-assets/add'] = array(
     'title' => 'update assets',
     'page callback' => 'work_task_update_assets',
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/update-resources/add'] = array(
     'title' => 'update resources',
     'page callback' => 'work_task_update_resources',
@@ -98,28 +98,28 @@ function work_task_menu() {
     'page arguments' => array('work_task_add_task', 2),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/add-time/%'] = array(
     'title' => 'Add Time',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('work_task_add_time', 2),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/status/%/%'] = array(
     'title' => 'Update Task Status',
     'page callback' => 'work_task_update_status_ajax',
     'page arguments' => array(2, 3),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/ajax/get-comments-by-nid/%'] = array(
     'title' => 'Get Comments',
     'page callback' => 'work_task_get_comments',
     'page arguments' => array(3),
     'access callback' => TRUE,
   );
-  
+
   $items['tasks/priority/%/%'] = array(
     'title' => 'Update Priority',
     'page callback' => 'work_task_priority',
@@ -205,7 +205,7 @@ function work_task_add_task($form, $form_state, $project) {
     WHERE n.type = 'sprint'
     AND p.field_project_nid = :pnid",
     array(":pnid" => $project));
-  
+
   foreach ($sprint_nodes as $s) {
     $sprints[$s->nid] = $s->title;
   }
@@ -216,14 +216,14 @@ function work_task_add_task($form, $form_state, $project) {
     '#options' => $sprints,
     '#default_value' => 0,
   );
-  
+
   $form['due_date'] = array(
     '#type' => 'date_popup',
     '#date_format' => 'Y-m-d',
     '#date_year_range' => '-3:+3',
     '#title' => 'Due Date',
   );
- 
+
   if (in_array('administrator', $user->roles)) {
     $form['estimate'] = array(
       '#title' => 'Estimate',
@@ -289,10 +289,10 @@ function work_task_add_task_submit($form, &$form_state) {
   $node->type = 'task';
   node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
   $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
-  $node->uid = $user->uid; 
-  $node->status = 1; 
-  $node->promote = 0; 
-  $node->comment = 0; 
+  $node->uid = $user->uid;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->comment = 0;
 
   $node->field_status['und'][0]['tid'] = 1;
   if ($v['sprint'] != 0) {
@@ -331,13 +331,13 @@ function work_task_add_task_submit($form, &$form_state) {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  foreach($v['action_items']['action_items_fieldset']['items'] as $i) { 
+  foreach($v['action_items']['action_items_fieldset']['items'] as $i) {
     if (isset($i) && ($i <> '')) {
-      $fc = array();  
+      $fc = array();
 
       $fc['field_name'] = 'field_to_do';
 
-      $fc['field_description']['und'][0]['value'] = $i;  
+      $fc['field_description']['und'][0]['value'] = $i;
 
       $entity = entity_create('field_collection_item', $fc);
       $entity->setHostEntity('node', $node);
@@ -350,20 +350,20 @@ function work_task_add_task_submit($form, &$form_state) {
   $project = node_load($v['project']);
 
   $subject = " new task for {$project->title}.";
-  
+
   $body = "A new task has been assigned to you for {$project->title}.<br /><br />";
   $body .= "<br /><br /><strong>Task:</strong> {$node->title}<br /><br />";
 
   if (isset($v['description'])) {
-    $body .= nl2br($v['description']) . "<br /><br />";    
+    $body .= nl2br($v['description']) . "<br /><br />";
   }
-  
-  foreach($v['action_items']['action_items_fieldset']['items'] as $i) { 
+
+  foreach($v['action_items']['action_items_fieldset']['items'] as $i) {
     $body .= "<strong>Action Item:</strong> $i<br /><br />";
   }
 
   $body .= "<br /><br />View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-  
+
   $assigned_user = user_load($v['assigned_to']);
 
   $to = $assigned_user->mail;
@@ -406,13 +406,13 @@ function work_task_add_time($form, $form_state, $project) {
     '#title' => 'Description',
     '#type' => 'textarea',
   );
-  
+
   $form['time_date'] = array(
     '#type' => 'date_popup',
     '#date_format' => 'Y-m-d',
     '#date_year_range' => '-3:+3',
   );
-  
+
   $form['time'] = array(
     '#title' => 'Hours',
     '#type' => 'textfield',
@@ -437,13 +437,13 @@ function work_task_add_time_submit($form, &$form_state) {
   $node->type = 'task';
   node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
   $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
-  $node->uid = $user->uid; 
-  $node->status = 1; 
-  $node->promote = 0; 
-  $node->comment = 0; 
+  $node->uid = $user->uid;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->comment = 0;
 
   $node->field_status['und'][0]['tid'] = 7;
-  
+
   $node->body['und'][0]['value'] = $v['description'];
 
   $node->field_project['und'][0]['nid'] = $v['project'];
@@ -465,8 +465,8 @@ function work_task_add_time_submit($form, &$form_state) {
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
   $fc['field_name'] = 'field_time';
-  $fc['field_date']['und'][0]['value'] = $v['time_date'] . ' 00:00:00';  
- 
+  $fc['field_date']['und'][0]['value'] = $v['time_date'] . ' 00:00:00';
+
   $fc['field_user']['und'][0]['uid'] = $user->uid;
 
   $fc['field_hours']['und'][0]['value'] = $v['time'];
@@ -491,7 +491,7 @@ function action_add_one($form, &$form_state) {
 
   $form_state['num_items']++;
   $form_state['rebuild'] = TRUE;
-} 
+}
 
 function action_add_one_callback($form, &$form_state) {
   return $form['action_items']['action_items_fieldset'];
@@ -505,7 +505,7 @@ function work_task_estimate($nid) {
   $content = node_view($node);
 
   print render($content['field_estimate']);
-  
+
   drupal_exit();
 }
 
@@ -531,10 +531,10 @@ function work_task_update_time_delete($nid, $fcid) {
   }
 
   node_save($node);
-  
+
   $content = node_view($node);
   print render($content['field_time']);
-  
+
   drupal_exit();
 }
 
@@ -544,11 +544,11 @@ function work_task_update_time() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_time';
-  $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));  
- 
+  $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));
+
   global $user;
   $fc['field_user']['und'][0]['uid'] = $user->uid;
 
@@ -566,7 +566,7 @@ function work_task_update_time() {
 
   $content = node_view($node);
   print render($content['field_time']);
-  
+
   drupal_exit();
 }
 
@@ -598,10 +598,10 @@ function work_task_update_schedule_delete($nid, $fcid) {
   }
 
   node_save($node);
-  
+
   $content = node_view($node);
   print render($content['field_schedule']);
-  
+
   drupal_exit();
 }
 
@@ -611,17 +611,17 @@ function work_task_update_schedule() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_schedule';
-  $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));  
- 
+  $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));
+
   $time_string = "";
   foreach ($data['time'] as $t) {
     $fc['field_schedule_time']['und'][]['value'] = $t;
     $time_string .= $t .", ";
-  } 
-  
+  }
+
   $time_string = rtrim($time_string, ", ");
   global $user;
   $fc['field_user']['und'][0]['uid'] = $user->uid;
@@ -638,10 +638,10 @@ function work_task_update_schedule() {
     "Scheduled time updated:<br/>Date: ".
     substr($fc['field_date']['und'][0]['value'], 0, 10) .
     "<br/>Time: " . $time_string . "<br/>Created by " . $user->name);
-  
+
   $content = node_view($node);
   print render($content['field_schedule']);
-  
+
   drupal_exit();
 }
 
@@ -657,11 +657,11 @@ function work_task_update_status($nid, $tid) {
     SELECT name FROM {taxonomy_term_data}
     WHERE tid = :tid", array(":tid" => $tid))->fetchField();
   node_save($node);
-  
+
   work_log_create_log_entry($nid, "Status Updated",
     "Status changed from <strong>" .
     $original_status . "</strong> to <strong>" . $new_status . "</strong>");
-  
+
 }
 
 function work_task_update_assigned($nid, $uid) {
@@ -680,7 +680,7 @@ function work_task_update_assigned($nid, $uid) {
   }
 
   if ($add_to_users) {
-    $node->field_users['und'][]['uid'] = $uid; 
+    $node->field_users['und'][]['uid'] = $uid;
   }
 
   $node->field_assigned_to['und'][0]['uid'] = $uid;
@@ -713,10 +713,10 @@ function work_task_update_users_add($nid, $uid) {
 
   work_log_create_log_entry($node->nid,"User Added",
     "New user <strong>" . $u . "</strong> added to the task");
-  
+
   $content = node_view($node);
   print render($content['field_users']);
-  
+
   drupal_exit();
 }
 
@@ -744,8 +744,8 @@ function work_task_update_todo($id) {
       "Todo <strong>#".$todo->item_id."</strong> status changed to <strong>".
       ( $todo->field_todo_status['und'][0]['value'] == 0 ? "Unfinished" : "finished" ).
       "</strong> by ". $user->name);
-  
-  
+
+
 }
 
 function work_task_update_todo_add() {
@@ -757,24 +757,24 @@ function work_task_update_todo_add() {
   $fc = array();
 
   $fc['field_name'] = 'field_to_do';
-  $fc['field_description']['und'][0]['value'] = $data['todo'];  
- 
+  $fc['field_description']['und'][0]['value'] = $data['todo'];
+
   $node = node_load($data['nid']);
 
   $entity = entity_create('field_collection_item', $fc);
   $entity->setHostEntity('node', $node);
   $entity->save();
-  
+
   $node = node_load($data['nid']);
 
   global $user;
   work_log_create_log_entry($node->nid, "New Todo #". $entity->item_id . " added",
     "New Todo item <strong>#".$entity->item_id."</strong> added by " . $user->name .
     "<br/>Todo description:<br/>".$entity->field_description['und'][0]['value']);
-  
+
   $content = node_view($node);
   print render($content['field_to_do']);
-  
+
   drupal_exit();
 }
 
@@ -784,16 +784,16 @@ function work_task_update_comment() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_comments';
 
   global $user;
   $fc['field_user']['und'][0]['uid'] = $user->uid;
 
-  $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');  
+  $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');
 
-  
+
   if (isset($data['todo'])) {
     $fc['field_title']['und'][0]['value'] = 'Comment for To Do: #' . $data['todo'];
   } else {
@@ -856,8 +856,10 @@ function work_task_update_comment() {
 
   foreach (array_unique($mail_list) as $uid) {
     $u = user_load($uid);
-    $mail_to .= $u->mail . ",";
-  }
+    if (isset($u->field_receive_email_notification['und']) &&
+      $u->field_receive_email_notification['und'][0]['value'] == 1) {
+      $mail_to .= $u->mail . ",";
+    }
 
   $mail_to = rtrim($mail_to, ",");
 
@@ -874,7 +876,7 @@ function work_task_update_comment() {
 
   $content = node_view($node);
   print render($content['field_comments']);
-  
+
   drupal_exit();
 }
 
@@ -884,7 +886,7 @@ function work_task_update_credentials() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_credentials';
 
@@ -909,7 +911,7 @@ function work_task_update_credentials() {
 
   $content = node_view($node);
   print render($content['field_credentials']);
-  
+
   drupal_exit();
 }
 
@@ -917,7 +919,7 @@ function work_task_update_assets() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_assets';
 
@@ -954,7 +956,7 @@ function work_task_update_resources() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_resources';
 
@@ -979,7 +981,7 @@ function work_task_update_resources() {
   $content = node_view($node);
 
   print render($content['field_resources']);
-  
+
   drupal_exit();
 }
 
@@ -997,7 +999,7 @@ function work_task_progress($nid) {
 
     foreach($node->field_to_do['und'] as $t) {
       $e = entity_load('field_collection_item', array($t['value']));
-      $fc = array_pop($e);  
+      $fc = array_pop($e);
 
       if ($fc->field_todo_status['und'][0]['value'] == 1) {
         $done += 1;
@@ -1005,7 +1007,7 @@ function work_task_progress($nid) {
     }
 
      return floor($done / $count * 100) . '%';
-  } 
+  }
 
   else {
     if (($node->field_status['und'][0]['tid'] == 6) || ($node->field_status['und'][0]['tid'] == 7)) {
@@ -1033,15 +1035,15 @@ function work_task_update_status_ajax($nid, $new_status) {
   $node = node_load($nid);
 
   $status   = &$node->field_status['und'][0]['tid'];
-  
+
   $assigned = &$node->field_assigned_to['und'][0]['uid'];
   $creator  = &$node->field_creator['und'][0]['uid'];
   $owner    = &$node->field_owner['und'][0]['uid'];
 
   switch ($status) {
-    case 1: 
+    case 1:
       $status = 2;
-      work_log_create_log_entry($node->nid, 'Status Updated: New => In Progress'); 
+      work_log_create_log_entry($node->nid, 'Status Updated: New => In Progress');
       break;
 
    case 2:
@@ -1049,7 +1051,7 @@ function work_task_update_status_ajax($nid, $new_status) {
       if ($new_status == 'feedback') {
         $status = 5;
         $assigned = $creator;
-        work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Feedback Requested'); 
+        work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Feedback Requested');
         work_task_add_comment($node->nid, 'Feedback Requested', $data['status-text']);
 
       } else {
@@ -1067,7 +1069,7 @@ function work_task_update_status_ajax($nid, $new_status) {
     case 5:
         $status = 2;
         $assigned = $owner;
-        work_log_create_log_entry($node->nid, 'Status Updated: Feedback Requested => In Progress'); 
+        work_log_create_log_entry($node->nid, 'Status Updated: Feedback Requested => In Progress');
 
         if (isset($data['status-text'])) {
           work_task_add_comment($node->nid, 'Feedback', $data['status-text']);
@@ -1080,25 +1082,25 @@ function work_task_update_status_ajax($nid, $new_status) {
       if ($new_status == 'reject') {
         $status = 2;
         $assigned = $owner;
-        work_log_create_log_entry($node->nid, 'Status Updated: Resolved => In Progress'); 
-        
+        work_log_create_log_entry($node->nid, 'Status Updated: Resolved => In Progress');
+
         if (isset($data['status-text'])) {
           work_task_add_comment($node->nid, 'Task Rejected', $data['status-text']);
         }
 
       } else {
         $status = 7;
-        work_log_create_log_entry($node->nid, 'Status Updated: Resolved => Closed'); 
+        work_log_create_log_entry($node->nid, 'Status Updated: Resolved => Closed');
       }
   }
- 
+
   node_save($node);
 
   $status_term = taxonomy_term_load($status);
   $subject = " status " . strtoupper($status_term->name) . " : {$node->title}";
-        
+
   $body = "Task {$node->nid} has been updated to " . strtoupper($status_term->name)  . ".<br /><br />";
-        
+
   if (isset($data['status-text'])) {
     $body .= "{$data['status-text']}<br /><br />";
   }
@@ -1115,13 +1117,13 @@ function work_task_update_status_ajax($nid, $new_status) {
   $body .= "<strong>User:</strong> {$user->name}<br /><br />";
 
   $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-  
+
   // Email everybody!
   $mail_list = array();
   foreach ($node->field_users['und'] as $u) {
     $mail_list[] = $u['uid'];
   }
-  
+
   foreach ($node->field_users['und'] as $u) {
     $mail_list[] = $u['uid'];
   }
@@ -1144,8 +1146,10 @@ function work_task_update_status_ajax($nid, $new_status) {
 
   $mail_to = "";
   foreach (array_unique($mail_list) as $uid) {
-    $u = user_load($uid);
-    $mail_to .= $u->mail . ",";
+   if (isset($u->field_receive_email_notification['und']) &&
+      $u->field_receive_email_notification['und'][0]['value'] == 1) {
+      $mail_to .= $u->mail . ",";
+    }
   }
 
   $mail_to = rtrim($mail_to, ",");
@@ -1158,7 +1162,7 @@ function work_task_update_status_ajax($nid, $new_status) {
   $content = node_view($node);
 
   print render($content['field_status']);
-  
+
   drupal_exit();
 
 }
@@ -1166,14 +1170,14 @@ function work_task_update_status_ajax($nid, $new_status) {
 function work_task_add_comment($nid, $title, $body) {
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_comments';
 
   global $user;
   $fc['field_user']['und'][0]['uid'] = $user->uid;
 
-  $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');  
+  $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');
 
   $fc['field_title']['und'][0]['value'] = $title;
   $fc['field_comment_description']['und'][0]['value'] = $body;
@@ -1185,14 +1189,14 @@ function work_task_add_comment($nid, $title, $body) {
   $entity->save();
 
   if ($title == 'Comment') {
-    // email owner 
+    // email owner
     $subject = " comment added for {$node->nid}.";
-    
+
     $body = "A comment has been added for task {$node->nid}.<br /><br />";
     $body .= "<strong>Comment:</strong><br /> {$body}<br /><br />";
 
     $body .= "View Comment Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
-    
+
     $to = $assigned_user->mail;
 
     $params['subject'] = $subject;
@@ -1202,20 +1206,20 @@ function work_task_add_comment($nid, $title, $body) {
     foreach ($node->field_users['und'] as $u) {
       if ($u['uid'] <> $user->uid) {
         $mailto = user_load($u['uid']);
-        
-        $to = $mailto->mail;
-        
-        drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+
+        if (isset($mailto->field_receive_email_notification['und']) &&
+          $mailto->field_receive_email_notification['und'][0]['value'] == 1) {
+          $to = $mailto->mail;
+          drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+        }
       }
     }
-
   }
-
 }
 
 function work_task_get_comments($nid) {
   $node = node_load($nid);
-  
+
   $content = node_view($node);
 
   print render($content['field_comments']);
@@ -1234,7 +1238,7 @@ function work_task_priority($nid, $tid) {
   $content = node_view($node);
 
   print render($content['field_task_priority']);
-  
+
   drupal_exit();
 
 }

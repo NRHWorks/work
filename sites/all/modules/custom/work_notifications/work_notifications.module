@@ -17,17 +17,24 @@ function _new_project($client, $project) {
   if ($client->field_users)
   foreach ($client->field_users['und'] as $u) {
     $user = user_load($u['uid']);
-    $users[$user->name] = $user->mail;
+    if (isset($user->field_receive_email_notification['und']) &&
+      $user->field_receive_email_notification['und'][0]['value'] == 1) {
+      $users[$user->name] = $user->mail;
+    }
+
   }
-  
+
   if ($client->field_admins)
   foreach ($client->field_admins['und'] as $u) {
     $user = user_load($u['uid']);
-    $users[$user->name] = $user->mail;
+    if (isset($user->field_receive_email_notification['und']) &&
+      $user->field_receive_email_notification['und'][0]['value'] == 1) {
+      $users[$user->name] = $user->mail;
+    }
   }
 
   $subject = "new project  => {$project->title}";
-  $message = "A new project: <strong>{$project->title}</strong> has been added for client: 
+  $message = "A new project: <strong>{$project->title}</strong> has been added for client:
               <strong><a href='http://work.nrhworks.com/" . drupal_get_path_alias('node/' . $client->nid) . "'>" . $client->title . "</a></strong>";
 
   $params = array(
@@ -46,7 +53,7 @@ function work_notifications_mail($key, &$message, $params) {
     $message['subject'] = 'NRH Work\'s Work: ' . $params['subject'];
     $message['body'] = array($params['body']);
   }
-  
+
   if ($key == 'task_update') {
     $message['subject'] = '[WORK: #' . $params['id']  . '] ' . $params['subject'];
     $message['body'] = array($params['body']);

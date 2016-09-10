@@ -1,5 +1,5 @@
 <?php
 
-$z = node_load (2235);
+$z = user_load(1);
 
 print_r($z);
