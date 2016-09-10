@@ -1147,7 +1147,8 @@ function work_task_update_status_ajax($nid, $new_status) {
 
   $mail_to = "";
   foreach (array_unique($mail_list) as $uid) {
-   if (isset($u->field_receive_email_notification['und']) &&
+    $u = user_load($uid);
+    if (isset($u->field_receive_email_notification['und']) &&
       $u->field_receive_email_notification['und'][0]['value'] == 1) {
       $mail_to .= $u->mail . ",";
     }
