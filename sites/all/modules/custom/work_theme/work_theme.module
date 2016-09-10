@@ -9,7 +9,7 @@ function work_theme_init() {
 
 function work_theme_theme($existing, $type, $theme, $path) {
   $theme = array();
-  
+
   $theme['node__task'] = array(
     'render element' => 'content',
     'base hook' => 'node',
@@ -38,7 +38,7 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'template' => 'node--project',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
+
   $theme['node__browser_test'] = array(
     'render element' => 'content',
     'base hook' => 'node',
@@ -66,35 +66,35 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'template' => 'node--invoice',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
+
   $theme['field_collection_item__field_to_do'] = array(
     'render element' => 'content',
     'base hook' => 'field_collection',
     'template' => 'field-collection-item--field-to-do',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
+
   $theme['field_collection_item__field_schedule'] = array(
     'render element' => 'content',
     'base hook' => 'field_collection',
     'template' => 'field-collection-item--field-schedule',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
+
   $theme['field_collection_item__field_time'] = array(
     'render element' => 'content',
     'base hook' => 'field_collection',
     'template' => 'field-collection-item--field-time',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
+
   $theme['field_collection_item__field_comments'] = array(
     'render element' => 'content',
     'base hook' => 'field_collection',
     'template' => 'field-collection-item--field-comments',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
+
   $theme['field_collection_item__field_assets'] = array(
     'render element' => 'content',
     'base hook' => 'field_collection',
@@ -109,22 +109,22 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'template' => 'field--field-status',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
+
   $theme['field__field_task_priority'] = array(
     'render element' => 'content',
     'base hook' => 'field',
     'template' => 'field--field-task-priority',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
-  
+
+
   $theme['field__field_users'] = array(
     'render element' => 'content',
     'base hook' => 'field',
     'template' => 'field--field-users',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
-  
+
   $theme['field__field_assigned_to'] = array(
     'render element' => 'content',
     'base hook' => 'field',
@@ -159,7 +159,7 @@ function work_theme_aasort (&$array, $key) {
 function work_theme_sort($data, $key, $type = 'string') {
   $sorted = TRUE;
 
-  foreach ($data as $k => $d) { 
+  foreach ($data as $k => $d) {
     if (isset($data[$k+1])) {
       $sort_a = $data[$k][$key];
       $sort_b = $data[$k + 1][$key];
@@ -176,7 +176,7 @@ function work_theme_sort($data, $key, $type = 'string') {
         $data[$k+1] = $data[$k];
         $data[$k] = $holder;
       }
-    } 
+    }
   }
 
   if ($sorted == TRUE) {
@@ -186,3 +186,11 @@ function work_theme_sort($data, $key, $type = 'string') {
   }
 }
 
+function work_theme_preprocess_page(&$vars) {
+
+  if ($node = current($vars['page']['content']['system_main']['nodes'])) {
+    if ($node['#node']->type == 'task') {
+	    $vars['title'] .= " ({$node['#node']->nid})";
+    }
+  }
+}

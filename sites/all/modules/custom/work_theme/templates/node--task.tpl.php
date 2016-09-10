@@ -31,6 +31,8 @@
       ?>
     </div>
 
+    <br />
+
     <div class="row">
         <?php print render($content['field_due_date']); ?>
     </div>
