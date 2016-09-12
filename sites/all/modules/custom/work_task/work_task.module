@@ -372,7 +372,7 @@ function work_task_add_task_submit($form, &$form_state) {
   $params['body'] = $body;
   $params['id'] = $node->nid;
 
-  //drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+  drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
 
 
   work_log_create_log_entry($v['project'], "Task Added: " . l($node->title, 'node/' . $node->nid), "Task Added: " . l($node->title, 'node/' . $node->nid));
@@ -865,7 +865,7 @@ function work_task_update_comment() {
   $params['body'] = $body;
   $params['id'] = $node->nid;
 
-  //drupal_mail('work_notifications', 'task_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+  drupal_mail('work_notifications', 'task_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
 
   work_log_create_log_entry($node->nid, "New comment added",
     "New comment added by " . $user->name .
@@ -1153,7 +1153,7 @@ function work_task_update_status_ajax($nid, $new_status) {
   $params['subject'] = $subject;
   $params['body'] = $body;
   $params['id'] = $node->nid;
-  //drupal_mail('work_notifications', 'task_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+  drupal_mail('work_notifications', 'task_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
 
   $content = node_view($node);
 
@@ -1205,7 +1205,7 @@ function work_task_add_comment($nid, $title, $body) {
         
         $to = $mailto->mail;
         
-        //drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+        drupal_mail('work_notifications', 'task_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
       }
     }
 
