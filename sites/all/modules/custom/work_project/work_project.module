@@ -8,19 +8,19 @@ function work_project_menu() {
     'page arguments' => array(3, 4),
     'access callback' => TRUE,
   );
-  
+
   $items['projects/update-credentials/add'] = array(
     'title' => 'update credentials',
     'page callback' => 'work_project_update_credentials',
     'access callback' => TRUE,
   );
-  
+
   $items['projects/update-assets/add'] = array(
     'title' => 'update assets',
     'page callback' => 'work_project_update_assets',
     'access callback' => TRUE,
   );
-  
+
   $items['projects/update-resources/add'] = array(
     'title' => 'update resources',
     'page callback' => 'work_project_update_resources',
@@ -45,7 +45,7 @@ function work_project_update_users_add($nid, $uid) {
 
   $content = node_view($node);
   print render($content['field_users']);
-  
+
   drupal_exit();
 }
 
@@ -55,7 +55,7 @@ function work_project_update_credentials() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_credentials';
 
@@ -80,7 +80,7 @@ function work_project_update_credentials() {
     "<br/>Credentials description: ".$entity->field_description['und'][0]['value']);
   $content = node_view($node);
   print render($content['field_credentials']);
-  
+
   drupal_exit();
 }
 
@@ -88,7 +88,7 @@ function work_project_update_assets() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_assets';
 
@@ -124,7 +124,7 @@ function work_project_update_resources() {
 
   module_load_include('inc', 'entity', 'includes/entity.controller');
 
-  $fc = array();  
+  $fc = array();
 
   $fc['field_name'] = 'field_resources';
 
@@ -149,6 +149,21 @@ function work_project_update_resources() {
   $content = node_view($node);
 
   print render($content['field_resources']);
-  
+
   drupal_exit();
+}
+
+
+function work_project_list_of_sprints($nid) {
+  $sprints = db_query("
+    SELECT entity_id FROM {field_data_field_project}
+    WHERE bundle = 'sprint'
+    AND field_project_nid = :pnid",
+    array(":pnid" => $nid ));
+
+  $s = array();
+  foreach($sprints as $ss) {
+    $s[] = $ss->entity_id;
+  }
+  return $s;
 }

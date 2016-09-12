@@ -2,8 +2,13 @@
   // We hide the comments and links now so that we can render them later.
   hide($content['comments']);
   hide($content['links']);
-
+  $sprints = work_project_list_of_sprints($node->nid);
 ?>
+<script type="text/javascript">
+  var project_nid = <?php print $node->nid;?>;
+  var sprint_tabs = <?php print count($sprints) > 0 ? "true" : "false";?>;
+</script>
+
 <div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?> clearfix"<?php print $attributes; ?> style="position:relative">
 
   <div id="task-left">
@@ -15,11 +20,11 @@
     ?>
     </div>
 
-    <div id="users-container"><?php print render($content['field_users']); ?></div><br /> 
+    <div id="users-container"><?php print render($content['field_users']); ?></div><br />
 
     <?php print render($content['body']); ?><br />
-    
-    <?php 
+
+    <?php
       /*** MOVE TO MODULE ***/
 
       $bt_nid = db_query("SELECT entity_id FROM {field_data_field_project} WHERE field_project_nid = :nid AND bundle = 'browser_test'", array(':nid' => $node->nid))->fetchField();
@@ -50,7 +55,7 @@
       }
 
       $pages = array();
-      
+
       foreach($bt->field_pages['und'] as $k => $p) {
         $entity = entity_load('field_collection_item', array($p['value']));
         $page = array_pop($entity);
@@ -138,14 +143,14 @@
         <li><a href="#" data-show="resources">Resources (<?php print $resources_count;?>)</a></li>
       </ul>
     </div>
-    
+
 
 
     <div id="credentials-wrapper" class="right-wrapper">
       <div id="credentials-container"><?php print render($content['field_credentials']); ?></div>
       <a href="#" id="add-credentials" onclick="jQuery('#node-add-credentials').toggle(); return false;" class="form-link">Add Credentials</a>
-      <div id="node-add-credentials" class="hidden-form"> 
-        <form action="#" 
+      <div id="node-add-credentials" class="hidden-form">
+        <form action="#"
               id="credentials-form"
               onsubmit="  jQuery('#credentials-container').load('/projects/update-credentials/add', {data: jQuery('#credentials-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
                           jQuery('#node-add-credentials').hide();
@@ -157,13 +162,13 @@
           <input type="text" id="path"        name="path"         size="50" placeholder="Path"         /><br /><br />
           <input type="text" id="username"    name="username"     size="50" placeholder="Username"     /><br /><br />
           <input type="text" id="password"    name="password"     size="50" placeholder="Password"     /><br /><br />
-          
+
           <input type="submit" value="Add Credential"/>
         </form>
-      </div>  
+      </div>
 
       <div style="clear:both"></div>
- 
+
     </div>
 
     <div id="assets-wrapper" class="right-wrapper">
@@ -175,7 +180,7 @@
 
           <input type="text" id="asset" name="asset" size="50" placeholder="Asset" data-init="Asset" class="init" /><br /><br />
           <input type="file" id="file" name="file" size="50" class="init" /><br /><br />
-          
+
           <input type="submit" value="Add Asset"/>
         </form>
       </div>
@@ -185,10 +190,10 @@
       <div id="resources-container"><?php print render($content['field_resources']); ?></div>
       <a href="#" id="add-resource" onclick="jQuery('#node-add-resource').toggle(); return false;" class="form-link">Add Resource</a>
       <div id="node-add-resource" class="hidden-form">
-        <form action="#" 
-              id="resource-form" 
+        <form action="#"
+              id="resource-form"
               onsubmit="  jQuery('#resources-container').load('/projects/update-resources/add', {data: jQuery('#resource-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
-                          jQuery('#node-add-resource').hide(); 
+                          jQuery('#node-add-resource').hide();
                           reset_height();
                           return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
@@ -198,25 +203,25 @@
         </form>
       </div>
     </div>
-    
-    
+
+
     <div id="log-wrapper" class="right-wrapper">
       <?php print work_log_view($node->nid);?>
     </div>
-    
-    
+
+
 
     <div style="clear:both"></div><br /><br />
   </div>
 
   <div id="node-users-div">
-    <?php 
-    
+    <?php
+
       $result = db_query("SELECT uid, name FROM {users}");
 
       foreach ($result as $r) {
-          print " <a  href='#' 
-                      onclick=' jQuery(\"#node-users-div\").hide(); 
+          print " <a  href='#'
+                      onclick=' jQuery(\"#node-users-div\").hide();
                                 jQuery(\"#users-container\").load(\"/projects/update-users/add/{$node->nid}/{$r->uid}\", function(){work_log.update_log({$node->nid});})'>
                       {$r->name}
                   </a>\n";
@@ -238,24 +243,25 @@
 </script>
 <?php endif; ?>
 
-
 <div class='task-tabs tabs'>
   <ul class='tabs primary'>
-  <li class='task-tab task-tab-0 tab ' onclick='p.switch_to(0);'>
+  <li class='task-tab task-tab-0 tab ' onclick='project.switch_to(0);'>
     <a>List Of Tasks</a>
   </li>
-  <li class='task-tab task-tab-1 tab active' onclick='p.switch_to(1);'>
+  <li class='task-tab task-tab-1 tab' onclick='project.switch_to(1);'>
     <a>Sprint Backlog</a>
   </li>
-  <li class='task-tab task-tab-2 tab' onclick='p.switch_to(2);'>
-    <a>Current Sprint</a>
-  </li>
+  <?php if (count($sprints)) :?>
+    <li class='task-tab task-tab-2 tab' onclick='project.switch_to(2);'>
+      <a>Current Sprint</a>
+    </li>
+  <?php endif;?>
   </ul>
 </div>
 <div id='task-tab-content' style="padding:0 20px;">
   <div class='task-tab-content task-tab-content-0 ' >
   </div>
-  <div class='task-tab-content task-tab-content-1 active'>
+  <div class='task-tab-content task-tab-content-1'>
   <div><a href="/sprints/add/<?php print $node->nid;?>">Add Sprint</a> | <a href="/tasks/add/<?php print $node->nid;?>">Add Task</a></div>
   </div>
   <div class='task-tab-content task-tab-content-2'>
@@ -272,29 +278,3 @@
     display:block;
   }
 </style>
-<script type="text/javascript">
-(function ($) {
-  $(document).ready( function(){
-    $("#block-views-tasks-block-3").appendTo(".task-tab-content-0");
-    $("#block-views-tasks-block-1").appendTo(".task-tab-content-0");
-    $("#block-views-tasks-block-2").appendTo(".task-tab-content-0");
-
-    $("#block-views-sprint-backlog-block").appendTo(".task-tab-content-1");
-    $("#block-views-tasks-block-5").appendTo(".task-tab-content-1");
-
-    $("#block-block-1").appendTo(".task-tab-content-2");
- });
-}(jQuery));
-
-var p = (function ($) {
-  return {
-    switch_to: function(index){
-      $(".task-tab-content").removeClass("active");
-      $(".task-tab-content-" + index).addClass("active");
-
-      $(".task-tab").removeClass("active");
-      $(".task-tab-" + index).addClass("active");
-    }
-  }
-}(jQuery));
-</script>

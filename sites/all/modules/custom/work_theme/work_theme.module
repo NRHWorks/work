@@ -5,6 +5,7 @@ function work_theme_init() {
   drupal_add_css(drupal_get_path('module', 'work_theme') . '/css/work_theme.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
   drupal_add_css(drupal_get_path('module', 'work_theme') . '/css/fontello.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
   drupal_add_js(drupal_get_path('module', 'work_theme') . '/js/scripts.js', array('type' => 'file'));
+  drupal_add_js("https://cdn.jsdelivr.net/jquery.cookie/1.4.1/jquery.cookie.min.js", "external");
 }
 
 function work_theme_theme($existing, $type, $theme, $path) {
