@@ -161,7 +161,33 @@ function work_sprint_detail_by_sprint($sprint_nid) {
     $data = "";
     if (array_key_exists($status->tid, $tasks_arrange_by_status)) {
       foreach($tasks_arrange_by_status[$status->tid] as $task) {
-        $data .= "<div><a href='/node/" . $task->nid . "'>" . $task->title . "</a></div>";
+
+	$node = node_load($task->nid);
+
+	$assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
+
+	$pic = '<div></div>';
+	if (isset($assigned_user->picture)) {
+		$pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
+	
+		$pic = "<div style='height: 40px; margin:0px 5px 0px 0px; float:left;'>$pic</div>";
+	}
+
+	$dots = '';
+	if ($node->field_status['und'][0]['tid'] != 1 && $node->field_status['und'][0]['tid'] != 7) {
+		for($x=0; $x <= ((time() - $node->changed) / (60 * 60)); $x++) {
+			$dots .= ' .';
+		}
+	}
+
+        $data .= "<div style='border: 1px solid #999; background-color: #FFF; margin-bottom: 10px;'>
+			<div style='background-color:#999; font-size:24px; color: #EEE; padding:5px; overflow:auto; text-align:right;'> " . $pic . " #" . $task->nid . "</div>
+			<div style='padding: 5px;'>
+				<a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $task->title . "</a> <br />
+				Assigned to: " . $assigned_user->name . "<br />
+				" . $dots . "
+			</div>
+		  </div>";
       }
     }
     $row[] = $data;

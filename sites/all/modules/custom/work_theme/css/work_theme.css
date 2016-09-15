@@ -1,3 +1,9 @@
+#header div.section, #featured div.section, #messages div.section, #main, #footer, h1.title, .tabs, #header .section, #breadcrumb {
+  width: 100% !important;
+  max-width: 1200px;
+  min-width: 970px;
+}
+
 #page {
   background-color: #FFF !important;
   background-image: url(../images/graph.png) !important;
@@ -619,4 +625,14 @@ th.blue-hover {
 
 .field-name-field-rate {
   display: none;
+}
+
+.node-type-sprint table td,
+.task-tab-content-2 table td {
+  width: 20%;
+  vertical-align: top;
+}
+
+.view-tasks .views-field-php-1 {
+  width: 25px;
 }
