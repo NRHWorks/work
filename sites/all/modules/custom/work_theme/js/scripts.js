@@ -181,7 +181,7 @@ var project = (function ($) {
       // var project_nid and sprint_tabs are set in node--project.tpl.php.
 
       // First check if this page is a project page.
-      if (project_nid == 'undefined' ) {
+      if (typeof(project_nid) == "undefined") {
         return;
       }
 
