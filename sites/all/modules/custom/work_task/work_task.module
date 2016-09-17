@@ -1091,6 +1091,7 @@ function work_task_update_status_ajax($nid, $new_status) {
 
       } else {
         $status = 7;
+        $assigned = $owner;
         work_log_create_log_entry($node->nid, 'Status Updated: Resolved => Closed');
       }
   }
