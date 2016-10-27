@@ -1,5 +1,44 @@
 <?php
 
+function work_sprint_menu() {
+
+  $items['sprints'] = array(
+    'title' => 'Sprints',
+    'page callback' => 'work_sprint_page',
+    'access callback' => TRUE,
+  );
+
+  $items['sprints/%'] = array(
+    'title' => 'Sprints',
+    'page callback' => 'work_sprint_page',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+  );
+
+  $items['sprints/%/%'] = array(
+    'title' => 'Sprints',
+    'page callback' => 'work_sprint_page',
+    'page arguments' => array(1, 2),
+    'access callback' => TRUE,
+  );
+
+  $items['sprints/add/%'] = array(
+    'title' => 'Add Sprint',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('work_sprint_add_sprint', 2),
+    'access callback' => TRUE,
+  );
+
+  $items['sprints/add-story/%/%'] = array(
+    'title' => 'Sprints',
+    'page callback' => 'work_sprint_add_story',
+    'page arguments' => array(2,3),
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
 function work_sprint_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id != "task_node_form") {
     return;
@@ -20,17 +59,6 @@ function work_sprint_form_alter(&$form, &$form_state, $form_id) {
 
   $form['field_sprint']['und']['#options'] = $sprints;
 
-}
-function work_sprint_menu() {
-
-  $items['sprints/add/%'] = array(
-    'title' => 'Add Sprint',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('work_sprint_add_sprint', 2),
-    'access callback' => TRUE,
-  );
-  
-  return $items;
 }
 
 function work_sprint_add_sprint($form, $form_state, $project) {
@@ -55,7 +83,7 @@ function work_sprint_add_sprint($form, $form_state, $project) {
     '#type' => 'textfield',
   );
 
-  
+
   $form['start_date'] = array(
     '#type' => 'date_popup',
     '#date_format' => 'Y-m-d',
@@ -69,7 +97,7 @@ function work_sprint_add_sprint($form, $form_state, $project) {
     '#date_year_range' => '-3:+3',
     '#title' => 'End Date',
   );
- 
+
   $form['example_entry']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
@@ -88,10 +116,10 @@ function work_sprint_add_sprint_submit($form, &$form_state) {
   $node->type = 'sprint';
   node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
   $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
-  $node->uid = $user->uid; 
-  $node->status = 1; 
-  $node->promote = 0; 
-  $node->comment = 0; 
+  $node->uid = $user->uid;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->comment = 0;
 
   $node->field_project['und'][0]['nid'] = $v['project'];
 
@@ -109,32 +137,54 @@ function work_sprint_add_sprint_submit($form, &$form_state) {
   drupal_goto('node/' . $node->field_project['und'][0]['nid']);
 }
 
-
 function work_sprint_current_sprint_of_project($project_nid) {
+
+  // sprints are now based on team as tickets, rather then project
   $sprint = db_query("
-    SELECT n.nid, n.title FROM {node} AS n
-    INNER JOIN {field_data_field_project} AS p
-    ON n.nid = p.entity_id
-    INNER JOIN {field_data_field_sprint_end_date} AS e
-    ON e.entity_id = n.nid
-    WHERE p.bundle = 'sprint'
-    AND p.field_project_nid = :pnid
-    AND e.field_sprint_end_date_value > :now
-    ORDER BY e.field_sprint_end_date_value ASC LIMIT 1",
-    array(":pnid" => $project_nid, ":now" => time()));
+    SELECT n.nid, n.title
+    FROM {node} AS n
+      INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+      INNER JOIN {field_data_field_sprint} sp ON sp.field_sprint_nid = n.nid
+    WHERE n.type = 'sprint'
+      AND s.field_sprint_status_tid = 48
+      AND sp.entity_id IN (
+        SELECT entity_id FROM {field_data_field_project} WHERE field_project_nid = :pnid
+      )
+    GROUP BY n.nid
+    ORDER BY n.title
+    ", array(':pnid' => $project_nid));
+
 
   if ($sprint->rowCount() == 0) {
     return "No Sprint In Progress";
   }
 
   else {
+    $content = array();
+    foreach ($sprint as $s) {
+      $n = node_load($s->nid);
+      $content[] = node_view($n, 'full');
+    }
+
+/*
     $sprint = $sprint->fetchObject();
     $n = node_load($sprint->nid);
     $node_content = node_view($n, 'full');
-    return $node_content;
+*/
+    return $content;
   }
 }
+
 function work_sprint_detail_by_sprint($sprint_nid) {
+  if (arg(0) == 'sprints') {
+    return work_sprint_detail_by_sprint_id($sprint_nid);
+  } else {
+    return work_sprint_detail_by_project($sprint_nid);
+  }
+}
+
+function work_sprint_detail_by_sprint_id($sprint_nid) {
+
   $task_statuses = db_query("
     SELECT * FROM {taxonomy_term_data}
     WHERE vid = 2
@@ -162,32 +212,37 @@ function work_sprint_detail_by_sprint($sprint_nid) {
     if (array_key_exists($status->tid, $tasks_arrange_by_status)) {
       foreach($tasks_arrange_by_status[$status->tid] as $task) {
 
-	$node = node_load($task->nid);
+        $node = node_load($task->nid);
 
-	$assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
+        $assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
 
-	$pic = '<div></div>';
-	if (isset($assigned_user->picture)) {
-		$pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
-	
-		$pic = "<div style='height: 40px; margin:0px 5px 0px 0px; float:left;'>$pic</div>";
-	}
+        $pic = '<div></div>';
+        if (isset($assigned_user->picture)) {
+          $pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
 
-	$dots = '';
-	if ($node->field_status['und'][0]['tid'] != 1 && $node->field_status['und'][0]['tid'] != 7) {
-		for($x=0; $x <= ((time() - $node->changed) / (60 * 60)); $x++) {
-			$dots .= ' .';
-		}
-	}
+          $pic = "<div style='height: 40px; margin:0px 5px 0px 0px; float:left;'>$pic</div>";
+        }
+
+        $dots = '';
+        if ($node->field_status['und'][0]['tid'] != 1 && $node->field_status['und'][0]['tid'] != 7) {
+          for($x=1; $x <= ((time() - $node->changed) / (60 * 60)); $x++) {
+            if ($x <= 24) {
+              $dots .= '.';
+
+              if (($x > 0) && ($x % 24 == 0)) {
+                $dots .= '<br />';
+              }
+            }
+          }
+        }
 
         $data .= "<div style='border: 1px solid #999; background-color: #FFF; margin-bottom: 10px;'>
-			<div style='background-color:#999; font-size:24px; color: #EEE; padding:5px; overflow:auto; text-align:right;'> " . $pic . " #" . $task->nid . "</div>
-			<div style='padding: 5px;'>
-				<a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $task->title . "</a> <br />
-				Assigned to: " . $assigned_user->name . "<br />
-				" . $dots . "
-			</div>
-		  </div>";
+        <div style='background-color:#999; font-size:24px; color: #EEE; padding:5px; overflow:auto; text-align:right;'> " . $pic . " #" . $task->nid . "</div>
+        <div style='padding: 5px;'>
+          <a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $task->title . "</a> <br />
+          <span style='font-size:12px; letter-spacing:2px;'>" . $dots . "</span>
+        </div>
+        </div>";
       }
     }
     $row[] = $data;
@@ -195,4 +250,796 @@ function work_sprint_detail_by_sprint($sprint_nid) {
   $task_table = theme('table', array('header' => $table_header, 'rows' => array($row)));
 
   return $task_table;
+}
+
+function work_sprint_detail_by_project($sprint_nid) {
+
+  $task_statuses = db_query("
+    SELECT * FROM {taxonomy_term_data}
+    WHERE vid = 2
+    ORDER BY weight ASC");
+
+  $tasks = db_query("
+    SELECT n.title, n.nid, st.field_status_tid FROM {node} AS n
+    INNER JOIN {field_data_field_status} AS st
+    ON n.nid = st.entity_id
+    INNER JOIN {field_data_field_sprint} AS sp
+    ON n.nid = sp.entity_id
+    WHERE sp.field_sprint_nid = :spnid",
+    array(":spnid" => $sprint_nid))->fetchAll();
+
+  $tasks_arrange_by_status = array();
+
+  foreach ($tasks as $t) {
+    $tasks_arrange_by_status[$t->field_status_tid][] = $t;
+  }
+  $table_header = array();
+  $row = array();
+  foreach ($task_statuses as $status) {
+    $table_header[] = $status->name;
+    $data = "";
+    if (array_key_exists($status->tid, $tasks_arrange_by_status)) {
+      foreach($tasks_arrange_by_status[$status->tid] as $task) {
+
+        $node = node_load($task->nid);
+
+        $assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
+
+        $pic = '<div></div>';
+        if (isset($assigned_user->picture)) {
+          $pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
+
+          $pic = "<div style='height: 40px; margin:0px 5px 0px 0px; float:left;'>$pic</div>";
+        }
+
+        $dots = '';
+        if ($node->field_status['und'][0]['tid'] != 1 && $node->field_status['und'][0]['tid'] != 7) {
+          for($x=1; $x <= ((time() - $node->changed) / (60 * 60)); $x++) {
+            if ($x <= 24) {
+              $dots .= '.';
+
+              if (($x > 0) && ($x % 24 == 0)) {
+                $dots .= '<br />';
+              }
+            }
+          }
+        }
+
+        $data .= "<div style='border: 1px solid #999; background-color: #FFF; margin-bottom: 10px;'>
+        <div style='background-color:#999; font-size:24px; color: #EEE; padding:5px; overflow:auto; text-align:right;'> " . $pic . " #" . $task->nid . "</div>
+        <div style='padding: 5px;'>
+          <a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $task->title . "</a> <br />
+          <span style='font-size:12px; letter-spacing:2px;'>" . $dots . "</span>
+        </div>
+        </div>";
+      }
+    }
+    $row[] = $data;
+  }
+  $task_table = theme('table', array('header' => $table_header, 'rows' => array($row)));
+
+  return $task_table;
+}
+
+function work_sprint_page($team = null, $sprint = null) {
+  global $user;
+
+  $uid = $user->uid;
+
+  $result = db_query("  SELECT n.nid
+                        FROM {node} n
+                        WHERE n.type = 'team'
+                        AND n.nid IN (
+                          SELECT entity_id FROM {field_data_field_team_lead} WHERE field_team_lead_uid = :uid1 UNION
+                          SELECT entity_id FROM {field_data_field_project_manager} WHERE field_project_manager_uid = :uid2 UNION
+                          SELECT entity_id FROM {field_data_field_backend_developer} WHERE field_backend_developer_uid = :uid3 UNION
+                          SELECT entity_id FROM {field_data_field_frontend_developer} WHERE field_frontend_developer_uid = :uid4 UNION
+                          SELECT entity_id FROM {field_data_field_sys_admin} WHERE field_sys_admin_uid = :uid5 UNION
+                          SELECT entity_id FROM {field_data_field_quality_assurance_tester} WHERE field_quality_assurance_tester_uid = :uid6
+                        )",
+                        array(':uid1' => $uid,
+                              ':uid2' => $uid,
+                              ':uid3' => $uid,
+                              ':uid4' => $uid,
+                              ':uid5' => $uid,
+                              ':uid6' => $uid));
+  $teams = array();
+  foreach ($result as $r) {
+
+    if (!isset($team)) { $team = $r->nid; }
+
+    $n = node_load($r->nid);
+    $teams[$r->nid] = $n->title;
+  }
+
+  $team_form   = "<form>";
+  $team_form  .= "<select id='team-select'>";
+
+  foreach ($teams as $k => $v) {
+    if ($k == $team) {
+      $team_form .= "<option value='$k' selected='selected'>$v</option>";
+    } else {
+      $team_form .= "<option value='$k'>$v</option>";
+    }
+  }
+
+  $team_form  .= "</select>";
+  $team_form  .= "<input type='button' value='Switch Team' style='margin-left: 15px;' onclick=\"window.location='/sprints/' + jQuery('#team-select').val();\" />";
+  $team_form  .= "</form>";
+
+  $content =  "
+    <div class='tabs' style='margin-top: 25px;'>
+      <ul class='tabs primary'>
+        <li>
+          <a href='#' id='backlog-link' class='active' onclick='sprint.switch_tab(\"backlog\");' >Backlog</a>
+        </li>
+        <li>
+          <a href='#' id='active-link' onclick='sprint.switch_tab(\"active\");'>Active Sprint(s)</a>
+        </li>
+        <li>
+          <a href='#' id='summary-link' onclick='sprint.switch_tab(\"summary\");'>Summary</a>
+        </li>
+      </ul>
+    </div>";
+
+  $content .= "
+    <div id='backlog' class='sprint-div active'>" . _work_sprint_team_backlog($team) . "</div>
+    <div id='active' class='sprint-div'>" . _work_sprint_team_active($team, $sprint) . "</div>
+    <div id='summary' class='sprint-div'>
+        In progress
+        <br /><br />
+        <br /><br />
+        <br /><br />
+        <br /><br />
+    </div>
+  ";
+
+
+  return $team_form . $content;
+}
+
+function work_sprint_block_info() {
+  $items['work_sprint_project_backlog'] = array(
+    'info' => 'Project Backlog',
+  );
+
+  return $items;
+}
+
+function work_sprint_block_view($delta) {
+  $block = array();
+
+  switch($delta) {
+    case 'work_sprint_project_backlog':
+      $block['subject'] = '<none>';
+      $block['content'] = array(
+        '#markup' => _work_sprint_backlog(),
+      );
+      break;
+  }
+
+  return $block;
+}
+
+function _work_sprint_backlog() {
+  $output = null;
+  $headers = array('#', 'Story', 'Asisgned To', 'Status', 'Progress', 'Due Date');
+
+  // get stories for open sprints
+  $sprints = db_query(" SELECT n.nid
+                        FROM {node} n
+                          INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+                        WHERE n.type  ='sprint'
+                          AND s.field_sprint_status_tid != 49
+                        ORDER BY s.field_sprint_status_tid DESC, n.title");
+
+
+  foreach ($sprints as $s) {
+    $sprint = node_load($s->nid);
+    $sprint_status = taxonomy_term_load($sprint->field_sprint_status['und'][0]['tid']);
+
+    $result = db_query("
+                SELECT n.nid
+                FROM {node} n
+                  INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+                  INNER JOIN {field_data_field_sprint} sp ON sp.entity_id = n.nid
+                WHERE n.type = 'story'
+                  AND p.field_project_nid = :pnid
+                  AND sp.field_sprint_nid = :spnid",
+                array(':pnid' => arg(1), ':spnid' => $s->nid));
+
+    $rows = array();
+    foreach ($result as $r) {
+      $n = node_load($r->nid);
+
+      if (isset($n->field_assigned_to['und'])) {
+        $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
+      } else {
+        $assigned_to->name = 'Unassigned';
+      }
+
+      if (isset($n->field_status['und'])) {
+        $status = taxonomy_term_load($n->field_status['und'][0]['tid']);
+      } else {
+        $status->name = 'Closed';
+      }
+
+      $row = array(
+        $n->nid,
+        l($n->title, 'node/' . $n->nid),
+        $assigned_to->name,
+        $status->name,
+        work_story_progress(arg(1)),
+        $n->field_due_date['und'][0]['value']
+      );
+
+      $rows[] = $row;
+    }
+
+    if (count($rows) > 0) {
+
+      $table = theme('table', array('header' => $headers, 'rows' => $rows));
+
+      $output .= "<h2>{$sprint->title}<span style='color:#999; font-size:16px;'> ({$sprint_status->name})</span></h2>" . $table;
+    }
+  }
+
+  // get all the stories that are open and not assigned to a sprint
+  $result = db_query("
+              SELECT n.nid
+              FROM {node} n
+                INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+                INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
+              WHERE n.type = 'story'
+                AND s.field_status_tid != 7
+                AND p.field_project_nid = :pnid",
+              array(':pnid' => arg(1)));
+
+  $rows = array();
+  foreach ($result as $r) {
+    $n = node_load($r->nid);
+
+    if (!isset($n->field_sprint['und'])) {
+      if (isset($n->field_assigned_to['und'])) {
+        $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
+      } else {
+        $assigned_to->name = 'Unassigned';
+      }
+
+      if (isset($n->field_status['und'])) {
+        $status = taxonomy_term_load($n->field_status['und'][0]['tid']);
+      } else {
+        $status->name = 'Closed';
+      }
+
+      $row = array(
+        $n->nid,
+        l($n->title, 'node/' . $n->nid),
+        $assigned_to->name,
+        $status->name,
+        work_story_progress(arg(1)),
+        $n->field_due_date['und'][0]['value']
+      );
+
+      $rows[] = $row;
+    }
+  }
+
+  if (count($rows) > 0) {
+
+    $table = theme('table', array('header' => $headers, 'rows' => $rows));
+
+    $output .= "<h2>Backlog</h2>" . $table;
+  }
+
+  return $output;
+}
+
+function _work_sprint_team_backlog($team_nid) {
+
+  $output = null;
+  $headers = array('', '#', 'Story', 'Assign.', 'Status', 'Est.', 'Logged', 'Progress', 'Due Date', 'Move');
+
+  // get stories for open sprints
+  $sprints = db_query(" SELECT n.nid
+                        FROM {node} n
+                          INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+                          INNER JOIN {field_data_field_team} t ON t.entity_id = n.nid
+                        WHERE n.type  ='sprint'
+                          AND s.field_sprint_status_tid != 49
+                          AND t.field_team_nid = :tnid
+                        ORDER BY s.field_sprint_status_tid DESC, n.title",
+                        array(':tnid' => $team_nid));
+
+  $sprints_for_later = array();
+  foreach ($sprints as $s) {
+    $sprint = node_load($s->nid);
+    $sprints_for_later[] = $sprint;
+  }
+
+  $sprints = db_query(" SELECT n.nid
+                        FROM {node} n
+                          INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+                          INNER JOIN {field_data_field_team} t ON t.entity_id = n.nid
+                        WHERE n.type  ='sprint'
+                          AND s.field_sprint_status_tid != 49
+                          AND t.field_team_nid = :tnid
+                        ORDER BY s.field_sprint_status_tid DESC, n.title",
+                        array(':tnid' => $team_nid));
+  foreach ($sprints as $s) {
+    $sprint = node_load($s->nid);
+
+    $sprint_status = taxonomy_term_load($sprint->field_sprint_status['und'][0]['tid']);
+
+    $result = db_query("
+                SELECT n.nid
+                FROM {node} n
+                  INNER JOIN {field_data_field_sprint} sp ON sp.entity_id = n.nid
+                WHERE n.type = 'story'
+                  AND sp.field_sprint_nid = :spnid",
+                array(':spnid' => $s->nid));
+
+    $rows_project = array();
+    $team = array();
+    foreach ($result as $r) {
+      $n = node_load($r->nid);
+
+      if (isset($n->field_assigned_to['und'])) {
+        $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
+      } else {
+        $assigned_to->name = 'Unassigned';
+      }
+
+      if (isset($n->field_status['und'])) {
+        $status = taxonomy_term_load($n->field_status['und'][0]['tid']);
+      } else {
+        $status->name = 'Closed';
+      }
+
+      $move_to = "<strong>Move to:</strong> ";
+
+      $count = 0;
+      foreach ($sprints_for_later as $k => $s) {
+        if ($s->nid != $sprint->nid) {
+          $count += 1;
+          if ($count != 1) { $move_to .= ' | '; }
+          $move_to .= "<a href='/sprints/add-story/{$s->nid}/{$n->nid}'>" . preg_replace('/Sprint| - Team.*/', '', $s->title) . "</a>";
+        }
+      }
+
+      if ($count != 0) { $move_to .= ' | '; }
+      $move_to .= "<a href='/sprints/add-story/backlog/{$n->nid}'>Backlog</a>";
+
+      $row = array(
+        $n->nid,
+        l($n->title, 'node/' . $n->nid),
+        $assigned_to->name,
+        $status->name,
+        $n->field_estimate['und'][0]['value'] . ' hrs',
+        work_story_hours_logged($n->nid) . ' hrs',
+        work_story_progress($n->nid),
+        date('D, M j', strtotime($n->field_due_date['und'][0]['value'])),
+        $move_to,
+      );
+
+
+
+
+      $rows_project[$n->field_project['und'][0]['nid']][] = $row;
+    }
+
+    $stories = 0;
+    $estimate = 0;
+    $logged = 0;
+    $progress = 0;
+
+    $rows = array();
+
+    foreach ($rows_project as $project_nid => $items) {
+      $project = node_load($project_nid);
+
+      $hex = $project->field_color['und'][0]['value'];
+      $rgba = hex2rgba($hex, '0.3');
+
+      $rows[] = array(
+        array(
+          'data' => l($project->title, 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
+          'rowspan' => count($items) + 2,
+          'class' => 'sprint-project',
+          'style' => "text-align:center; background-color: $hex;",
+        ),
+      );
+
+      $project_stories = 0;
+      $project_estimate = 0;
+      $project_logged = 0;
+      $project_progress = 0;
+
+      foreach ($items as $r) {
+        $project_stories += 1;
+        $project_estimate += str_replace(' hrs','',$r[4]);
+        $project_logged += str_replace(' hrs','',$r[5]);
+        $project_progress += str_replace('%','',$r[6]);
+
+        $stories += 1;
+        $estimate += str_replace(' hrs','',$r[4]);
+        $logged += str_replace(' hrs','',$r[5]);
+        $progress += str_replace('%','',$r[6]);
+
+        if (!isset($team[$r[2]])) {
+          $team[$r[2]]['stories'] = 0;
+          $team[$r[2]]['estimate'] = 0;
+          $team[$r[2]]['logged'] = 0;
+          $team[$r[2]]['progress'] = 0;
+        }
+
+        $team[$r[2]]['stories'] += 1;
+        $team[$r[2]]['estimate'] += str_replace(' hrs','',$r[4]);
+        $team[$r[2]]['logged'] += str_replace(' hrs','',$r[5]);
+        $team[$r[2]]['progress'] += str_replace('%','',$r[6]);
+
+
+        $rows[] = $r;
+      }
+
+      $rows[] = array(
+        array(
+          'data' => "Summary",
+          'style' => "color: #FFF; font-weight: bold; background-color: $rgba",
+        ),
+        array(
+          'data' => "$project_stories stories",
+          'colspan' => 3,
+          'style' => "color: #FFF; font-weight: bold; background-color: $rgba",
+        ),
+        array(
+          'data' => "$project_estimate hrs",
+          'colspan' => 1,
+          'style' => "color: #FFF; font-weight: bold; background-color: $rgba",
+        ),
+        array(
+          'data' => "$project_logged hrs",
+          'colspan' => 1,
+          'style' => "color: #FFF; font-weight: bold; background-color: $rgba",
+        ),
+        array(
+          'data' => ceil($project_progress / $project_stories) . "%",
+          'colspan' => 3,
+          'style' => "color: #FFF; font-weight: bold; background-color: $rgba",
+        ),
+      );
+    }
+
+    $count = 0;
+    foreach ($team as $k => $t) {
+      if ($count == 0) {
+        $rows[] = array(
+          array(
+            'data' => l('Team', '#', array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
+            'rowspan' => count($team) + 1,
+            'class' => 'sprint-project',
+            'style' => "text-align:center; background-color: #CF352F;",
+          ),
+          array(
+            'data' => "<strong>$k</strong>",
+          ),
+          array(
+            'data' => "{$t['stories']} stories",
+            'colspan' => 3,
+          ),
+          array(
+            'data' => "{$t['estimate']} hrs",
+            'colspan' => 1,
+          ),
+          array(
+            'data' => "{$t['logged']} hrs",
+            'colspan' => 1,
+          ),
+          array(
+            'data' => ceil($t['progress'] / $t['stories']) . "%",
+            'colspan' => 3,
+          ),
+        );
+
+        $count += 1;
+      } else {
+        $rows[] = array(
+          array(
+            'data' => "<strong>$k</strong>",
+          ),
+          array(
+            'data' => "{$t['stories']} stories",
+            'colspan' => 3,
+          ),
+          array(
+            'data' => "{$t['estimate']} hrs",
+            'colspan' => 1,
+          ),
+          array(
+            'data' => "{$t['logged']} hrs",
+            'colspan' => 1,
+          ),
+          array(
+            'data' => ceil($t['progress'] / $t['stories']) . "%",
+            'colspan' => 3,
+          ),
+        );
+
+      }
+    }
+
+    $rows[] = array(
+      array(
+        'data' => "Summary",
+        'style' => " font-weight: bold; font-size: 16px;",
+      ),
+      array(
+        'data' => "$stories stories",
+        'colspan' => 3,
+        'style' => " font-weight: bold; font-size: 16px;",
+      ),
+      array(
+        'data' => "$estimate hrs",
+        'colspan' => 1,
+        'style' => " font-weight: bold; font-size: 16px;",
+      ),
+      array(
+        'data' => "$logged hrs",
+        'colspan' => 1,
+        'style' => " font-weight: bold; font-size: 16px;",
+      ),
+      array(
+        'data' => ceil($progress / $stories) . "%",
+        'colspan' => 3,
+        'style' => " font-weight: bold; font-size: 16px;",
+      ),
+    );
+
+    if (count($rows) > 0) {
+      $table = theme('table', array('header' => $headers, 'rows' => $rows));
+      $output .= "<h2>" . l($sprint->title, 'node/' . $sprint->nid) . "<span style='color:#999; font-size:16px;'> ({$sprint_status->name})</span></h2>" . $table;
+    }
+  }
+
+  // get all the stories that are open and not assigned to a sprint
+  $result = db_query("
+              SELECT n.nid, p.field_project_nid
+              FROM {node} n
+                INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
+                INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+              WHERE n.type = 'story'
+                AND s.field_status_tid != 7
+                AND p.field_project_nid IN (SELECT entity_id FROM {field_data_field_team} WHERE field_team_nid = :tnid)
+            ", array(':tnid' => $team_nid));
+
+  $headers = array('', '#', 'Story', 'Asisgned To', 'Status', 'Est.', 'Due Date', 'Add to Sprint');
+  $rows_project = array();
+  foreach ($result as $r) {
+    $n = node_load($r->nid);
+
+    if (!isset($n->field_sprint['und'])) {
+      if (isset($n->field_assigned_to['und'])) {
+        $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
+      } else {
+        $assigned_to->name = 'Unassigned';
+      }
+
+      if (isset($n->field_status['und'])) {
+        $status = taxonomy_term_load($n->field_status['und'][0]['tid']);
+      } else {
+        $status->name = 'Closed';
+      }
+
+      $add_to = "<strong>Add to:</strong> ";
+
+      foreach ($sprints_for_later as $k => $s) {
+        if ($k != 0) { $add_to .= ' | '; }
+        $add_to .= "<a href='/sprints/add-story/{$s->nid}/{$n->nid}'>" . preg_replace('/Sprint| - Team.*/', '', $s->title) . "</a>";
+      }
+
+      $row = array(
+        $n->nid,
+        l($n->title, 'node/' . $n->nid),
+        $assigned_to->name,
+        $status->name,
+        $n->field_estimate['und'][0]['value'] . ' hours',
+        date('D, M j', strtotime($n->field_due_date['und'][0]['value'])),
+        $add_to,
+      );
+
+      $rows_project[$r->field_project_nid][] = $row;
+    }
+  }
+
+  $stories = 0;
+  $estimate = 0;
+  $rows = array();
+  foreach ($rows_project as $project_nid => $items) {
+    $project = node_load($project_nid);
+
+    $hex = $project->field_color['und'][0]['value'];
+    $rgba = hex2rgba($hex, '0.3');
+
+    $rows[] = array(
+      array(
+        'data' => l($project->title, 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
+        'rowspan' => count($items) + 2,
+        'class' => 'sprint-project',
+        'style' => "text-align:center; background-color: $hex;",
+      ),
+    );
+
+    $project_stories = 0;
+    $project_estimate = 0;
+
+    foreach ($items as $r) {
+      $project_stories += 1;
+      $project_estimate += str_replace(' hours','',$r[4]);
+
+      $stories += 1;
+      $estimate += str_replace(' hours','',$r[4]);
+
+      $rows[] = $r;
+    }
+
+    $rows[] = array(
+      array(
+        'data' => "Summary",
+        'style' => "color: #FFF; font-weight: bold; background-color: $rgba",
+      ),
+      array(
+        'data' => "$project_stories stories / $project_estimate estimated hours",
+        'colspan' => 6,
+        'style' => "text-align:right; color: #FFF; font-weight: bold; background-color: $rgba",
+      ),
+    );
+  }
+
+  $rows[] = array(
+    '',
+    array(
+      'data' => "Summary",
+      'style' => "font-weight: bold; font-size: 16px;",
+    ),
+    array(
+      'data' => "$stories stories / $estimate estimated hours",
+      'colspan' => 6,
+      'style' => "text-align:right; font-weight: bold; font-size: 16px;",
+    ),
+  );
+
+  if (count($rows) > 0) {
+
+    $table = theme('table', array('header' => $headers, 'rows' => $rows));
+
+    $output .= "<h2>Backlog</h2>" . $table;
+  }
+
+  return $output;
+}
+
+function _work_sprint_team_active($team, $sprint) {
+
+  if (!isset($team)) {
+    $team = 6631 ;
+  }
+
+  $sprint_query = db_query("
+    SELECT n.nid, n.title
+    FROM {node} AS n
+      INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+      INNER JOIN {field_data_field_team} t ON t.entity_id = n.nid
+    WHERE n.type = 'sprint'
+      AND s.field_sprint_status_tid IN (47, 48)
+      AND t.field_team_nid = :tnid
+    GROUP BY n.nid
+    ORDER BY n.title
+    ", array(':tnid' => $team));
+
+  $sprint_form = '<form>';
+  $sprint_form .= '<select id="sprint-select"> ';
+  $sprint_form .= '<option value="all">All</option>';
+  foreach ($sprint_query as $s) {
+    $sprint_form .= '<option value="' . $s->nid. '">' . $s->title . '</option>';
+  }
+  $sprint_form .= '</select>';
+  $sprint_form .= "<input type='button' value='Switch Sprint' style='margin-left: 15px;' onclick=\"window.location='/sprints/' + jQuery('#team-select').val() + '/' + jQuery('#sprint-select').val();\" />";
+  $sprint_form .= '</form>';
+
+  $content = null;
+  if ($sprint && ($sprint <> 'all')) {
+
+    $node = node_load($sprint);
+    $view = node_view($node);
+    $content .= render($view);
+
+  } else {
+
+    $sprint_query = db_query("
+      SELECT n.nid, n.title
+      FROM {node} AS n
+        INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+        INNER JOIN {field_data_field_team} t ON t.entity_id = n.nid
+      WHERE n.type = 'sprint'
+        AND s.field_sprint_status_tid IN (47, 48)
+        AND t.field_team_nid = :tnid
+      GROUP BY n.nid
+      ORDER BY n.title
+      ", array(':tnid' => $team));
+
+    foreach ($sprint_query as $s) {
+      $node = node_load($s->nid);
+      $view = node_view($node);
+      $content .= render($view);
+    }
+  }
+
+  return $sprint_form . $content;
+
+}
+
+function work_sprint_add_story($sprint_nid, $story_nid) {
+
+  if ($sprint_nid == 'backlog') {
+    $story = node_load($story_nid);
+
+    unset($story->field_sprint['und']);
+
+    node_save($story);
+
+    drupal_set_message(l($story->title, 'node/' . $story->nid) . " added to the backlog.");
+
+  } else {
+    $sprint = node_load($sprint_nid);
+
+    $story = node_load($story_nid);
+
+    $story->field_sprint['und'][0]['nid'] = $sprint_nid;
+
+    node_save($story);
+
+    drupal_set_message(l($story->title, 'node/' . $story->nid) . " added to sprint " . l($sprint->title, 'node/' . $sprint->nid));
+  }
+
+
+  drupal_goto('sprints');
+}
+
+
+function hex2rgba($color, $opacity = false) {
+
+  $default = 'rgb(0,0,0)';
+
+  //Return default if no color provided
+  if(empty($color))
+          return $default;
+
+        //Sanitize $color if "#" is provided
+        if ($color[0] == '#' ) {
+          $color = substr( $color, 1 );
+        }
+
+        //Check if color has 6 or 3 characters and get values
+        if (strlen($color) == 6) {
+                $hex = array( $color[0] . $color[1], $color[2] . $color[3], $color[4] . $color[5] );
+        } elseif ( strlen( $color ) == 3 ) {
+                $hex = array( $color[0] . $color[0], $color[1] . $color[1], $color[2] . $color[2] );
+        } else {
+                return $default;
+        }
+
+        //Convert hexadec to rgb
+        $rgb =  array_map('hexdec', $hex);
+
+        //Check if opacity is set(rgba or rgb)
+        if($opacity){
+          if(abs($opacity) > 1)
+            $opacity = 1.0;
+          $output = 'rgba('.implode(",",$rgb).','.$opacity.')';
+        } else {
+          $output = 'rgb('.implode(",",$rgb).')';
+        }
+
+        //Return rgb(a) color string
+        return $output;
 }

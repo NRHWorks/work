@@ -155,15 +155,34 @@ function work_project_update_resources() {
 
 
 function work_project_list_of_sprints($nid) {
-  $sprints = db_query("
-    SELECT entity_id FROM {field_data_field_project}
-    WHERE bundle = 'sprint'
-    AND field_project_nid = :pnid",
-    array(":pnid" => $nid ));
 
+  $sprints = db_query(" SELECT field_sprint_nid
+                        FROM {field_data_field_sprint}
+                        WHERE entity_id IN (  SELECT entity_id
+                                              FROM {field_data_field_project}
+                                              WHERE field_project_nid = :pnid)
+                        GROUP BY field_sprint_nid",
+                      array(':pnid' => $nid));
   $s = array();
   foreach($sprints as $ss) {
-    $s[] = $ss->entity_id;
+    $s[] = $ss->field_sprint_nid;
   }
+
   return $s;
+}
+
+function work_project_user_dashboard($uid) {
+  $result = db_query("SELECT n.nid
+                      FROM {node} n
+                      WHERE type = 'project' AND
+                      n.nid IN ( SELECT entity_id FROM {field_data_field_users} WHERE field_users_uid = :uid1) AND
+                      n.nid NOT IN ( SELECT entity_id FROM {field_data_field_archive} WHERE field_archive_value = 1)",
+                      array(':uid1' => $uid));
+
+  $projects = array();
+  foreach ($result as $r) {
+    $projects[] = node_load($r->nid);
+  }
+
+  return $projects;
 }

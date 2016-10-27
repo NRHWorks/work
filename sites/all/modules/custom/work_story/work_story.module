@@ -1,0 +1,1289 @@
+<?php
+
+function work_story_menu() {
+  $items['stories/estimate/%'] = array(
+    'title' => 'estimate',
+    'page callback' => 'work_story_estimate',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-todo/%'] = array(
+    'title' => 'update todo',
+    'page callback' => 'work_story_update_todo',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-todo/add'] = array(
+    'title' => 'add todo',
+    'page callback' => 'work_story_update_todo_add',
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-status/%/%'] = array(
+    'title' => 'update status',
+    'page callback' => 'work_story_update_status',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-assigned/%/%'] = array(
+    'title' => 'update assigned',
+    'page callback' => 'work_story_update_assigned',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-users/add/%/%'] = array(
+    'title' => 'update users add',
+    'page callback' => 'work_story_update_users_add',
+    'page arguments' => array(3, 4),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-schedule/add'] = array(
+    'title' => 'add schedule',
+    'page callback' => 'work_story_update_schedule',
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-schedule/delete/%/%'] = array(
+    'title' => 'update schedule',
+    'page callback' => 'work_story_update_schedule_delete',
+    'page arguments' => array(3, 4),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-time/add'] = array(
+    'title' => 'add time',
+    'page callback' => 'work_story_update_time',
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-time/delete/%/%'] = array(
+    'title' => 'update time',
+    'page callback' => 'work_story_update_time_delete',
+    'page arguments' => array(3, 4),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-comment/add'] = array(
+    'title' => 'update comments',
+    'page callback' => 'work_story_update_comment',
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-credentials/add'] = array(
+    'title' => 'update credentials',
+    'page callback' => 'work_story_update_credentials',
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-assets/add'] = array(
+    'title' => 'update assets',
+    'page callback' => 'work_story_update_assets',
+    'access callback' => TRUE,
+  );
+
+  $items['stories/update-resources/add'] = array(
+    'title' => 'update resources',
+    'page callback' => 'work_story_update_resources',
+    'access callback' => TRUE,
+  );
+
+  $items['stories/add/%'] = array(
+    'title' => 'Add Story',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('work_story_add_story', 2),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/add-time/%'] = array(
+    'title' => 'Add Time',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('work_story_add_time', 2),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/status/%/%'] = array(
+    'title' => 'Update Story Status',
+    'page callback' => 'work_story_update_status_ajax',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/ajax/get-comments-by-nid/%'] = array(
+    'title' => 'Get Comments',
+    'page callback' => 'work_story_get_comments',
+    'page arguments' => array(3),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/priority/%/%'] = array(
+    'title' => 'Update Priority',
+    'page callback' => 'work_story_priority',
+    'page arguments' => array(2,3),
+    'access callback' => TRUE,
+  );
+
+
+  return $items;
+}
+
+function work_story_add_story($form, $form_state, $project) {
+  $form['#tree'] = TRUE;
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+
+  $p = node_load($project);
+
+  $form['title'] = array(
+    '#type' => 'item',
+    '#markup' => "<h3>Adding Story for <strong>" . l($p->title, 'node/' . $p->nid) . "</strong></h3>",
+  );
+
+  $form['project'] = array(
+    '#type' => 'hidden',
+    '#value' => $project,
+  );
+
+  $story = null;
+
+  if (isset($_GET['story']) && ($_GET['task'] == 'Browser Test')) {
+    $browser = taxonomy_term_load($_GET['browser']);
+    $resolution = taxonomy_term_load($_GET['resolution']);
+    $story = "BROWSER TEST ({$browser->name} : {$resolution->name}) => {$_GET['page']}";
+  }
+
+  $form['story'] = array(
+    '#title' => 'Story',
+    '#type' => 'textfield',
+    '#default_value' => $story,
+    '#required' => TRUE
+  );
+
+
+  global $user;
+
+  $uid = $user->uid;
+
+  $users = db_query("SELECT uid, name FROM {users} WHERE uid IN (SELECT uid FROM {users_roles} WHERE rid IN (3, 4, 5))");
+
+  $assigned_to = array();
+  foreach ($users as $u) {
+    $assigned_to[$u->uid] = $u->name;
+  }
+
+  $form['assigned_to'] = array(
+    '#title' => 'Assigned To',
+    '#type' => 'select',
+    '#options' => $assigned_to,
+    '#default_value' => $user->uid,
+  );
+
+
+  $priority_terms = db_query("
+    SELECT tid, name FROM {taxonomy_term_data}
+    WHERE vid = 6
+    ORDER BY weight ASC");
+
+  $priority_options = array();
+
+  foreach ($priority_terms as $p_term){
+    $priority_options[$p_term->tid] = $p_term->name;
+  }
+
+  $form['priority'] = array(
+    '#title' => 'Priority',
+    '#type' => 'select',
+    '#options' => $priority_options,
+    '#default_value' => 34,
+  );
+
+  $sprints = array("--NONE--");
+
+  $sprint_nodes = db_query("
+    SELECT n.nid, n.title
+    FROM {node} AS n
+      INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+      INNER JOIN {field_data_field_team} t ON t.entity_id = n.nid
+    WHERE n.type ='sprint'
+      AND s.field_sprint_status_tid IN (47, 48)
+      AND t.field_team_nid IN (
+        SELECT entity_id FROM {field_data_field_team_lead} WHERE field_team_lead_uid = :uid1 UNION
+        SELECT entity_id FROM {field_data_field_project_manager} WHERE field_project_manager_uid = :uid2 UNION
+        SELECT entity_id FROM {field_data_field_backend_developer} WHERE field_backend_developer_uid = :uid3 UNION
+        SELECT entity_id FROM {field_data_field_frontend_developer} WHERE field_frontend_developer_uid = :uid4 UNION
+        SELECT entity_id FROM {field_data_field_sys_admin} WHERE field_sys_admin_uid = :uid5 UNION
+        SELECT entity_id FROM {field_data_field_quality_assurance_tester} WHERE field_quality_assurance_tester_uid = :uid6
+      )",
+      array(':uid1' => $uid,
+            ':uid2' => $uid,
+            ':uid3' => $uid,
+            ':uid4' => $uid,
+            ':uid5' => $uid,
+            ':uid6' => $uid));
+
+  foreach ($sprint_nodes as $s) {
+    $sprints[$s->nid] = $s->title;
+  }
+
+  $form['sprint'] = array(
+    '#title' => 'Sprint',
+    '#type' => 'select',
+    '#options' => $sprints,
+    '#default_value' => 0,
+  );
+
+  $form['due_date'] = array(
+    '#type' => 'date_popup',
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '-3:+3',
+    '#title' => 'Due Date',
+  );
+
+  if (in_array('administrator', $user->roles)) {
+    $form['estimate'] = array(
+      '#prefix' => '<br>',
+      '#title' => 'Estimate',
+      '#description' => '<span style="padding-top:5px; padding-left:5px; display:block;">hours</span>',
+      '#type' => 'select',
+      '#options' => array(1,2,4,8,12,16),
+      '#required' => TRUE
+    );
+  }
+
+  $form['description'] = array(
+    '#title' => 'Description',
+    '#type' => 'textarea',
+    '#description' => '<span style="padding-top:5px; padding-left:5px; display:block;">As a &lt;type of user&gt;, I want &lt;some goal&gt; so that &lt;some reason&gt;.</span>',
+  );
+
+  // --------------- Add more text box starts  ------------------------------
+
+  $form['action_items']['action_items_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Action Items'),
+    '#prefix' => '<div id="action-items-wrapper">',
+    '#suffix' => '</div>',
+  );
+
+  if (empty($form_state['num_items'])) {
+    $form_state['num_items'] = 1;
+  }
+
+  for ($i = 0; $i < $form_state['num_items']; $i++) {
+
+  $form['action_items']['action_items_fieldset']['items'][$i] = array(
+    '#type' => 'textfield',
+    '#maxlength' => 255,
+    '#attributes' => array('multiple' => 'multiple'),
+    );
+  }
+
+  $form['action_items']['action_items_fieldset']['add_action_item'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add Action Item'),
+      '#submit' => array('action_add_one'),
+      '#ajax' => array(
+        'callback' => 'action_add_one_callback',
+        'wrapper' => 'action-items-wrapper',
+      ),
+  );
+
+  // ---------------  Add more text box ends ---------------------------------
+
+  $form['example_entry']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  return $form;
+}
+
+function work_story_add_story_submit($form, &$form_state) {
+  $v = $form_state['values'];
+
+  global $user;
+
+  $node = new stdClass();
+  $node->title = $v['story'];
+  $node->type = 'story';
+  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+  $node->uid = $user->uid;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->comment = 0;
+
+  $node->field_status['und'][0]['tid'] = 1;
+  if ($v['sprint'] != 0) {
+    $node->field_sprint['und'][0]['nid'] = $v['sprint'];
+  }
+  $node->body['und'][0]['value'] = $v['description'];
+
+  $node->field_project['und'][0]['nid'] = $v['project'];
+
+  $node->field_creator['und'][0]['uid'] = $node->uid;
+
+  $node->field_owner['und'][0]['uid'] = $v['assigned_to'];
+
+  $node->field_assigned_to['und'][0]['uid'] = $v['assigned_to'];
+
+  $node->field_users['und'][0]['uid'] = $v['assigned_to'];
+
+  if ($user->uid != $v['assigned_to']) {
+    $node->field_users['und'][1]['uid'] = $user->uid;
+  }
+
+  if (isset($v['estimate']) && ($v['estimate'] != '')) {
+    $node->field_estimate['und'][0]['value'] = $v['estimate'];
+  } else {
+    $node->field_estimate['und'][0]['value'] = 0;
+  }
+
+  $due_date = $v['due_date'] == "" ? date("Y-m-d", time() + 86400 * 7) : $v['due_date'];
+
+  $node->field_due_date['und'][0]['value'] = $due_date . ' 00:00:00';
+
+  $node->field_task_priority['und'][0]['tid'] = $v['priority'];
+
+
+  node_save($node);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  foreach($v['action_items']['action_items_fieldset']['items'] as $i) {
+    if (isset($i) && ($i <> '')) {
+      $fc = array();
+
+      $fc['field_name'] = 'field_to_do';
+
+      $fc['field_description']['und'][0]['value'] = $i;
+
+      $entity = entity_create('field_collection_item', $fc);
+      $entity->setHostEntity('node', $node);
+      $entity->save();
+    }
+  }
+
+  node_save($node);
+
+  $project = node_load($v['project']);
+
+  $subject = " new story for {$project->title}.";
+
+  $body = "A new story has been assigned to you for {$project->title}.<br /><br />";
+  $body .= "<br /><br /><strong>Task:</strong> {$node->title}<br /><br />";
+
+  if (isset($v['description'])) {
+    $body .= nl2br($v['description']) . "<br /><br />";
+  }
+
+  foreach($v['action_items']['action_items_fieldset']['items'] as $i) {
+    $body .= "<strong>Action Item:</strong> $i<br /><br />";
+  }
+
+  $body .= "<br /><br />View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
+
+  $assigned_user = user_load($v['assigned_to']);
+
+  $to = $assigned_user->mail;
+
+  $params['subject'] = $subject;
+  $params['body'] = $body;
+  $params['id'] = $node->nid;
+
+  //drupal_mail('work_notifications', 'story_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+
+
+  work_log_create_log_entry($v['project'], "Task Added: " . l($node->title, 'node/' . $node->nid), "Task Added: " . l($node->title, 'node/' . $node->nid));
+  drupal_set_message("Task Added: " . l($node->title, 'node/' . $node->nid) . "<br />" . l ('Add Another Task', 'stories/add/' . $v['project']));
+
+  drupal_goto('node/' . $node->field_project['und'][0]['nid']);
+}
+
+function work_story_add_time($form, $form_state, $project) {
+  $form['#tree'] = TRUE;
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+
+  $p = node_load($project);
+
+  $form['title'] = array(
+    '#type' => 'item',
+    '#markup' => "<h3>Adding time for <strong>" . l($p->title, 'node/' . $p->nid) . "</strong></h3>",
+  );
+
+  $form['project'] = array(
+    '#type' => 'hidden',
+    '#value' => $project,
+  );
+
+  $form['story'] = array(
+    '#title' => 'Story',
+    '#type' => 'textfield',
+    '#required' => TRUE
+  );
+
+  $form['description'] = array(
+    '#title' => 'Description',
+    '#type' => 'textarea',
+  );
+
+  $form['time_date'] = array(
+    '#type' => 'date_popup',
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '-3:+3',
+    '#required' => TRUE
+  );
+
+  $form['time'] = array(
+    '#title' => 'Hours',
+    '#type' => 'textfield',
+    '#size' => 4,
+    '#required' => TRUE
+  );
+
+  $form['example_entry']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  return $form;
+}
+
+function work_story_add_time_submit($form, &$form_state) {
+  $v = $form_state['values'];
+
+  global $user;
+
+  $node = new stdClass();
+  $node->title = $v['story'];
+  $node->type = 'story';
+  node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+  $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+  $node->uid = $user->uid;
+  $node->status = 1;
+  $node->promote = 0;
+  $node->comment = 0;
+
+  $node->field_status['und'][0]['tid'] = 7;
+
+  $node->body['und'][0]['value'] = $v['description'];
+
+  $node->field_project['und'][0]['nid'] = $v['project'];
+
+  $node->field_creator['und'][0]['uid'] = $node->uid;
+
+  $node->field_owner['und'][0]['uid'] = $user->uid;
+
+  $node->field_assigned_to['und'][0]['uid'] = $user->uid;
+
+  $node->field_users['und'][0]['uid'] = $user->uid;
+
+  $node->field_users['und'][1]['uid'] = $user->uid;
+
+  $node->field_task_priority['und'][0]['tid'] = 34;
+
+  node_save($node);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc['field_name'] = 'field_time';
+  $fc['field_date']['und'][0]['value'] = $v['time_date'] . ' 00:00:00';
+
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $fc['field_hours']['und'][0]['value'] = $v['time'];
+  $fc['field_description']['und'][0]['value'] = $v['story'];
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  node_save($node);
+
+  drupal_set_message("Time Added ({$v['time']} hours): " . l($node->title, 'node/' . $node->nid) . "<br />" . l ('Add Another Task', 'stories/add/' . $v['project']));
+
+  drupal_goto('node/' . $node->field_project['und'][0]['nid']);
+}
+
+function action_add_one($form, &$form_state) {
+  if (!isset($form_state['num_items'])) {
+    $form_state['num_items'] = 0;
+    $form_state['num_items']++;
+  }
+
+  $form_state['num_items']++;
+  $form_state['rebuild'] = TRUE;
+}
+
+function action_add_one_callback($form, &$form_state) {
+  return $form['action_items']['action_items_fieldset'];
+}
+
+
+
+function work_story_estimate($nid) {
+  $node = node_load($nid);
+
+  $content = node_view($node);
+
+  print render($content['field_estimate']);
+
+  drupal_exit();
+}
+
+function work_story_update_time_delete($nid, $fcid) {
+  $fc = entity_load('field_collection_item', array($fcid));
+  $fc = array_shift($fc);
+  $date = substr($fc->field_date['und'][0]['value'], 0 ,10);
+  $u = db_query("
+    SELECT name FROM {users} WHERE uid = :uid",
+    array(":uid" => $fc->field_user['und'][0]['uid']))->fetchField();
+
+  work_log_create_log_entry($nid, "Record Time Deleted",
+    "Record time deleted:<br/>Date: ".$date."<br/>Hours: ".$fc->field_hours['und'][0]['value']. "<br/>Created by ". $u);
+
+  entity_delete_multiple('field_collection_item', array($fcid));
+
+  $node = node_load($nid);
+
+  foreach ($node->field_time['und'] as $k => $s) {
+    if ($s['value'] == $fcid) {
+      unset($node->field_time['und'][$k]);
+    }
+  }
+
+  node_save($node);
+
+  $content = node_view($node);
+  print render($content['field_time']);
+
+  drupal_exit();
+}
+
+function work_story_update_time() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_time';
+  $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));
+
+  global $user;
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $fc['field_hours']['und'][0]['value'] = $data['hours'];
+  $fc['field_description']['und'][0]['value'] = $data['description'];
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  work_log_create_log_entry($node->nid, "Record Time Added",
+    "Record Time added:<br/>Date: ".$fc['field_date']['und'][0]['value']."<br/>Time: ".$fc['field_hours']['und'][0]['value']. "<br/>Created by ". $user->name);
+
+  $content = node_view($node);
+  print render($content['field_time']);
+
+  drupal_exit();
+}
+
+function work_story_update_schedule_delete($nid, $fcid) {
+  // get info for log entry
+  $fc = entity_load('field_collection_item', array($fcid));
+  $fc = array_shift($fc);
+  $date = substr($fc->field_date['und'][0]['value'], 0 ,10);
+  $u = db_query("
+    SELECT name FROM {users} WHERE uid = :uid",
+    array(":uid" => $fc->field_user['und'][0]['uid']))->fetchField();
+  $time = "";
+  foreach ($fc->field_schedule_time['und'] as $v){
+    $time .= $v['value'].", ";
+  }
+  $time = rtrim($time, ", ");
+  work_log_create_log_entry($nid, "Scheduled Time Deleted",
+    "Scheduled time deleted:<br/>Date: ".$date."<br/>Time: ".$time. "<br/>Created by ". $u);
+
+  // Delete actual field collection
+  entity_delete_multiple('field_collection_item', array($fcid));
+
+  $node = node_load($nid);
+
+  foreach ($node->field_schedule['und'] as $k => $s) {
+    if ($s['value'] == $fcid) {
+      unset($node->field_schedule['und'][$k]);
+    }
+  }
+
+  node_save($node);
+
+  $content = node_view($node);
+  print render($content['field_schedule']);
+
+  drupal_exit();
+}
+
+function work_story_update_schedule() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_schedule';
+  $fc['field_date']['und'][0]['value'] = date('Y-m-d H:i:s', strtotime($data['date']));
+
+  $time_string = "";
+  foreach ($data['time'] as $t) {
+    $fc['field_schedule_time']['und'][]['value'] = $t;
+    $time_string .= $t .", ";
+  }
+
+  $time_string = rtrim($time_string, ", ");
+  global $user;
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+
+
+  work_log_create_log_entry($node->nid, "Scheduled Time Updated",
+    "Scheduled time updated:<br/>Date: ".
+    substr($fc['field_date']['und'][0]['value'], 0, 10) .
+    "<br/>Time: " . $time_string . "<br/>Created by " . $user->name);
+
+  $content = node_view($node);
+  print render($content['field_schedule']);
+
+  drupal_exit();
+}
+
+function work_story_update_status($nid, $tid) {
+  $node = node_load($nid);
+
+  $original_status = db_query("
+    SELECT name FROM {taxonomy_term_data}
+    WHERE tid = :tid", array(":tid" => $node->field_status['und'][0]['tid']))->fetchField();
+
+  $node->field_status['und'][0]['tid'] = $tid;
+  $new_status = db_query("
+    SELECT name FROM {taxonomy_term_data}
+    WHERE tid = :tid", array(":tid" => $tid))->fetchField();
+  node_save($node);
+
+  work_log_create_log_entry($nid, "Status Updated",
+    "Status changed from <strong>" .
+    $original_status . "</strong> to <strong>" . $new_status . "</strong>");
+
+}
+
+function work_story_update_assigned($nid, $uid) {
+  $node = node_load($nid);
+
+  if (($uid != $node->field_owner['und'][0]['uid']) && ($uid != $node->field_creator['und'][0]['uid'])) {
+    $node->field_owner['und'][0]['uid'] = $uid;
+  }
+
+  $add_to_users = TRUE;
+
+  foreach ($node->field_users['und'] as $u) {
+    if ($u['uid'] == $uid) {
+      $add_to_users = FALSE;
+    }
+  }
+
+  if ($add_to_users) {
+    $node->field_users['und'][]['uid'] = $uid;
+  }
+
+  $node->field_assigned_to['und'][0]['uid'] = $uid;
+
+  node_save($node);
+
+  $u = db_query("SELECT name FROM {users} WHERE uid = :uid", array(":uid" => $uid))->fetchField();
+  work_log_create_log_entry($node->nid,"Assignee changed",
+  "Task assigned to <strong>" . $u ."</strong>");
+
+  $content = node_view($node);
+
+  print '
+    <div id="assigned-to-container">' . render($content['field_assigned_to']) . '</div><br />
+    <div id="creator-container">' . render($content['field_creator']) . '</div><br />
+    <div id="owner-container">' . render($content['field_owner']) . '</div><br />
+    <div id="users-container">' . render($content['field_users']) . '</div><br />';
+
+  drupal_exit();
+}
+
+function work_story_update_users_add($nid, $uid) {
+  $node = node_load($nid);
+
+  $node->field_users['und'][]['uid'] = $uid;
+
+  node_save($node);
+
+  $u = db_query("SELECT name FROM {users} WHERE uid = :uid", array(":uid" => $uid))->fetchField();
+
+  work_log_create_log_entry($node->nid,"User Added",
+    "New user <strong>" . $u . "</strong> added to the story");
+
+  $content = node_view($node);
+  print render($content['field_users']);
+
+  drupal_exit();
+}
+
+function work_story_update_todo($id) {
+  $collection = entity_load('field_collection_item', array($id));
+  $todo = array_pop($collection);
+
+  $nid = db_query("
+    SELECT entity_id FROM {field_data_field_to_do}
+    WHERE field_to_do_value = :fc_id", array(":fc_id" => $id))->fetchField();
+
+  global $user;
+
+  if ($todo->field_todo_status['und'][0]['value'] == 1) {
+    $todo->field_user['und'][0]['uid'] = null;
+    $todo->field_todo_status['und'][0]['value'] = 0;
+
+  } else {
+    $todo->field_user['und'][0]['uid'] = $user->uid;
+    $todo->field_todo_status['und'][0]['value'] = 1;
+  }
+  entity_save('field_collection_item', $todo);
+
+  work_log_create_log_entry($nid, "Todo #".$todo->item_id ." status changed",
+      "Todo <strong>#".$todo->item_id."</strong> status changed to <strong>".
+      ( $todo->field_todo_status['und'][0]['value'] == 0 ? "Unfinished" : "finished" ).
+      "</strong> by ". $user->name);
+
+
+}
+
+function work_story_update_todo_add() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_to_do';
+  $fc['field_description']['und'][0]['value'] = $data['todo'];
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $node = node_load($data['nid']);
+
+  global $user;
+  work_log_create_log_entry($node->nid, "New Todo #". $entity->item_id . " added",
+    "New Todo item <strong>#".$entity->item_id."</strong> added by " . $user->name .
+    "<br/>Todo description:<br/>".$entity->field_description['und'][0]['value']);
+
+  $content = node_view($node);
+  print render($content['field_to_do']);
+
+  drupal_exit();
+}
+
+function work_story_update_comment() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_comments';
+
+  global $user;
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');
+
+
+  if (isset($data['todo'])) {
+    $fc['field_title']['und'][0]['value'] = 'Comment for To Do: #' . $data['todo'];
+  } else {
+    $fc['field_title']['und'][0]['value'] = 'Comment';
+  }
+
+  $fc['field_comment_description']['und'][0]['value'] = $data['description'];
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  $project = node_load($node->field_project['und'][0]['nid']);
+
+  $client = node_load($project->field_client['und'][0]['nid']);
+
+
+  $subject = "Comment added for story {$node->nid} ({$node->title}).";
+
+  $body = "Comment added for story #{$node->nid}:<br><br/>";
+  $body .= nl2br($data['description']). "<br/><br />";
+
+  $body .= "-----------------------------------------------------------------------------<br /><br />";
+
+  $body .= "<strong>Client:</strong> {$client->title}<br /><br />";
+  $body .= "<strong>Project:</strong> {$project->title}<br /><br />";
+  $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
+  $body .= "<strong>User:</strong> {$user->name}<br /><br />";
+
+  $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
+
+  // Email everybody!
+  $creator  = &$node->field_creator['und'][0]['uid'];
+  $owner    = &$node->field_owner['und'][0]['uid'];
+  $mail_list = array();
+
+  foreach ($node->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($client->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($project->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  if (!in_array($owner, $mail_list)) {
+    $mail_list[] = $owner;
+  }
+
+  if (!in_array($creator, $mail_list)) {
+    $mail_list[] = $creator;
+  }
+
+  $mail_to = "";
+
+  foreach (array_unique($mail_list) as $uid) {
+    $u = user_load($uid);
+    if (isset($u->field_receive_email_notification['und']) &&
+      $u->field_receive_email_notification['und'][0]['value'] == 1) {
+      $mail_to .= $u->mail . ",";
+    }
+  }
+
+  $mail_to = rtrim($mail_to, ",");
+
+  $params['subject'] = $subject;
+  $params['body'] = $body;
+  $params['id'] = $node->nid;
+
+  //drupal_mail('work_notifications', 'story_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+
+  work_log_create_log_entry($node->nid, "New comment added",
+    "New comment added by " . $user->name .
+    "<br/>Comment:<br/>".$entity->field_title['und'][0]['value']);
+
+
+  $content = node_view($node);
+  print render($content['field_comments']);
+
+  drupal_exit();
+}
+
+function work_story_update_credentials() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_credentials';
+
+  $fc['field_description']['und'][0]['value'] = $data['description'];
+  $fc['field_path']['und'][0]['value'] =        $data['path'];
+  $fc['field_username']['und'][0]['value'] =    $data['username'];
+
+  $password = g09s8df7q23opughrqw8e7($data['password']);
+
+  $fc['field_password']['und'][0]['value'] = $password;
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  global $user;
+  work_log_create_log_entry($node->nid, "Credentials updated",
+    "Credentials updated by " . $user->name .
+    "<br/>Credentials description: ".$entity->field_description['und'][0]['value']);
+
+  $content = node_view($node);
+  print render($content['field_credentials']);
+
+  drupal_exit();
+}
+
+function work_story_update_assets() {
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_assets';
+
+  $fc['field_description']['und'][0]['value'] = $_POST['asset'];
+
+  $file = file_get_contents($_FILES['file']['tmp_name']);
+
+  $file_upload = file_save_data($file, 'public://' . $_FILES['file']['name'], FILE_EXISTS_RENAME);
+
+  $file_upload->display = 1;
+
+  $fc['field_asset']['und'][] = (array) $file_upload;
+
+  $node = node_load($_POST['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  drupal_set_message("Asset added");
+
+  global $user;
+  work_log_create_log_entry($node->nid, "Asset added",
+    "Asset added by " . $user->name .
+    "<br/>File description: ".$entity->field_description['und'][0]['value']);
+
+  drupal_goto('node/' . $node->nid, array('query' => array('assets' => 'TRUE')));
+  drupal_exit();
+}
+
+function work_story_update_resources() {
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_resources';
+
+  $fc['field_description']['und'][0]['value'] = $data['resource'];
+  $fc['field_url']['und'][0]['url'] = $data['url'];
+  $fc['field_url']['und'][0]['title'] = $data['url'];
+  $fc['field_url']['und'][0]['attributes']['target'] = '_blank';
+
+
+  $node = node_load($data['nid']);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  global $user;
+  work_log_create_log_entry($node->nid, "Resource added",
+    "Resource added by " . $user->name .
+    "<br/>Resource description: ".$entity->field_description['und'][0]['value']);
+
+
+  $content = node_view($node);
+
+  print render($content['field_resources']);
+
+  drupal_exit();
+}
+
+
+function custom_story_ajax_add_action($form, $form_state) {
+  return $form['actions'];
+}
+
+function work_story_hours_logged($nid) {
+  $node = node_load($nid);
+
+  $hours = 0;
+
+  if (isset($node->field_time['und'])) {
+    foreach($node->field_time['und'] as $t) {
+      $e = entity_load('field_collection_item', array($t['value']));
+      $fc = array_pop($e);
+
+      $hours += $fc->field_hours['und'][0]['value'];
+    }
+  }
+
+  return $hours;
+}
+
+function work_story_progress($nid) {
+  $node = node_load($nid);
+
+  if (isset($node->field_to_do['und'])) {
+    $count = count($node->field_to_do['und']);
+    $done = 0;
+
+    foreach($node->field_to_do['und'] as $t) {
+      $e = entity_load('field_collection_item', array($t['value']));
+      $fc = array_pop($e);
+
+      if ($fc->field_todo_status['und'][0]['value'] == 1) {
+        $done += 1;
+      }
+    }
+
+     return floor($done / $count * 100) . '%';
+  }
+
+  else {
+    if (isset($node->field_status['und']) && (($node->field_status['und'][0]['tid'] == 6) || ($node->field_status['und'][0]['tid'] == 7))) {
+      return '100%';
+   } else {
+      return '0%';
+   }
+  }
+}
+
+function work_story_update_status_ajax($nid, $new_status) {
+  global $user;
+
+  $data = array();
+  parse_str($_POST['data'], $data);
+
+  /*
+    1 = New
+    2 = In Progress
+    5 = Feedback Requested
+    6 = Resolved
+    7 = Closed
+  */
+
+  $node = node_load($nid);
+
+  $status   = &$node->field_status['und'][0]['tid'];
+
+  $assigned = &$node->field_assigned_to['und'][0]['uid'];
+  $creator  = &$node->field_creator['und'][0]['uid'];
+  $owner    = &$node->field_owner['und'][0]['uid'];
+
+  switch ($status) {
+    case 1:
+      $status = 2;
+      work_log_create_log_entry($node->nid, 'Status Updated: New => In Progress');
+      break;
+
+   case 2:
+
+      if ($new_status == 'feedback') {
+        $status = 5;
+        $assigned = $creator;
+        work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Feedback Requested');
+        work_story_add_comment($node->nid, 'Feedback Requested', $data['status-text']);
+
+      } else {
+        $status = 6;
+        $assigned = $creator;
+        work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Resolved');
+
+        if (isset($data['status-text'])) {
+          work_story_add_comment($node->nid, 'Resolved', $data['status-text']);
+        }
+      }
+
+    break;
+
+    case 5:
+        $status = 2;
+        $assigned = $owner;
+        work_log_create_log_entry($node->nid, 'Status Updated: Feedback Requested => In Progress');
+
+        if (isset($data['status-text'])) {
+          work_story_add_comment($node->nid, 'Feedback', $data['status-text']);
+        }
+
+      break;
+
+    case 6:
+
+      if ($new_status == 'reject') {
+        $status = 2;
+        $assigned = $owner;
+        work_log_create_log_entry($node->nid, 'Status Updated: Resolved => In Progress');
+
+        if (isset($data['status-text'])) {
+          work_story_add_comment($node->nid, 'Task Rejected', $data['status-text']);
+        }
+
+      } else {
+        $status = 7;
+        $assigned = $owner;
+        work_log_create_log_entry($node->nid, 'Status Updated: Resolved => Closed');
+      }
+  }
+
+  node_save($node);
+
+  $status_term = taxonomy_term_load($status);
+  $subject = " status " . strtoupper($status_term->name) . " : {$node->title}";
+
+  $body = "Task {$node->nid} has been updated to " . strtoupper($status_term->name)  . ".<br /><br />";
+
+  if (isset($data['status-text'])) {
+    $body .= "{$data['status-text']}<br /><br />";
+  }
+
+  $project = node_load($node->field_project['und'][0]['nid']);
+
+  $client = node_load($project->field_client['und'][0]['nid']);
+
+  $body .= "-----------------------------------------------------------------------------<br /><br />";
+
+  $body .= "<strong>Client:</strong> {$client->title}<br /><br />";
+  $body .= "<strong>Project:</strong> {$project->title}<br /><br />";
+  $body .= "<strong>Task:</strong> {$node->title}<br /><br />";
+  $body .= "<strong>User:</strong> {$user->name}<br /><br />";
+
+  $body .= "View Task Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
+
+  // Email everybody!
+  $mail_list = array();
+  foreach ($node->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($node->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($client->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  foreach ($project->field_users['und'] as $u) {
+    $mail_list[] = $u['uid'];
+  }
+
+  if (!in_array($owner, $mail_list)) {
+    $mail_list[] = $owner;
+  }
+
+  if (!in_array($creator, $mail_list)) {
+    $mail_list[] = $creator;
+  }
+
+  $mail_to = "";
+  foreach (array_unique($mail_list) as $uid) {
+    $u = user_load($uid);
+    if (isset($u->field_receive_email_notification['und']) &&
+      $u->field_receive_email_notification['und'][0]['value'] == 1) {
+      $mail_to .= $u->mail . ",";
+    }
+  }
+
+  $mail_to = rtrim($mail_to, ",");
+
+  $params['subject'] = $subject;
+  $params['body'] = $body;
+  $params['id'] = $node->nid;
+  //drupal_mail('work_notifications', 'story_update', $mail_to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+
+  $content = node_view($node);
+
+  print render($content['field_status']);
+
+  drupal_exit();
+
+}
+
+function work_story_add_comment($nid, $title, $body) {
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_comments';
+
+  global $user;
+  $fc['field_user']['und'][0]['uid'] = $user->uid;
+
+  $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');
+
+  $fc['field_title']['und'][0]['value'] = $title;
+  $fc['field_comment_description']['und'][0]['value'] = $body;
+
+  $node = node_load($nid);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  if ($title == 'Comment') {
+    // email owner
+    $subject = " comment added for {$node->nid}.";
+
+    $body = "A comment has been added for story {$node->nid}.<br /><br />";
+    $body .= "<strong>Comment:</strong><br /> {$body}<br /><br />";
+
+    $body .= "View Comment Here: http://work.nrhworks.com/node/{$node->nid}<br /><br />";
+
+    $to = $assigned_user->mail;
+
+    $params['subject'] = $subject;
+    $params['body'] = $body;
+    $params['id'] = $node->nid;
+
+    foreach ($node->field_users['und'] as $u) {
+      if ($u['uid'] <> $user->uid) {
+        $mailto = user_load($u['uid']);
+
+        if (isset($mailto->field_receive_email_notification['und']) &&
+          $mailto->field_receive_email_notification['und'][0]['value'] == 1) {
+          $to = $mailto->mail;
+          //drupal_mail('work_notifications', 'story_update', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+        }
+      }
+    }
+  }
+}
+
+function work_story_get_comments($nid) {
+  $node = node_load($nid);
+
+  $content = node_view($node);
+
+  print render($content['field_comments']);
+
+  drupal_exit;
+
+}
+
+function work_story_priority($nid, $tid) {
+  $node = node_load($nid);
+
+  $node->field_task_priority['und'][0]['tid'] = $tid;
+
+  node_save($node);
+
+  $content = node_view($node);
+
+  print render($content['field_task_priority']);
+
+  drupal_exit();
+
+}

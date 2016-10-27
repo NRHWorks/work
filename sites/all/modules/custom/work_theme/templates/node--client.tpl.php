@@ -7,8 +7,8 @@
 <div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?> clearfix"<?php print $attributes; ?> style="position:relative">
 
   <div id="project-left">
-    <div id="admins-container"><?php print render($content['field_admins']); ?></div><br /> 
-    <div id="users-container"><?php print render($content['field_users']); ?></div><br /> 
+    <div id="admins-container"><?php print render($content['field_admins']); ?></div><br />
+    <div id="users-container"><?php print render($content['field_users']); ?></div><br />
     <div style="clear:both;" /></div>
     <br /><br />
   </div>
@@ -21,7 +21,7 @@
     </div>
 
     <div id="contact-wrapper" class="right-wrapper">
-      <div id="contact"><?php print render($content['field_contact_info']); ?></div><br /> 
+      <div id="contact"><?php print render($content['field_contact_info']); ?></div><br />
       <div style="clear:both"></div>
     </div>
     <div style="clear:both"></div><br /><br />

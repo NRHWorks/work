@@ -626,10 +626,20 @@ function field_collection_field_delete($entity_type, $entity, $field, $instance,
         // Filter this $id out.
         unset($ids[$id_key]);
       }
+
+      // Set a flag to remember that the host entity is being deleted. See
+      // FieldCollectionItemEntity::deleteHostEntityReference().
+      // Doing this on $entity is not sufficient because the cache for $entity
+      // may have been reset since it was loaded.  That would cause
+      // hostEntity() to load it from the database later without the flag.
+      $field_collection_item = field_collection_item_load($id);
+      if ($field_collection_item) {
+        $hostEntity = $field_collection_item->hostEntity();
+        if (!empty($hostEntity)) {
+          $hostEntity->field_collection_deleting = TRUE;
+        }
+      }
     }
-    // Set a flag to remember that the host entity is being deleted. See
-    // FieldCollectionItemEntity::deleteHostEntityReference().
-    $entity->field_collection_deleting = TRUE;
 
     entity_delete_multiple('field_collection_item', $ids);
   }
@@ -1528,7 +1538,7 @@ function field_collection_field_widget_embed_validate($element, &$form_state, $c
           if (isset($elements['#title'])) {
             form_error($elements, t('@name field is required in the @collection collection.', array(
               '@name' => $elements['#title'],
-              '@collection' => $instance['label']
+              '@collection' => $field_state['instance']['label'],
             )));
           }
           else {

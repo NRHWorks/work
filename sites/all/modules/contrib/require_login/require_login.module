@@ -40,12 +40,34 @@ function require_login_permission() {
 function require_login_init() {
 
   // Check user authentication status. Non-authenticated visitors will
-  // automatically be redirected to /user/login. Display customizable message
-  // to user stating authentication requirements.
+  // automatically be redirected to /user/login (OR custom configured
+  // user login path). Display customizable message to user stating
+  // authentication requirements.
   if (!require_login_authcheck()) {
+    $query = array('destination' => $_GET['q']);
+
+    // Display access denied message.
     $deny_message = filter_xss_admin(trim(variable_get('require_login_deny_message', REQUIRE_LOGIN_DEFAULT_MESSAGE)));
-    drupal_set_message(t($deny_message));
-    drupal_goto('user/login', array('query' => array('destination' => $_GET['q'])));
+    drupal_set_message(t($deny_message), 'warning');
+
+    // Exclude external PHP scripts from destination query.
+    if (preg_match('/^.*\.php$/i', request_uri())) {
+      $query = array();
+    }
+
+    // Prepare authentication redirect path.
+    $redirect = array(
+      'path' => '/user/login',
+      'query' => $query,
+    );
+    if ($auth_path = filter_xss_admin(trim(variable_get('require_login_auth_path', '')))) {
+      $redirect = drupal_parse_url($auth_path);
+    }
+
+    drupal_goto(ltrim($redirect['path'], ''), array(
+      'query' => isset($redirect['query']) ? $redirect['query'] : array(),
+      'fragment' => isset($redirect['fragment']) ? $redirect['fragment'] : '',
+    ));
   }
 }
 
@@ -56,23 +78,36 @@ function require_login_init() {
  *   Returns TRUE if authenticated and FALSE otherwise.
  */
 function require_login_authcheck() {
-  global $base_path;
-  $path = drupal_get_path_alias($_GET['q']);
+  global $base_path, $base_url;
+  $path = '/'. drupal_get_path_alias($_GET['q']);
 
   // Isolate request path from subdirectory when present.
-  $current_uri = request_uri();
+  $raw_uri = request_uri();
   if ($base_path != '/') {
-    $current_uri = '/'. str_replace($base_path, '', $current_uri);
+    $current_uri = '/'. str_replace($base_path, '', $raw_uri);
+  }
+  else {
+    $current_uri = $raw_uri;
+  }
+
+  // Detect PHP script running Drupal bootstrap.
+  if (preg_match('/^.*\.php$/i', $raw_uri)) {
+    $path = $base_path . trim($current_uri, '/');
   }
 
   // Compare current URL with customizable excluded paths. Returns TRUE when
-  // at least one excluded path matches the current page path.
+  // at least one excluded path matches the current page path. Also includes
+  // custom configured user login path with exclusions.
   $exclude_paths = explode(PHP_EOL, variable_get('require_login_excluded_paths', ''));
   foreach ($exclude_paths as $key => $exclude_path) {
     $exclude_paths[$key] = trim($exclude_path);
     if ($exclude_paths[$key] == '<front>') {
-      $exclude_paths[$key] = drupal_get_path_alias(variable_get('site_frontpage', 'node'));
+      $exclude_paths[$key] = '/'. drupal_get_path_alias(variable_get('site_frontpage', 'node'));
     }
+  }
+  if ($auth_path = filter_xss_admin(trim(variable_get('require_login_auth_path', '')))) {
+    $auth_path = drupal_parse_url($auth_path);
+    $exclude_paths[] = trim($auth_path['path']);
   }
   if (drupal_match_path($path, implode(PHP_EOL, $exclude_paths))) {
     return TRUE;

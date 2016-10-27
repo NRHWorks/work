@@ -11,14 +11,16 @@
 
 <div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?> clearfix"<?php print $attributes; ?> style="position:relative">
 
-  <div id="task-left">
-    <div id="task-project">
+  <div id="project-left">
+    <div id="project-project">
     <strong>Client:</strong>
     <?php
       $client = node_load($node->field_client['und'][0]['nid']);
       print l($client->title, 'node/' . $client->nid);
     ?>
-    </div>
+    </div><br />
+
+    <div id="team-container"><?php print render($content['field_team']); ?></div><br />
 
     <div id="users-container"><?php print render($content['field_users']); ?></div><br />
 
@@ -134,7 +136,7 @@
     if (isset($node->field_resources['und'])) { $resources_count += count($node->field_resources['und']); }
   ?>
 
-  <div id="task-right">
+  <div id="project-right">
     <div class="tabs">
       <ul class="tabs primary task">
         <li class="active"><a href="#" data-show="log">Log</a></li>
@@ -246,14 +248,14 @@
 <div class='task-tabs tabs'>
   <ul class='tabs primary'>
   <li class='task-tab task-tab-0 tab ' onclick='project.switch_to(0);'>
-    <a>List Of Tasks</a>
+    <a>Stories</a>
   </li>
   <li class='task-tab task-tab-1 tab' onclick='project.switch_to(1);'>
-    <a>Sprint Backlog</a>
+    <a>Backlog</a>
   </li>
   <?php if (count($sprints)) :?>
     <li class='task-tab task-tab-2 tab' onclick='project.switch_to(2);'>
-      <a>Current Sprint</a>
+      <a>Active Sprint(s)</a>
     </li>
   <?php endif;?>
   </ul>
@@ -262,7 +264,7 @@
   <div class='task-tab-content task-tab-content-0 ' >
   </div>
   <div class='task-tab-content task-tab-content-1'>
-  <div><a href="/sprints/add/<?php print $node->nid;?>">Add Sprint</a> | <a href="/tasks/add/<?php print $node->nid;?>">Add Task</a></div>
+  <div><a href="/sprints/add/<?php print $node->nid;?>">Add Sprint</a> | <a href="/stories/add/<?php print $node->nid;?>">Add Task</a></div>
   </div>
   <div class='task-tab-content task-tab-content-2'>
   </div>

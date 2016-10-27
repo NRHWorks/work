@@ -1,0 +1,116 @@
+<?php
+
+/**
+ * Hook_menu.
+ */
+function work_dashboard_menu(){
+  $items['work-dashboard'] = array(
+    'title' => "Dashboard",
+    'page callback' => 'work_dashboard_page',
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+function work_dashboard_theme() {
+  $theme = array();
+  $theme['work_dashboard_developer'] = array(
+    'template' => 'work-dashboard-developer',
+    'variables' => array(
+      'messages' => null,
+			'todo' => null,
+			'schedule' => null,
+			'tickets' => null,
+			'sprints' => null,
+			'projets' => null,
+			'time' => null,),
+    'path' => drupal_get_path('module', 'work_dashboard') . '/templates',
+   );
+
+  return $theme;
+}
+
+/**
+ * This function sets up the dashboard page
+ */
+function work_dashboard_page() {
+	return _work_dashboard_developer();
+}
+
+function _work_dashboard_developer() {
+  global $user;
+
+  $uid = $user->uid;
+
+	$messages = array();
+
+  $todo = work_todo_page_user_dashboard($uid);
+
+	$schedule = work_schedule2_user_dashboard($uid);
+
+  // get stories without status closed assigned to the user
+  $result = db_query("SELECT s.entity_id as nid
+                      FROM {field_data_field_status} s
+                        INNER JOIN {field_data_field_assigned_to} u ON u.entity_id = s.entity_id
+                      WHERE s.field_status_tid != 7 AND u.field_Assigned_to_uid = :uid",
+                      array(':uid' => $uid));
+
+  foreach ($result as $r) {
+    $tickets[] = node_load($r->nid);
+  }
+
+  $result = db_query("  SELECT n.nid
+                        FROM {node} n
+                        WHERE n.type = 'team'
+                        AND n.nid IN (
+                          SELECT entity_id FROM {field_data_field_team_lead} WHERE field_team_lead_uid = :uid1 UNION
+                          SELECT entity_id FROM {field_data_field_project_manager} WHERE field_project_manager_uid = :uid2 UNION
+                          SELECT entity_id FROM {field_data_field_backend_developer} WHERE field_backend_developer_uid = :uid3 UNION
+                          SELECT entity_id FROM {field_data_field_frontend_developer} WHERE field_frontend_developer_uid = :uid4 UNION
+                          SELECT entity_id FROM {field_data_field_sys_admin} WHERE field_sys_admin_uid = :uid5 UNION
+                          SELECT entity_id FROM {field_data_field_quality_assurance_tester} WHERE field_quality_assurance_tester_uid = :uid6
+                        )",
+                        array(':uid1' => $uid,
+                              ':uid2' => $uid,
+                              ':uid3' => $uid,
+                              ':uid4' => $uid,
+                              ':uid5' => $uid,
+                              ':uid6' => $uid));
+  $team_nids = array();
+  foreach ($result as $r) {
+    $team_nids[] = $r->nid;
+  }
+
+  // get all the active sprints the user's team(s) are assigned to
+  $result = db_query("  SELECT n.nid
+                        FROM {node} n
+                        WHERE n.type = 'sprint' AND
+                        n.nid IN (SELECT entity_id FROM field_data_field_team WHERE field_team_nid IN (:team_nids)) AND
+                        n.nid IN (SELECT entity_id FROM field_data_field_sprint_status WHERE field_sprint_status_tid IN (47, 48))
+                        ORDER BY n.title",
+                        array(':team_nids' => $team_nids));
+
+  $sprints = array();
+  foreach ($result as $r) {
+    $sprints[] = node_load($r->nid);
+  }
+
+
+	$projects = work_project_user_dashboard($uid);
+
+	$time = 'Data coming soon.';
+
+	return theme('work_dashboard_developer',
+                array(
+                  'messages' => $messages,
+                  'todo' => $todo,
+                  'schedule' => $schedule,
+                  'tickets' => $tickets,
+                  'sprints' => $sprints,
+                  'projects' => $projects,
+                  'time' => $time,
+                )
+              );
+}
+

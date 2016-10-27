@@ -62,8 +62,8 @@ textarea {
   width: 95%;
 }
 
-input[type=submit], button {
-  background-color: #d61111;
+input[type=submit], input[type=button], button {
+  background-color: #cf3535;
   color: #FFF;
   font-weight: bold;
   padding: 7px 10px;
@@ -112,7 +112,7 @@ button {
   font-weight: bold;
 }
 
-#task-left,
+#story-left,
 #project-left {
   width: 50%;
   padding: 10px;
@@ -131,7 +131,7 @@ button {
   padding-left: 25px !important;
 }
 
-#task-right,
+#story-right,
 #project-right {
   width: 50%;
   padding: 10px;
@@ -141,22 +141,33 @@ button {
 
   -webkit-box-shadow: -5px 0px 5px -3px #CCC;
   box-shadow: -5px 0px 5px -3px #CCC;
-  
+
   min-height: 450px;
 }
 
-#task-right .tabs,
+#story-right .tabs,
 #project-right .tabs {
   margin-top: -35px;
   margin-left: -7px;
 }
 
+#project-right div.tabs,
+#project-right ul.tabs {
+  min-width: 550px;
+}
 
-#task-right .right-wrapper {
+#story-right div.tabs,
+#story-right ul.tabs {
+  min-width: 550px;
+}
+
+
+#project-right .right-wrapper,
+#story-right .right-wrapper {
   display: none;
 }
 
-#task-right #comments-wrapper {
+#story-right #comments-wrapper {
   display: block;
 }
 
@@ -164,7 +175,7 @@ button {
   display: block;
 }
 
-.node-type-project #task-right #log-wrapper {
+.node-type-project #project-right #log-wrapper {
   display: block;
 }
 
@@ -178,7 +189,7 @@ button {
 }
 
 .node-type-project .section > div.tabs,
-.node-type-task .section > div.tabs {
+.node-type-story .section > div.tabs {
   margin-bottom: -11px;
   height: 28px;
 }
@@ -193,7 +204,7 @@ button {
 
 .node-type-client:not(.page-node-edit) #block-system-main > .content,
 .node-type-project:not(.page-node-edit) #block-system-main > .content,
-.node-type-task:not(.page-node-edit) #block-system-main > .content {
+.node-type-story:not(.page-node-edit) #block-system-main > .content {
   background-color: #FFF;
   border: 1px solid #CCC;
   min-height: 450px;
@@ -216,7 +227,7 @@ button {
 
 .field-type-taxonomy-term-reference .field-label {
   font-size: 12px !important;
-  font-weight: bold !important;   
+  font-weight: bold !important;
 }
 
 .field-type-taxonomy-term-reference ul.links li {
@@ -267,7 +278,7 @@ button {
   left: 52px;
 
   height: auto;
- 
+
   -webkit-box-shadow: 5px 5px 5px -3px #CCC;
   box-shadow: 5px 5px 5px -3px #CCC;
 
@@ -294,7 +305,7 @@ button {
 
   top: 75px;
   left: 100px;
- 
+
   -webkit-box-shadow: 5px 5px 5px -3px #CCC;
   box-shadow: 5px 5px 5px -3px #CCC;
 
@@ -317,7 +328,7 @@ button {
 
   top: 45px;
   left: 280px;
- 
+
   -webkit-box-shadow: 5px 5px 5px -3px #CCC;
   box-shadow: 5px 5px 5px -3px #CCC;
 
@@ -380,6 +391,11 @@ button {
 .field-name-field-estimate {
   float: right;
   margin-right: 20px;
+}
+
+form .field-name-field-estimate {
+  float: none;
+  margin-right: none;
 }
 
 .field-name-field-credentials .field-label,
@@ -449,7 +465,7 @@ button {
   margin-right: 20px;
 }
 
-#task-project {
+#story-project {
   font-size: 16px;
   font-weight: bold;
   margin: 5px 0 16px 0;
@@ -460,7 +476,7 @@ button {
   border-bottom: 1px solid #CCC;
   padding: 20px 10px 10px 10px;
   display: none;
-  margin: 10px -10px; 
+  margin: 10px -10px;
   background-color: #F5f5f5;
 }
 
@@ -562,12 +578,12 @@ h1.title, .tabs, #header .section, #breadcrumb  {
 
 .in-progress {
   background-color: #fcf8e3;
-  font-size: 12px; 
+  font-size: 12px;
   text-align: center;
 }
 
 .needs-tested {
-  font-size: 12px; 
+  font-size: 12px;
   text-align: center;
 }
 
@@ -607,7 +623,7 @@ th.blue-hover {
   font-weight: bold;
 }
 
-#task-status-update {
+#story-status-update {
   border-top: 1px solid #CCC;
   border-bottom: 1px solid #CCC;
   background-color: #f5f5f5;
@@ -616,7 +632,7 @@ th.blue-hover {
   display: none;
 }
 
-#task-status-update a {
+#story-status-update a {
   font-weight: bold;
   display: inline-block;
   width: 60px;
@@ -627,12 +643,96 @@ th.blue-hover {
   display: none;
 }
 
+#active.sprint-div table td,
+.task-tab-content-2 table td,
+.task-tab-content-2 table td,
 .node-type-sprint table td,
-.task-tab-content-2 table td {
-  width: 20%;
+.story-tab-content-2 table td {
+  width: 16.66%;
   vertical-align: top;
 }
 
 .view-tasks .views-field-php-1 {
   width: 25px;
+}
+
+.node-team .field {
+  border-bottom: 1px solid #DDD;
+  padding-bottom: 25px;
+  margin-bottom: 25px;
+  width: 500px;
+}
+.node-team .field-label {
+  width: 250px;
+}
+
+#dashboard .row {
+  overflow: auto;
+  clear: left;
+  margin-top: 25px;
+}
+
+#dashboard .row .item {
+  float: left;
+  width: 45%;
+  margin-right: 0%;
+  border: 1px solid #CCC;
+  background-color: white;
+}
+
+#dashboard .row .item.first {
+  width: 50%;
+  margin-right: 4%;
+}
+
+#dashboard .title {
+  background-color: #cf3535;
+  color: white;
+  padding: 5px 10px;
+  font-weight: bold;
+}
+
+#dashboard .content {
+  padding: 10px 15px;
+}
+
+.sprint-div {
+  display: none;
+  background-color: white;
+  border-left: 1px solid #CCC;
+  border-right: 1px solid #CCC;
+  border-bottom: 1px solid #CCC;
+  padding: 25px;
+  margin-top: -20px;
+}
+
+.sprint-div.active {
+  display: block;
+}
+
+.sprint-project {
+  width: 20px;
+}
+
+.sprint-project a {
+  position: absolute;
+  left: 10px;
+  display: block;
+  min-width: 100px;
+
+  /* Safari */
+  -webkit-transform: rotate(-90deg);
+
+  /* Firefox */
+  -moz-transform: rotate(-90deg);
+
+  /* IE */
+  -ms-transform: rotate(-90deg);
+
+  /* Opera */
+  -o-transform: rotate(-90deg);
+
+  /* Internet Explorer */
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+
 }

@@ -28,8 +28,8 @@
  * @see template_process()
  */
 ?>
-<?php 
-  $e = $variables['elements']['#entity']; 
+<?php
+  $e = $variables['elements']['#entity'];
   $he = $e->hostEntity();
 
   $content['field_hours'][0]['#markup'] .= ' hours';
@@ -38,9 +38,9 @@
 <div class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
   <div class="content"<?php print $content_attributes; ?>>
     <div style="float:left; margin-right:20px; font-weight:bold;">
-      <a href="#" 
-         onclick="  jQuery('#time-wrapper').load('/tasks/update-time/delete/<?php print $he->nid; ?>/<?php print $e->item_id; ?>', function(){work_log.update_log(<?php print $he->nid;?>);});
-                    setTimeout(function() { jQuery('#estimate-wrapper').load('/tasks/estimate/<?php print $he->nid; ?>') }, 1000);
+      <a href="#"
+         onclick="  jQuery('#time-wrapper').load('/stories/update-time/delete/<?php print $he->nid; ?>/<?php print $e->item_id; ?>', function(){work_log.update_log(<?php print $he->nid;?>);});
+                    setTimeout(function() { jQuery('#estimate-wrapper').load('/stories/estimate/<?php print $he->nid; ?>') }, 1000);
                     return false;">X</a>
     </div>
     <?php

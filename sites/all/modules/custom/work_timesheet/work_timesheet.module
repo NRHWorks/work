@@ -21,7 +21,7 @@ function work_timesheet_menu() {
     'page arguments' => array('developer'),
     'access arguments' => array('access developer timesheet'),
   );
-  
+
   $items['timesheet/update-billed/%'] = array(
     'title' => 'Update Timesheet',
     'page callback' => 'work_timesheet_update_time',
@@ -42,7 +42,7 @@ function work_timesheet_permission() {
 
 function work_timesheet_theme($existing, $type, $theme, $path) {
   $theme = array();
-  
+
   $theme['timesheet_filter'] = array(
     'template' => 'timesheet-filter',
     'variables' => array('version' => null),
@@ -54,7 +54,7 @@ function work_timesheet_theme($existing, $type, $theme, $path) {
 
 function work_timesheet_page($version = 'admin') {
   $output = theme('timesheet_filter', array('version' => $version));
- 
+
   extract($_GET);
 
   if (!isset($group)) {
@@ -74,12 +74,12 @@ function work_timesheet_page($version = 'admin') {
   }
 
   if (!isset($start) && !isset($stop)) {
-    $start  = date('Y-m');
+    $start  = date('Y-m-01');
 
     if (date('m') == 12) {
       $stop = (date('Y') + 1) . '-01';
     } else {
-      $stop = date('Y') . '-' . sprintf("%02d",(date('m') + 1));
+      $stop = date('Y') . '-' . sprintf("%02d",(date('m') + 1)) . '-01';
     }
   }
 
@@ -90,7 +90,7 @@ function work_timesheet_page($version = 'admin') {
       $columns = array(
         'client' => 'Client',
         'project' => 'Project',
-        'task' => 'Task',
+        'story' => 'Story',
         'developer' => 'Developer',
         'date' => 'Date',
         'hours' => 'Hours',
@@ -104,7 +104,7 @@ function work_timesheet_page($version = 'admin') {
     case 'client' :
       $columns = array(
         'project' => 'Project',
-        'task' => 'Task',
+        'story' => 'Story',
         'developer' => 'Developer',
         'date' => 'Date',
         'hours_billed' => 'Hours',
@@ -116,14 +116,14 @@ function work_timesheet_page($version = 'admin') {
       $columns = array(
         'client' => 'Client',
         'project' => 'Project',
-        'task' => 'Task',
+        'story' => 'Story',
         'date' => 'Date',
         'hours' => 'Hours',
         'amount_paid' => 'Paid',
       );
       break;
   }
- 
+
   $headers = array();
 
   foreach ($columns as $k => $v) {
@@ -135,7 +135,7 @@ function work_timesheet_page($version = 'admin') {
   if ($group == 'no-group') {
 
     $rows = array();
-    
+
     $totals = array();
 
     foreach ($time as $t) {
@@ -151,11 +151,11 @@ function work_timesheet_page($version = 'admin') {
               $row[$k] = $t['profit'];
             } else {
               if (!isset($t[$k]) || ($t[$k] == 0)) {
-                $row[$k]  = "<div style='white-space:nowrap;'>";  
+                $row[$k]  = "<div style='white-space:nowrap;'>";
                 $row[$k] .= " <form action='/timesheet/update-billed/{$t['time_id']}' method='get' style='display:inline-block;'><input type='text' name='hours_billed' size='3' style='font-size:1.4em;' /></form> ";
                 $row[$k] .= "&nbsp;&nbsp;&nbsp; <a href='/timesheet/update-billed/{$t['time_id']}' style='display:inline-block; color:#393;'><i class='fa fa-dollar fa-2x'></i></a>";
                 $row[$k] .= "</div>";
-              } elseif ($t[$k] == -1) { 
+              } elseif ($t[$k] == -1) {
                 $row[$k] = "<a href='#' onclick='jQuery(this).toggle(); jQuery(\"#money-{$t['time_id']}\").toggle(); return false;' style='font-weight:bold;'>0</a>";
                 $row[$k] .= " <form id='money-{$t['time_id']}' action='/timesheet/update-billed/{$t['time_id']}' method='get' style='display:none;'><input type='text' name='hours_billed' size='3' style='font-size:2em;' /></form> ";
               } else {
@@ -180,7 +180,7 @@ function work_timesheet_page($version = 'admin') {
           }
         }
       }
-        
+
       work_timesheet_totals($row_totals, $totals, $t);
       $rows[] = $row;
     }
@@ -201,7 +201,7 @@ function work_timesheet_page($version = 'admin') {
     $output .= theme('table', array('header'=> $headers, 'rows' => $rows));
 
   } else {
-  
+
     $summary_table = array();
     $summary_totals = array();
 
@@ -223,11 +223,11 @@ function work_timesheet_page($version = 'admin') {
     }
 
     foreach ($time as $g => $time_group) {
-      
+
       $output .= "<h2>$g</h2>";
 
       $rows = array();
-      
+
       $totals = array();
       foreach ($time_group as $t) {
 
@@ -241,11 +241,11 @@ function work_timesheet_page($version = 'admin') {
                 $row[$k] = $t['profit'];
               } else {
                 if (!isset($t[$k]) || ($t[$k] == 0)) {
-                  $row[$k]  = "<div style='white-space:nowrap;'>";  
+                  $row[$k]  = "<div style='white-space:nowrap;'>";
                   $row[$k] .= " <form id='money-{$t['time_id']}' action='/timesheet/update-billed/{$t['time_id']}' method='get' style='display:inline-block;'><input type='text' name='hours_billed' size='3' style='font-size:1.4em;' /></form> ";
                   $row[$k] .= "&nbsp;&nbsp;&nbsp; <a href='/timesheet/update-billed/{$t['time_id']}' style='display:inline-block; color:#393;'><i class='fa fa-dollar fa-2x'></i></a>";
                   $row[$k] .= "</div>";
-                } elseif ($t[$k] == -1) { 
+                } elseif ($t[$k] == -1) {
                   $row[$k] = "<a href='#' onclick='jQuery(this).toggle(); jQuery(\"#money-{$t['time_id']}\").toggle(); return false;' style='font-weight:bold;'>0</a>";
                   $row[$k] .= " <form id='money-{$t['time_id']}' action='/timesheet/update-billed/{$t['time_id']}' method='get' style='display:none;'><input type='text' name='hours_billed' size='3' style='font-size:2em;' /></form> ";
                 } else {
@@ -272,7 +272,7 @@ function work_timesheet_page($version = 'admin') {
             }
           }
         }
-          
+
         work_timesheet_totals($row_totals, $totals, $t);
         $rows[] = $row;
       }
@@ -339,15 +339,15 @@ function work_timesheet_page($version = 'admin') {
                 );
     }
   }
-  
+
 
   if ($group != 'no-group') {
-    $output = str_replace('[summary]', '<h2>Summary</h2>' . theme('table', array('header'=> $summary_headers, 'rows' => $summary_table)) ,  $output); 
+    $output = str_replace('[summary]', '<h2>Summary</h2>' . theme('table', array('header'=> $summary_headers, 'rows' => $summary_table)) ,  $output);
   }
 
   $output = str_replace('$-', '-$', $output);
 
-  if (isset($_GET['update-time'])) { 
+  if (isset($_GET['update-time'])) {
     $output .= '<script>jQuery(document).ready(function() { var t = jQuery("#money-' . $_GET['update-time']  . '").parent().offset().top;  jQuery(window).scrollTop((t - 100)); });</script>';
   }
 
@@ -357,7 +357,7 @@ function work_timesheet_page($version = 'admin') {
 function work_timesheet_totals($row, &$totals, $t) {
 
   foreach ($row as $k => $v) {
-    if (isset($totals[$k]) && $totals[$k] == -1) { 
+    if (isset($totals[$k]) && $totals[$k] == -1) {
       $totals[$k] = 0;
     }
 
@@ -407,17 +407,18 @@ function work_timesheet_totals($row, &$totals, $t) {
 function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced = 'all', $start, $stop, $version = 'admin') {
   global $user;
 
-  $result = db_query("SELECT entity_id 
-                      FROM {field_data_field_date} 
-                      WHERE   bundle = 'field_time' 
+  $result = db_query("SELECT entity_id
+                      FROM {field_data_field_date}
+                      WHERE   bundle = 'field_time'
                               AND field_date_value >= '$start'
                               AND field_date_value <= '$stop'");
 
-  $time = array();  
+  $time = array();
 
   foreach ($result as $r) {
+
     $entity = entity_load('field_collection_item', array($r->entity_id));
-    $e = array_pop($entity); 
+    $e = array_pop($entity);
 
     $paid_query = db_query("SELECT count(*) FROM {field_data_field_payment_time} WHERE field_payment_time_target_id = :eid", array(':eid' => $r->entity_id))->fetchField();
 
@@ -443,24 +444,24 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
 
     $developer = user_load($e->field_user['und'][0]['uid']);
 
-    $tnid = db_query("  SELECT entity_id 
-                        FROM {field_data_field_time} 
-                        WHERE field_time_value = :eid", 
+    $snid = db_query("  SELECT entity_id
+                        FROM {field_data_field_time}
+                        WHERE field_time_value = :eid",
                         array(':eid' => $r->entity_id))->fetchField();
 
-    $pnid = db_query(" SELECT field_project_nid 
-                       FROM {field_data_field_project} 
+    $pnid = db_query(" SELECT field_project_nid
+                       FROM {field_data_field_project}
                        WHERE entity_id = :eid
-                             AND bundle = 'task'", 
-                       array(':eid' => $tnid))->fetchField();
-    
-    $cnid = db_query(" SELECT field_client_nid 
-                       FROM {field_data_field_client} 
+                             AND bundle = 'story'",
+                       array(':eid' => $snid))->fetchField();
+
+    $cnid = db_query(" SELECT field_client_nid
+                       FROM {field_data_field_client}
                        WHERE entity_id = :eid
-                             AND bundle = 'project'", 
+                             AND bundle = 'project'",
                        array(':eid' => $pnid))->fetchField();
-    
-    $t = node_load($tnid);
+
+    $s = node_load($snid);
     $p = node_load($pnid);
     $c = node_load($cnid);
 
@@ -476,14 +477,14 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
       }
     }
 
-    $task    = "<!-- {$t->title}  -->" . l($t->title, 'node/' . $t->nid);
+    $story    = "<!-- {$s->title}  -->" . l($s->title, 'node/' . $s->nid);
     $project = "<!-- " . strtoupper($p->title) . " -->" . l($p->title, 'node/' . $p->nid);
     $client  = "<!-- {$c->title}  -->" . l($c->title, 'node/' . $c->nid);
 
-    $task_inv = db_query("SELECT entity_id FROM {field_data_field_invoice_task} WHERE field_invoice_task_nid = :nid", array(':nid' => $t->nid))->fetchField();
+    $story_inv = db_query("SELECT entity_id FROM {field_data_field_invoice_task} WHERE field_invoice_task_nid = :nid", array(':nid' => $s->nid))->fetchField();
 
-    if (is_numeric($task_inv)) {
-      $inv = node_load($task_inv);
+    if (is_numeric($story_inv)) {
+      $inv = node_load($story_inv);
 
       if ($inv->field_invoice_status['und'][0]['value'] == 'Paid') {
         $grid_invoiced = 'paid';
@@ -516,7 +517,7 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
     } else {
       $grid_paid = 'not-paid';
     }
-    
+
     if (isset($e->field_hours_billed['und'])) {
       $hours_billed = $e->field_hours_billed['und'][0]['value'];
     } else {
@@ -527,6 +528,9 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
 
     $retainer = 0;
     $flat_fee = 0;
+
+    $amount_billed = '';
+    $profit = '';
 
     if (isset($p->field_bill_rate['und'][0]['value'])) {
       if ($hours_billed == -1) {
@@ -543,7 +547,7 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
     }
 
     $amount_paid = 0;
-    if (isset($developer->field_rate['und'][0]['value'])) { 
+    if (isset($developer->field_rate['und'][0]['value'])) {
     $amount_paid = $e->field_hours['und'][0]['value'] * $developer->field_rate['und'][0]['value'];
     }
 
@@ -558,46 +562,46 @@ function work_timesheet_get_time($group = 'no-group', $paid = 'all', $invoiced =
     $item = array (
       'time_id' => $e->item_id,
 
-      'task'  => $task,
+      'story'  => $story,
       'date'  => date('M d', strtotime($e->field_date['und'][0]['value'])),
-      
-      'paid' => $grid_paid, 
+
+      'paid' => $grid_paid,
       'invoiced' => $grid_invoiced,
-      
+
       'hours' => $hours,
       'hours_billed' => $hours_billed,
 
       'amount_billed' => $amount_billed,
       'amount_paid' => $amount_paid,
       'profit' => $profit,
-      
+
       'flat-fee' => $flat_fee,
       'retainer' => $retainer,
     );
 
     switch ($group) {
       case 'client':
-        $item['project'] = $project; 
-        $item['developer'] = $developer->name; 
+        $item['project'] = $project;
+        $item['developer'] = $developer->name;
 
         $time[$client][] = $item;
         break;
       case 'project':
-        $item['client'] = $client; 
-        $item['developer'] = $developer->name; 
+        $item['client'] = $client;
+        $item['developer'] = $developer->name;
 
         $time[$project][] = $item;
         break;
       case 'developer':
-        $item['client'] = $client; 
-        $item['project'] = $project; 
+        $item['client'] = $client;
+        $item['project'] = $project;
 
         $time[$developer->name][] = $item;
         break;
       default;
-        $item['client'] = $client; 
-        $item['project'] = $project; 
-        $item['developer'] = $developer->name; 
+        $item['client'] = $client;
+        $item['project'] = $project;
+        $item['developer'] = $developer->name;
 
         $time[] = $item;
     }
@@ -624,7 +628,7 @@ function work_timesheet_aasort (&$array, $key) {
 
 function work_timesheet_update_time($entity_id) {
   $entity = entity_load('field_collection_item', array($entity_id));
-  
+
   $fc_item = reset($entity);
 
   $fc_wrapper = entity_metadata_wrapper('field_collection_item', $fc_item);

@@ -8,8 +8,8 @@
 ?>
 <div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?> clearfix"<?php print $attributes; ?> style="position:relative">
 
-  <div id="task-left">
-    <div id="task-project">
+  <div id="story-left">
+    <div id="story-project">
       <strong>Project:</strong>
       <?php
         $project = node_load($node->field_project['und'][0]['nid']);
@@ -17,7 +17,7 @@
       ?>
     </div>
 
-    <div id="task-sprint">
+    <div id="story-sprint">
       <strong>Sprint:</strong>
       <?php
         if (isset($node->field_sprint['und'])) {
@@ -58,15 +58,15 @@
       <div id="assigned-to-container"><?php print render($content['field_assigned_to']); ?></div><br />
       <div id="creator-container"><?php print render($content['field_creator']); ?></div><br />
       <div id="owner-container"><?php print render($content['field_owner']); ?></div><br />
-      <div id="users-container"><?php print render($content['field_users']); ?></div><br /> 
+      <div id="users-container"><?php print render($content['field_users']); ?></div><br />
 
       <?php global $user; if ($user->uid != $node->field_assigned_to['und'][0]['uid']) : ?>
-        <div id="takeover-container"><a href="#" onclick="jQuery('#users-container').html('<img src=\'/sites/all/modules/custom/work_theme/images/loading.gif\' style=\'width: 20px; height: auto;\' />'); jQuery('#users-container').load('/tasks/update-assigned/<?php print $node->nid; ?>/<?php print $user->uid; ?>');  return false;">Assign to Me</a></div><br />
+        <div id="takeover-container"><a href="#" onclick="jQuery('#users-container').html('<img src=\'/sites/all/modules/custom/work_theme/images/loading.gif\' style=\'width: 20px; height: auto;\' />'); jQuery('#users-container').load('/stories/update-assigned/<?php print $node->nid; ?>/<?php print $user->uid; ?>');  return false;">Assign to Me</a></div><br />
       <?php endif; ?>
     </div>
 
     <div class="field-label gray">To Do:
-      <div style="float:right;"> 
+      <div style="float:right;">
         <a href="#" onclick="jQuery('.todo-done').parent().toggle(); return false;">Toggle Complete</a>
       </div>
     </div>
@@ -78,7 +78,7 @@
     <br />
     <a href="#" id="todo-add" onclick="jQuery('#node-todo-div').toggle(); return false;" class="form-link">Add Item</a>
     <div id="node-todo-div" class="hidden-form">
-      <form action="#" id="todo-form" onsubmit="jQuery('#todo-wrapper').load('/tasks/update-todo/add', {data: jQuery('#todo-form').serialize()}, function() {jQuery('#todo').val(''); jQuery('#node-todo-div').hide(); work_log.update_log(<?php print $node->nid;?>)}); return false;">
+      <form action="#" id="todo-form" onsubmit="jQuery('#todo-wrapper').load('/stories/update-todo/add', {data: jQuery('#todo-form').serialize()}, function() {jQuery('#todo').val(''); jQuery('#node-todo-div').hide(); work_log.update_log(<?php print $node->nid;?>)}); return false;">
         <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
         <input type="text" id="todo" name="todo" size="50" placeholder="todo..."  /><br />
         <input type="submit" value="Add Item" />
@@ -87,7 +87,7 @@
     <br /><br />
 
     <div class="field-label gray">Schedule:</div>
- 
+
     <div id="schedule-wrapper">
     <?php print render($content['field_schedule']); ?>
     </div>
@@ -96,7 +96,7 @@
     <a href="#" id="schedule-time" onclick="jQuery('#node-schedule-div').toggle(); return false;" class="form-link">Schedule Time</a>
     <div id="node-schedule-div" class="hidden-form">
       <form action="#" id="schedule-form" onsubmit="
-        jQuery('#schedule-wrapper').load('/tasks/update-schedule/add', {data: jQuery('#schedule-form').serialize()}, function(){work_log.update_log(<?php print $node->nid;?>);}); jQuery('#node-schedule-div').hide(); return false;">
+        jQuery('#schedule-wrapper').load('/stories/update-schedule/add', {data: jQuery('#schedule-form').serialize()}, function(){work_log.update_log(<?php print $node->nid;?>);}); jQuery('#node-schedule-div').hide(); return false;">
         <input type="text" id="schedule-date" class="datepicker init" placeholder="mm/dd/yyyy" name="date"/>
         <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
         <input type="checkbox" name="time[]" value="AM"/> AM
@@ -106,7 +106,7 @@
       </form>
     </div>
     <br /><br />
-  
+
     <?php if (!in_array('Client', $user->roles)) : ?>
       <div class="field-label gray">
         <div id="estimate-wrapper"><?php print render($content['field_estimate']); ?></div>
@@ -119,11 +119,11 @@
       <br />
       <a href="#" id="record-time" onclick="jQuery('#node-record-div').toggle(); return false;" class="form-link">Record Time</a>
       <div id="node-record-div" class="hidden-form">
-        <form action="#" 
-              id="record-form" 
-              onsubmit="  jQuery('#time-wrapper').load('/tasks/update-time/add', {data: jQuery('#record-form').serialize()}, function(){work_log.update_log(<?php print $node->nid;?>);});
-                          jQuery('#node-record-div').hide(); 
-                          setTimeout(function() { jQuery('#estimate-wrapper').load('/tasks/estimate/<?php print $node->nid; ?>') }, 1000);
+        <form action="#"
+              id="record-form"
+              onsubmit="  jQuery('#time-wrapper').load('/stories/update-time/add', {data: jQuery('#record-form').serialize()}, function(){work_log.update_log(<?php print $node->nid;?>);});
+                          jQuery('#node-record-div').hide();
+                          setTimeout(function() { jQuery('#estimate-wrapper').load('/stories/estimate/<?php print $node->nid; ?>') }, 1000);
                           return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
           <input type="text" id="record-date" class="datepicker init" name="date" placeholder="mm/dd/yyyy" size="12" />
@@ -150,7 +150,7 @@
     if (isset($project->field_resources['und'])) { $resources_count += count($project->field_resources['und']); }
   ?>
 
-  <div id="task-right">
+  <div id="story-right">
     <div class="tabs">
       <ul class="tabs primary task">
         <li class="active"><a href="#" data-show="comments" class="active">Comments</a></li>
@@ -165,15 +165,15 @@
       <div id="comments-container"><?php print render($content['field_comments']); ?></div>
       <a href="#" id="add-comment" onclick="jQuery('#node-add-comment').toggle(); return false;" class="form-link">Add Comment</a>
       <div id="node-add-comment" class="hidden-form">
-        <form action="#" 
-              id="comment-form" 
-              onsubmit=" jQuery('#comments-container').load('/tasks/update-comment/add', {data: jQuery('#comment-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
+        <form action="#"
+              id="comment-form"
+              onsubmit=" jQuery('#comments-container').load('/stories/update-comment/add', {data: jQuery('#comment-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
                          jQuery('#node-add-comment').hide();
                          jQuery('#comment-form #description').val('');
                          reset_height();
                          return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
-          <span style="color:#555;">Reference To Do:</span> 
+          <span style="color:#555;">Reference To Do:</span>
           <select name="todo" style="margin-bottom: 10px;">
             <option>-- none --</option>
             <?php if (isset($node->field_to_do['und'])) foreach ($node->field_to_do['und'] as $todo_id) : ?>
@@ -195,11 +195,11 @@
       <?php $f = field_view_field('node', $project, 'field_credentials', array('label' => 'hidden')); print render($f); ?>
 
       <a href="#" id="add-credentials" onclick="jQuery('#node-add-credentials').toggle(); return false;" class="form-link">Add Credentials</a>
-      <div id="node-add-credentials" class="hidden-form"> 
-        <form action="#" 
-              id="credentials-form" 
-              onsubmit="  jQuery('#credentials-container').load('/tasks/update-credentials/add', {data: jQuery('#credentials-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
-                          jQuery('#node-add-credentials').hide(); 
+      <div id="node-add-credentials" class="hidden-form">
+        <form action="#"
+              id="credentials-form"
+              onsubmit="  jQuery('#credentials-container').load('/stories/update-credentials/add', {data: jQuery('#credentials-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
+                          jQuery('#node-add-credentials').hide();
                           reset_height();
                           return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
@@ -208,13 +208,13 @@
           <input type="text" id="path"        name="path"         size="50" placeholder="Path"         /><br /><br />
           <input type="text" id="username"    name="username"     size="50" placeholder="Username"     /><br /><br />
           <input type="text" id="password"    name="password"     size="50" placeholder="Password"     /><br /><br />
-          
+
           <input type="submit" value="Add Credential"/>
         </form>
-      </div>  
+      </div>
 
       <div style="clear:both"></div>
- 
+
     </div>
 
     <div id="assets-wrapper" class="right-wrapper">
@@ -223,12 +223,12 @@
       <?php $f = field_view_field('node', $project, 'field_assets', array('label' => 'hidden')); print render($f); ?>
       <a href="#" id="add-asset" onclick="jQuery('#node-add-asset').toggle(); return false;" class="form-link">Add Asset</a>
       <div id="node-add-asset" class="hidden-form">
-        <form action="/tasks/update-assets/add" id="asset-form" method="post" enctype="multipart/form-data">
+        <form action="/stories/update-assets/add" id="asset-form" method="post" enctype="multipart/form-data">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
 
           <input type="text" id="asset" name="asset" size="50" placeholder="Asset" data-init="Asset" class="init" /><br /><br />
           <input type="file" id="file" name="file" size="50" class="init" /><br /><br />
-          
+
           <input type="submit" value="Add Asset"/>
         </form>
       </div>
@@ -240,10 +240,10 @@
       <?php $f = field_view_field('node', $project, 'field_resources', array('label' => 'hidden')); print render($f); ?>
       <a href="#" id="add-resource" onclick="jQuery('#node-add-resource').toggle(); return false;" class="form-link">Add Resource</a>
       <div id="node-add-resource" class="hidden-form">
-        <form action="#" 
-              id="resource-form" 
-              onsubmit="  jQuery('#resources-container').load('/tasks/update-resources/add', {data: jQuery('#resource-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
-                          jQuery('#node-add-resource').hide(); 
+        <form action="#"
+              id="resource-form"
+              onsubmit="  jQuery('#resources-container').load('/stories/update-resources/add', {data: jQuery('#resource-form').serialize()},function(){work_log.update_log(<?php print $node->nid;?>);});
+                          jQuery('#node-add-resource').hide();
                           reset_height();
                           return false;">
           <input type="hidden" id="nid" name="nid" value="<?php print $node->nid; ?>" />
@@ -253,7 +253,7 @@
         </form>
       </div>
     </div>
-    
+
     <div id="log-wrapper" class="right-wrapper">
       <?php print work_log_view($node->nid);?>
     </div>
@@ -264,31 +264,31 @@
 <!-- POPUP DIVS --->
 
 <div id="node-status-div">
-  <?php 
+  <?php
     $terms = taxonomy_get_tree(2);
 
     foreach ($terms as $t) {
       if  ($t->tid != 8) {
-        print "<a href='#' 
-                  onclick=' jQuery(\"#node-status-div\").hide(); 
-                            jQuery(\"#node-status\").html(\"{$t->name}\"); 
-                            jQuery.post(\"/tasks/update-status/{$node->nid}/{$t->tid}\", function(){work_log.update_log({$node->nid});})'>
+        print "<a href='#'
+                  onclick=' jQuery(\"#node-status-div\").hide();
+                            jQuery(\"#node-status\").html(\"{$t->name}\");
+                            jQuery.post(\"/stories/update-status/{$node->nid}/{$t->tid}\", function(){work_log.update_log({$node->nid});})'>
                   {$t->name}
                </a>\n";
       }
-    } 
+    }
   ?>
 </div>
 
 <div id="node-assign-to-div">
-  <?php 
+  <?php
     foreach ($node->field_users['und'] as $u) {
         $assign_user = user_load($u['uid']);
 
-        print " <a  href='#' 
-                    onclick=' jQuery(\"#node-assign-to-div\").hide(); 
-                              jQuery(\"#node-assigned-to\").html(\"{$assign_user->name}\"); 
-                              jQuery.post(\"/tasks/update-assigned/{$node->nid}/{$assign_user->uid}\", function(){work_log.update_log({$node->nid});})'>
+        print " <a  href='#'
+                    onclick=' jQuery(\"#node-assign-to-div\").hide();
+                              jQuery(\"#node-assigned-to\").html(\"{$assign_user->name}\");
+                              jQuery.post(\"/stories/update-assigned/{$node->nid}/{$assign_user->uid}\", function(){work_log.update_log({$node->nid});})'>
                     {$assign_user->name}
                 </a>\n";
     }
@@ -296,14 +296,14 @@
 </div>
 
 <div id="node-users-div">
-  <?php 
-  
+  <?php
+
     $result = db_query("SELECT uid, name FROM {users}");
 
     foreach ($result as $r) {
-        print " <a  href='#' 
-                    onclick=' jQuery(\"#node-users-div\").hide(); 
-                              jQuery(\"#users-container\").load(\"/tasks/update-users/add/{$node->nid}/{$r->uid}\", function(){work_log.update_log({$node->nid});})'>
+        print " <a  href='#'
+                    onclick=' jQuery(\"#node-users-div\").hide();
+                              jQuery(\"#users-container\").load(\"/stories/update-users/add/{$node->nid}/{$r->uid}\", function(){work_log.update_log({$node->nid});})'>
                     {$r->name}
                 </a>\n";
 

@@ -71,9 +71,7 @@ function work_log_view($node_nid) {
     AND f.bundle = 'log_entry'
     ORDER BY n.created DESC LIMIT 10", array(":nid" => $node_nid))->fetchAll();
 
-
   $rendered_log = "";
-
 
   foreach($logs as $log) {
     $n = node_load($log->nid);

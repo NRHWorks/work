@@ -61,7 +61,7 @@ function work_github_push_callback(){
       "<strong>URL:</strong> <a href='".$commit->url."' target='_blank'>".$commit->url."</a><br/>".
       "<strong>Message:</strong> ".$commit->message);
 
-    // Check if we should also create a log entry for task.
+    // Check if we should also create a log entry for story.
     // See if the beginning of the message is a number.
     $matches = array();
     preg_match("/^[\d]+/", $commit->message, $matches);
@@ -69,10 +69,10 @@ function work_github_push_callback(){
       continue;
     }
 
-    // Check if the number is a task number which belongs to this project.
+    // Check if the number is a story number which belongs to this project.
     $result = db_query("
       SELECT * FROM {field_data_field_project}
-      WHERE bundle = 'task'
+      WHERE bundle = 'story'
       AND entity_id = :tnid
       AND field_project_nid = :pnid",
       array(":tnid" => $matches[0], ":pnid" => $project_nid));
@@ -85,7 +85,7 @@ function work_github_push_callback(){
       "<strong>Committer:</strong> ".$commit->committer->name."<br/>".
       "<strong>URL:</strong> <a href='".$commit->url."' target='_blank'>".$commit->url."</a><br/>".
       "<strong>Message:</strong> ".$commit->message);
-    
+
 
   }
 }

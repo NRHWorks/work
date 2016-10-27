@@ -51,7 +51,7 @@ function work_schedule2_theme($existing, $type, $theme, $path) {
    );
   $theme['schedule_month'] = array(
     'template' => 'schedule_month',
-    'variables' => array('tasks' => null),
+    'variables' => array('stories' => null),
     'path' => drupal_get_path('module', 'work_schedule2')."/templates",
    );
   $theme['schedule_menu'] = array(
@@ -74,7 +74,7 @@ function work_schedule2_week($date = null) {
 
 function work_schedule2_month($date = null) {
   return theme('schedule_month',
-    array('tasks' => work_schedule2_get_table('month', $date)));
+    array('stories' => work_schedule2_get_table('month', $date)));
 }
 
 
@@ -90,12 +90,12 @@ function work_schedule2_get_table($sort_by, $date = null) {
 
 function work_schedule2_query_database() {
   global $user;
-  
+
   // First get all the projects this user is involved.
   $projects = db_query("
     SELECT entity_id AS project_nid FROM {field_data_field_users} WHERE field_users_uid = :uid",
     array(":uid" => $user->uid));
-  
+
   $all_data = [];
   foreach ($projects as $p) {
     $data = db_query( "
@@ -117,15 +117,13 @@ function work_schedule2_query_database() {
     INNER JOIN {field_data_field_project} AS fp ON n.nid = fp.entity_id
     INNER JOIN {node} as np ON np.nid = fp.field_project_nid
     INNER JOIN {field_data_field_assigned_to} AS at ON at.entity_id = n.nid
-    WHERE  n.type = 'task'
+    WHERE  n.type = 'story'
     AND n.status = 1
     AND np.nid = :nid",
     array(":nid" => $p->project_nid))->fetchAll();
     $all_data = array_merge($all_data, $data);
   }
-  
-  
-  
+
   return $all_data;
 
 }
@@ -147,19 +145,19 @@ function sort_tables($data, $sort_by, $date) {
         $tables[$time][] = array(
           'project_nid' => $d->np_nid,
           'project_title' => $d->np_title,
-          'task_nid' => $d->nid,
-          'task_title' =>$d->title,
+          'story_nid' => $d->nid,
+          'story_title' =>$d->title,
           'assignee' => $d->name);
       }
-    } elseif ($sort_by == 'week') { 
+    } elseif ($sort_by == 'week') {
       if(date("Y-m-d", strtotime($d->field_date_value)) >= $start_date &&
          date("Y-m-d", strtotime($d->field_date_value)) <= $end_date) {
         $tables[$time][date("Y-m-d", strtotime($d->field_date_value))][]
           = array(
             'project_nid' => $d->np_nid,
             'project_title' => $d->np_title,
-            'task_nid' => $d->nid,
-            'task_title' =>$d->title,
+            'story_nid' => $d->nid,
+            'story_title' =>$d->title,
             'assignee' => $d->name);
       }
     } elseif ($sort_by == 'month') {
@@ -169,7 +167,7 @@ function sort_tables($data, $sort_by, $date) {
       }
     }
   }
-  
+
   if ($sort_by == 'day') {
     ksort($tables);
   }
@@ -200,8 +198,8 @@ function objectToArray ($object) {
 }
 
 function build_tables_day($data, $date) {
-  
-  $header = array('Project', 'Task', 'Assignee');
+
+  $header = array('Project', 'Story', 'Assignee');
   foreach ($data as $key => $val) {
     $rows = null;
     $time = $key;
@@ -213,7 +211,7 @@ function build_tables_day($data, $date) {
       foreach($val as $v) {
         $rows[] = array(
           l($v['project_title'], drupal_get_path_alias("node/".$v['project_nid'])),
-          l("#".$v['task_nid'] ." " .$v['task_title'], drupal_get_path_alias("node/".$v['task_nid'])),
+          l("#".$v['story_nid'] ." " .$v['story_title'], drupal_get_path_alias("node/".$v['story_nid'])),
           $v['assignee'],
           );
       }
@@ -251,28 +249,28 @@ function build_tables_week($data, $date) {
     }
   }
   $hours_rows = null;
-  
-  foreach ($data_organized as $hours => $date_tasks) {
+
+  foreach ($data_organized as $hours => $date_stories) {
     $time = $hours == "PM+" ? "Evening" : $hours;
     $infos = array($time);
     // Now dealing with each table cell
-    foreach ($date_tasks as $tasks) {
-      $tasks_organized = work_schedule2_organized_week_tasks($tasks);
+    foreach ($date_stories as $stories) {
+      $stories_organized = work_schedule2_organized_week_stories($stories);
       $info = "";
-      foreach ($tasks_organized as $project_nid => $cell_content) {
+      foreach ($stories_organized as $project_nid => $cell_content) {
         $info .= "<div class='weekly-schedule-project-item'><strong>" .
           l($cell_content['project_title'], drupal_get_path_alias("node/".$project_nid)) .
           "</strong><ul>";
-          
-        foreach($cell_content['tasks'] as $task) {
+
+        foreach($cell_content['stories'] as $story) {
           $info .= "<li ";
-          if ($task['assignee'] != $user->name){
+          if ($story['assignee'] != $user->name){
             $info .=" class='not-assigned-to-me'";
           }
           $info .=">" .
-            l("#".$task['task_nid'] ." " .
-            $task['task_title'], drupal_get_path_alias("node/".$task['task_nid'])) .
-            " (".$task['assignee'].")</li>";
+            l("#".$story['story_nid'] ." " .
+            $story['story_title'], drupal_get_path_alias("node/".$story['story_nid'])) .
+            " (".$story['assignee'].")</li>";
         }
         $info .="</ul></div>";
       }
@@ -285,16 +283,16 @@ function build_tables_week($data, $date) {
   return $temp;
 }
 
-function work_schedule2_organized_week_tasks ($tasks) {
+function work_schedule2_organized_week_stories ($stories) {
   $result = [];
-  foreach ($tasks as $task){
-    if (isset($result[$task['project_nid']])) {
-      $result[$task['project_nid']]['tasks'][] = $task;
+  foreach ($stories as $story){
+    if (isset($result[$story['project_nid']])) {
+      $result[$story['project_nid']]['stories'][] = $story;
     }
     else {
-      $result[$task['project_nid']] = array(
-        'project_title' => $task['project_title'],
-        'tasks' => array($task),
+      $result[$story['project_nid']] = array(
+        'project_title' => $story['project_title'],
+        'stories' => array($story),
       );
     }
   }
@@ -312,4 +310,19 @@ function build_tables_month($data, $date) {
   }
   $temp = array($start_date, $rows);
   return $temp;
+}
+
+function work_schedule2_user_dashboard($uid) {
+  $user = user_load($uid);
+  $data = work_schedule2_query_database();
+
+  $schedule = array();
+  foreach ($data as $d) {
+    if (($d->name == $user->name) && ($d->field_date_value >= date('Y-m-d'))) {
+      $schedule[] = $d;
+    }
+  }
+
+  return $schedule;
+
 }

@@ -1,7 +1,7 @@
-<?php 
-global $t;
-$t = $tasks;
-$date = $t[0];
+<?php
+global $s;
+$s = $stories;
+$date = $s[0];
 $month = date('m', strtotime($date));
 $year = date('Y', strtotime($date));
 ?>
@@ -9,14 +9,14 @@ $year = date('Y', strtotime($date));
 <?php print theme('schedule_menu'); ?>
 <div>
   <input name='assigned_to_me' type='checkbox' onchange='schedule.assigned_to_me_toggle();'></input>
-  <span>Only show tasks that are assigned to me</span>
+  <span>Only show stories that are assigned to me</span>
 </div>
 <div style="clear:both; margin-bottom: 20px;">
 <h1>
   <div style = "float: left; width: 50px;">
     <a href="/schedule/month/<?php echo date('Y-m-d', strtotime('first day of last month', strtotime($date)));?>" ><<</a>
   </div>
-  <div style = "float: left; margin-left: 350px;"> 
+  <div style = "float: left; margin-left: 350px;">
     <?php echo date( 'M Y', strtotime($date)) ?>
   </div>
   <div style = "float: right; width:50px">
@@ -27,50 +27,50 @@ $year = date('Y', strtotime($date));
 </div>
 
 <?php
-global $t;
+global $s;
 print build_calendar($month, $year);
 
-function tasks_for_day($day) {
-  global $t;
+function stories_for_day($day) {
+  global $s;
   global $user;
-  $data = $t[1];
+  $data = $s[1];
   $today_events = array();
-  
+
   foreach($data as $val) {
     if($val->field_date_value == $day) {
       if (isset($today_events[$val->np_nid])) {
-        $today_events[$val->np_nid]['tasks'][] = $val;
+        $today_events[$val->np_nid]['stories'][] = $val;
       }
       else {
         $today_events[$val->np_nid] = array(
           'project_title' => $val->np_title,
-          'tasks' => array($val)
+          'stories' => array($val)
         );
       }
-      
+
     }
   }
-  
+
   $info = "";
   foreach ($today_events as $project_nid => $cell_content) {
     $info .= "<div class='monthly-schedule-project-item'><strong>" .
       l($cell_content['project_title'], drupal_get_path_alias("node/".$project_nid)) .
       "</strong><ul>";
-      
-    foreach($cell_content['tasks'] as $task) {
+
+    foreach($cell_content['stories'] as $story) {
       $info .= "<li ";
-      if ($task->name != $user->name){
+      if ($story->name != $user->name){
         $info .=" class='not-assigned-to-me'";
       }
       $info .=">" .
-        l("#" . $task->nid, drupal_get_path_alias("node/".$task->nid)) .
-        " (".$task->name.")</li>";
+        l("#" . $story->nid, drupal_get_path_alias("node/".$story->nid)) .
+        " (".$story->name.")</li>";
     }
     $info .="</ul></div>";
   }
 
-  return $info;  
-} 
+  return $info;
+}
 
 function build_calendar($month,$year) {
 
@@ -103,7 +103,7 @@ function build_calendar($month,$year) {
 
      foreach($daysOfWeek as $day) {
           $calendar .= "<th class='header' style='width:12%'>$day</th>";
-     } 
+     }
 
      // Create the rest of the calendar
 
@@ -117,12 +117,12 @@ function build_calendar($month,$year) {
      // ensure that the calendar
      // display consists of exactly 7 columns.
 
-     if ($dayOfWeek > 0) { 
-          $calendar .= "<td colspan='$dayOfWeek'>&nbsp;</td>"; 
+     if ($dayOfWeek > 0) {
+          $calendar .= "<td colspan='$dayOfWeek'>&nbsp;</td>";
      }
-     
+
      $month = str_pad($month, 2, "0", STR_PAD_LEFT);
-  
+
      while ($currentDay <= $numberDays) {
 
           // Seventh column (Saturday) reached. Start a new row.
@@ -133,32 +133,32 @@ function build_calendar($month,$year) {
                $calendar .= "</tr><tr>";
 
           }
-          
+
           $currentDayRel = str_pad($currentDay, 2, "0", STR_PAD_LEFT);
-          
+
           $date = "$year-$month-$currentDayRel";
           $link = l($currentDay, "schedule/day/$year-$month-$currentDayRel");
           $calendar .= "<td valign='top' class='day' rel='$date' style='padding:5px; height:100px;'>
                         $link <br />
-                        " . tasks_for_day($date . ' 00:00:00') . "
+                        " . stories_for_day($date . ' 00:00:00') . "
                         </td>";
- 
+
           $currentDay++;
           $dayOfWeek++;
 
      }
-     
-     
+
+
 
      // Complete the row of the last week in month, if necessary
 
-     if ($dayOfWeek != 7) { 
-     
+     if ($dayOfWeek != 7) {
+
           $remainingDays = 7 - $dayOfWeek;
-          $calendar .= "<td colspan='$remainingDays'>&nbsp;</td>"; 
+          $calendar .= "<td colspan='$remainingDays'>&nbsp;</td>";
 
      }
-     
+
      $calendar .= "</tr>";
 
      $calendar .= "</table>";

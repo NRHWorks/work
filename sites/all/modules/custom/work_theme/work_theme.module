@@ -11,10 +11,10 @@ function work_theme_init() {
 function work_theme_theme($existing, $type, $theme, $path) {
   $theme = array();
 
-  $theme['node__task'] = array(
+  $theme['node__story'] = array(
     'render element' => 'content',
     'base hook' => 'node',
-    'template' => 'node--task',
+    'template' => 'node--story',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
 
@@ -189,7 +189,7 @@ function work_theme_sort($data, $key, $type = 'string') {
 
 function work_theme_preprocess_page(&$vars) {
   if (isset($vars['page']['content']['system_main']['nodes']) && ($node = current($vars['page']['content']['system_main']['nodes']))) {
-    if ($node['#node']->type == 'task') {
+    if ($node['#node']->type == 'story') {
 	    $vars['title'] .= " ({$node['#node']->nid})";
     }
   }

@@ -10,7 +10,7 @@
     $img_url = file_create_url($content['field_asset']["#items"][0]['uri']);
     $thumbnail
       = "<a href ='" . $img_url . "' target='_blank'><img src='" . $img_url .
-      "' width=400 /></a>";
+      "' width=200 /></a>";
   }
 ?>
 

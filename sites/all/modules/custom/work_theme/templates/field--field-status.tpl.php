@@ -1,11 +1,11 @@
-<?php 
-  $node = $element['#object']; 
+<?php
+  $node = $element['#object'];
   $nid  = $node->nid;
 ?>
   <div class="<?php print $classes; ?>"<?php print $attributes; ?>>
     <div class="field-label"<?php print $title_attributes; ?>><?php print $label ?>:&nbsp;</div>
     <div class="field-items"<?php print $content_attributes; ?>>
-      <div class="field-item"> <span id="node-status"><?php print render($items[0]); ?></span> 
+      <div class="field-item"> <span id="node-status"><?php print render($items[0]); ?></span>
       <?php
          global $user;
 
@@ -14,33 +14,33 @@
             switch ($items[0]['#markup']) {
               case 'New' :
                 ?>
-                  <span class="status-link"> => 
-                    <a href="#" onclick="jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/progress', function() { work_log.update_log(<?php print $nid; ?>); }); ">get started</a>
+                  <span class="status-link"> =>
+                    <a href="#" onclick="jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/progress', function() { work_log.update_log(<?php print $nid; ?>); }); ">get started</a>
                   </span>
                 <?php
                 break;
               case 'In Progress' :
                 ?>
-                  <span class="status-link"> => 
+                  <span class="status-link"> =>
                     <a href="#" onclick="jQuery('#feedback-comment').show(); ">request feedback</a> |
-                    <a href="#" onclick="jQuery('#resolve-comment').show(); ">resolve</a> 
+                    <a href="#" onclick="jQuery('#resolve-comment').show(); ">resolve</a>
                   </span>
                 <?php
                 break;
-              
+
               case 'Feedback Requested' :
                 ?>
-                  <span class="status-link"> => 
+                  <span class="status-link"> =>
                     <a href="#" onclick="jQuery('#give-feedback-comment').show(); ">give feedback</a>
                   </span>
                 <?php
                 break;
-              
+
               case 'Resolved' :
                 ?>
-                  <span class="status-link"> => 
-                    <a href="#" onclick="jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/close', function() { work_log.update_log(<?php print $nid; ?>); });">accept work</a> |
-                    <a href="#" onclick="jQuery('#reject-comment').show(); ">reject work</a> 
+                  <span class="status-link"> =>
+                    <a href="#" onclick="jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/close', function() { work_log.update_log(<?php print $nid; ?>); });">accept work</a> |
+                    <a href="#" onclick="jQuery('#reject-comment').show(); ">reject work</a>
                   </span>
                 <?php
                 break;
@@ -54,9 +54,9 @@
     </div>
   </div>
   <div id="reject-comment" style="display:none;" class="status-form hidden-form">
-    <form action="#" 
-          id="reject-comment-form" 
-          onsubmit=" jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/reject', {data: jQuery('#reject-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
+    <form action="#"
+          id="reject-comment-form"
+          onsubmit=" jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/reject', {data: jQuery('#reject-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
                      jQuery('#give-feedback-comment').hide();
                      return false;">
       <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Why is the work being rejected?" /></textarea><br />
@@ -65,9 +65,9 @@
     </form>
   </div>
   <div id="give-feedback-comment" style="display:none;" class="status-form hidden-form">
-    <form action="#" 
-          id="give-feedback-comment-form" 
-          onsubmit=" jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/give-feedback', {data: jQuery('#give-feedback-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
+    <form action="#"
+          id="give-feedback-comment-form"
+          onsubmit=" jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/give-feedback', {data: jQuery('#give-feedback-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
                      jQuery('#give-feedback-comment').hide();
                      return false;">
       <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Provide feedback..." /></textarea><br />
@@ -76,9 +76,9 @@
     </form>
   </div>
   <div id="feedback-comment" style="display:none;" class="status-form hidden-form">
-    <form action="#" 
-          id="feedback-comment-form" 
-          onsubmit=" jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/feedback', {data: jQuery('#feedback-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
+    <form action="#"
+          id="feedback-comment-form"
+          onsubmit=" jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/feedback', {data: jQuery('#feedback-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
                      jQuery('#feedback-comment').hide();
                      return false;">
       <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Ask questions..." /></textarea><br />
@@ -87,9 +87,9 @@
     </form>
   </div>
   <div id="resolve-comment" style="display:none;" class="status-form hidden-form">
-    <form action="#" 
-          id="resolve-comment-form" 
-          onsubmit=" jQuery('#status-row').load('/tasks/status/<?php print $nid; ?>/resolve', {data: jQuery('#resolve-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
+    <form action="#"
+          id="resolve-comment-form"
+          onsubmit=" jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/resolve', {data: jQuery('#resolve-comment-form').serialize()},function(){work_log.update_log_comments(<?php print $nid;?>);});
                      jQuery('#resolve-comment').hide();
                      return false;">
       <textarea id="status-text" name="status-text" class="init" cols="50" rows="10" placeholder="Add comments..." /></textarea><br />

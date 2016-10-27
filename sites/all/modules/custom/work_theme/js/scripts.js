@@ -27,21 +27,40 @@ function reset_height() {
 
     $("ul.task a").click(function() {
 
-      $('#task-right .right-wrapper').hide();
-      $('#task-right #' + $(this).data('show') + '-wrapper').show();
+      $('#project-right .right-wrapper').hide();
+      $('#project-right #' + $(this).data('show') + '-wrapper').show();
 
       reset_height();
 
-      $('#task-right li').removeClass('active');
+      $('#project-right li').removeClass('active');
       $(this).parent().addClass('active');
 
-      $('#task-right li a').removeClass('active');
+      $('#project-right li a').removeClass('active');
       $(this).addClass('active');
 
-      if ($("#task-left").height() > $('#task-right').height()) {
-        $("#task-right").height($("#task-left").height() + 20);
+      if ($("#project-left").height() > $('#project-right #' + $(this).data('show') + '-wrapper').height()) {
+        $("#project-right").height($("#project-left").height() + 20);
       } else {
-        $("#task-left").height($("#task-right").height());
+        $("#project-left").height($('#project-right #' + $(this).data('show') + '-wrapper').height());
+        $("#project-right").height($('#project-right #' + $(this).data('show') + '-wrapper').height());
+      }
+
+      $('#story-right .right-wrapper').hide();
+      $('#story-right #' + $(this).data('show') + '-wrapper').show();
+
+      reset_height();
+
+      $('#story-right li').removeClass('active');
+      $(this).parent().addClass('active');
+
+      $('#story-right li a').removeClass('active');
+      $(this).addClass('active');
+
+      if ($("#story-left").height() > $('#story-right #' + $(this).data('show') + '-wrapper').height()) {
+        $("#story-right").height($("#story-left").height() + 20);
+      } else {
+        $("#story-left").height($('#story-right #' + $(this).data('show') + '-wrapper').height() + 100);
+        $("#story-right").height($('#story-right #' + $(this).data('show') + '-wrapper').height() + 100);
       }
     });
 
@@ -52,7 +71,7 @@ function reset_height() {
         $(this).parent().siblings('div').removeClass('todo-done');
       }
       var thisCheckbox = $(this);
-      $.post('/tasks/update-todo/' + $(this).data('todo'), function(d, status){
+      $.post('/stories/update-todo/' + $(this).data('todo'), function(d, status){
         if (status == 'success') {
           work_log.update_log_by_todo_eid(thisCheckbox.data('todo'));
         }
@@ -117,7 +136,7 @@ var work_browser_test =(function ($) {
         $(clicked).parent().removeClass('needs-tested');
         $(clicked).parent().html(' <i  class="icon-cancel" data-nid="' + $(clicked).data('nid')  +  '" data-page="' + $(clicked).data('page')  +'" data-browser="' + $(clicked).data('browser')  +'" data-resolution="' + $(clicked).data('resolution')  + '" data-status="Needs Tested"> </i>');
 
-        window.open('http://work.nrhworks.com/tasks/add/' + $(clicked).data('nid') + '?task=Browser Test&browser=' + $(clicked).data('browser') + '&resolution=' + $(clicked).data('resolution') + '&page=' + $(clicked).data('page'));
+        window.open('http://work.nrhworks.com/stories/add/' + $(clicked).data('nid') + '?task=Browser Test&browser=' + $(clicked).data('browser') + '&resolution=' + $(clicked).data('resolution') + '&page=' + $(clicked).data('page'));
       }
 
       if ($(clicked).data('status') == 'Needs Tested') {
@@ -152,7 +171,7 @@ var work_log = (function ($) {
       $.get("/work-log/ajax/get-log-by-nid/" + nid, function(data, status){
         $("#log-wrapper").html(data);
       });
-      $.get("/tasks/ajax/get-comments-by-nid/" + nid, function(data, status){
+      $.get("/stories/ajax/get-comments-by-nid/" + nid, function(data, status){
         $("#comments-container").html(data);
       });
     },
@@ -189,8 +208,9 @@ var project = (function ($) {
       $("#block-views-tasks-block-3").appendTo(".task-tab-content-0");
       $("#block-views-tasks-block-1").appendTo(".task-tab-content-0");
       $("#block-views-tasks-block-2").appendTo(".task-tab-content-0");
-      $("#block-views-sprint-backlog-block").appendTo(".task-tab-content-1");
-      $("#block-views-tasks-block-5").appendTo(".task-tab-content-1");
+//      $("#block-views-sprint-backlog-block").appendTo(".task-tab-content-1");
+//      $("#block-views-tasks-block-5").appendTo(".task-tab-content-1");
+      $("#block-work-sprint-work-sprint-project-backlog").appendTo(".task-tab-content-1");
       $("#block-block-1").appendTo(".task-tab-content-2");
 
       // Show the proper tab.
@@ -204,6 +224,18 @@ var project = (function ($) {
       $(".task-tab").removeClass("active");
       $(".task-tab-" + index).addClass("active");
       $.cookie("project_sprint_tabs", index);
+    }
+  }
+}(jQuery));
+
+var sprint = (function ($) {
+  return {
+    switch_tab: function(index) {
+      $('.sprint-div').hide();
+      $('#' + index).show();
+
+      $('.tabs  a').removeClass('active');
+      $('#' + index + '-link').addClass('active');
     }
   }
 }(jQuery));
