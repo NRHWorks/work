@@ -44,7 +44,7 @@ function _new_project($client, $project) {
 
   foreach ($users as $u => $e) {
     $to = "$u <$e>";
-//    drupal_mail('work_notifications', 'new_project', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
+    drupal_mail('work_notifications', 'new_project', $to, language_default(), $params, NOTIFICATIONS_FROM, TRUE);
   }
 }
 

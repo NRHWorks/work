@@ -10,16 +10,44 @@ function work_browser_test_menu() {
     'access callback' => TRUE,
   );
 
+  $items['browser-test/add-page/%/%'] = array(
+    'title' => 'Add Page',
+    'page callback' => 'work_browser_add_page',
+    'page arguments' => array(2,3),
+    'access callback' => TRUE,
+  );
+
   return $items;
 }
 
+function work_browser_add_page($nid, $page) {
+
+  module_load_include('inc', 'entity', 'includes/entity.controller');
+
+  $fc = array();
+
+  $fc['field_name'] = 'field_pages';
+
+  $fc['field_page']['und'][0]['value'] = $page;
+
+  $node = node_load($nid);
+
+  $entity = entity_create('field_collection_item', $fc);
+  $entity->setHostEntity('node', $node);
+  $entity->save();
+
+  drupal_set_message("Page added: $page.");
+
+  drupal_goto('node/' . $node->nid);
+  drupal_exit();
+}
 
 function work_browser_test_get_status($nid, $page, $browser, $resolution) {
   $results = work_browser_test_get_results($nid);
-  
+
   if (isset($results[$page][$browser][$resolution])) {
     return $results[$page][$browser][$resolution];
-  } 
+  }
 
   return null;
 }

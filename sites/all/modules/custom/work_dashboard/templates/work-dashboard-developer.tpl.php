@@ -23,7 +23,6 @@
         ?>
       </div>
     </div>
-
     <div id="dashboard-schedule" class="item">
       <div class="title">My Schedule</div>
       <div class="content">
@@ -35,60 +34,80 @@
                     "</span><strong>{$s->np_title}:</strong> " . l($s->title, 'node/' . $s->nid)  . "<br /><br />";
             }
           } else {
-            print "You have no time scheduled.  Please check out your tickets and fill in your schedule.";
+            print "You have no time scheduled.  Please check out your stories and fill in your schedule.";
           }
         ?>
       </div>
     </div>
+    <div id="dashboard-time" class="item">
+      <div class="title">My Time</div>
+      <div class="content">
+        <?php print $time; ?>
+      </div>
+    </div>
   </div>
-
   <div class="row">
-    <div id="dashboard-tickets" class="item first">
-      <div class="title">My Tickets</div>
+    <div id="dashboard-stories" class="item first">
+      <div class="title">My Stories</div>
       <div class="content">
         <?php
-          if (count($tickets) > 0) {
-            foreach ($tickets as $k => $t) {
-              if ($k < 7) {
-                print ($k+1) . ". {$t->title}<br>";
+          if (count($stories) > 0) {
+
+            print "<table>
+                    <tr>
+                      <th></th>
+                      <th>Story</th>
+                      <th>Sprint</th>
+                      <th>Project</th>
+                      <th>Status</th>
+                      <th>Due Date</th>
+                    </tr>";
+
+            $count = 0;
+            foreach ($stories as $spr => $pr) {
+              $spr_obj = node_load($spr);
+
+              foreach ($pr as $pnid => $str_arr) {
+                $prj_obj = node_load($pnid);
+
+                foreach ($str_arr as $s) {
+                  $count += 1;
+
+
+                  $status = taxonomy_term_load($s->field_status['und'][0]['tid']);
+                  $due = date('D, M j', strtotime($s->field_due_date['und'][0]['value']));
+
+                  print " <tr>
+                            <td>$count. </td>
+                            <td>" . l($s->title, 'node/' . $s->nid) . "</td>
+                            <td>" . l($spr_obj->title, 'node/' . $spr_obj->nid) . "</td>
+                            <td>" . l($prj_obj->title, 'node/' . $prj_obj->nid) . "</td>
+                            <td>{$status->name}</td>
+                            <td>$due</td>
+                          </tr>";
+                }
               }
             }
-          } else {
-            print "You have no tickets assigned.";
-          }
 
-          if (count($tickets) > 6) {
-            print "<a href='/tickets'>View all tickets&raquo;</a>";
-          }
-        ?>
-      </div>
-    </div>
+            print "</table>";
 
-    <div id="dashboard-sprints" class="item">
-      <div class="title">My Sprints</div>
-      <div class="content">
-        <?php
-          if (count($sprints) > 0) {
-            foreach ($sprints as $k => $s) {
-              $status = taxonomy_term_load($s->field_sprint_status['und'][0]['tid']);
-              print ($k+1) . ". {$s->title} - {$status->name}<br>";
-            }
           } else {
-            print "You are not assigned to any sprints.";
+            print "You have no stories assigned.";
           }
         ?>
       </div>
     </div>
   </div>
-
   <div class="row">
-    <div id="dashboard-projets" class="item first">
-      <div class="title">My Projects</div>
+    <div id="dashboard-projects" class="item first">
+      <div class="title">My Active Projects</div>
       <div class="content">
         <?php
           if (count($projects) > 0) {
+            $count = 0;
             foreach ($projects as $k => $p) {
-              print ($k+1) . ". {$p->title}<br>";
+              $count += 1;
+              print $count . ". " .l($p->title, 'node/' . $p->nid) . "<br>";
             }
           } else {
             print "You are not assigned to any projects.";
@@ -96,11 +115,19 @@
         ?>
       </div>
     </div>
-
-    <div id="dashboard-time" class="item">
-      <div class="title">My Time</div>
+    <div id="dashboard-sprints" class="item">
+      <div class="title">My Active Sprints</div>
       <div class="content">
-        <?php print $time; ?>
+        <?php
+          if (count($sprints) > 0) {
+            foreach ($sprints as $k => $s) {
+              $status = taxonomy_term_load($s->field_sprint_status['und'][0]['tid']);
+              print ($k+1) . ". " . l($s->title, 'node/' . $s->nid) . " ({$status->name})<br>";
+            }
+          } else {
+            print "You are not assigned to any sprints.";
+          }
+        ?>
       </div>
     </div>
   </div>

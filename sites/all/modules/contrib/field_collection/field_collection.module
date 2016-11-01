@@ -205,8 +205,8 @@ function field_collection_menu() {
       $items[$path . '/%field_collection_item'] = array(
         'page callback' => 'field_collection_item_page_view',
         'page arguments' => array($count),
-        'access callback' => 'field_collection_item_access',
-        'access arguments' => array('view', $count),
+        'access callback' => 'entity_access',
+        'access arguments' => array('view', 'field_collection_item', $count),
         'file' => 'field_collection.pages.inc',
       );
       $items[$path . '/%field_collection_item/view'] = array(
@@ -217,8 +217,8 @@ function field_collection_menu() {
       $items[$path . '/%field_collection_item/edit'] = array(
         'page callback' => 'drupal_get_form',
         'page arguments' => array('field_collection_item_form', $count),
-        'access callback' => 'field_collection_item_access',
-        'access arguments' => array('update', $count),
+        'access callback' => 'entity_access',
+        'access arguments' => array('update', 'field_collection_item', $count),
         'title' => 'Edit',
         'type' => MENU_LOCAL_TASK,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
@@ -227,8 +227,8 @@ function field_collection_menu() {
       $items[$path . '/%field_collection_item/delete'] = array(
         'page callback' => 'drupal_get_form',
         'page arguments' => array('field_collection_item_delete_confirm', $count),
-        'access callback' => 'field_collection_item_access',
-        'access arguments' => array('delete', $count),
+        'access callback' => 'entity_access',
+        'access arguments' => array('delete', 'field_collection_item', $count),
         'title' => 'Delete',
         'type' => MENU_LOCAL_TASK,
         'context' => MENU_CONTEXT_INLINE,
@@ -246,8 +246,8 @@ function field_collection_menu() {
       $items[$path . '/%field_collection_item/revisions/%field_collection_item_revision'] = array(
         'page callback' => 'field_collection_item_page_view',
         'page arguments' => array($count + 2),
-        'access callback' => 'field_collection_item_access',
-        'access arguments' => array('view', $count + 2),
+        'access callback' => 'entity_access',
+        'access arguments' => array('view', 'field_collection_item', $count + 2),
         'file' => 'field_collection.pages.inc',
       );
     }
@@ -876,7 +876,7 @@ function field_collection_field_formatter_view($entity_type, $entity, $field, $i
           $output = l($field_collection->label(), $field_collection->path());
           $links = array();
           foreach (field_collection_get_operations($settings) as $op => $label) {
-            if ($settings[$op] && field_collection_item_access($op == 'edit' ? 'update' : $op, $field_collection)) {
+            if ($settings[$op] && entity_access($op == 'edit' ? 'update' : $op, 'field_collection_item', $field_collection)) {
               $title = entity_i18n_string("field:{$field['field_name']}:{$instance['bundle']}:setting_$op", $settings[$op]);
               $links[] = l($title, $field_collection->path() . '/' . $op, array('query' => drupal_get_destination()));
             }
@@ -906,7 +906,7 @@ function field_collection_field_formatter_view($entity_type, $entity, $field, $i
           );
           $links['#attributes']['class'][] = 'field-collection-view-links';
           foreach (field_collection_get_operations($settings) as $op => $label) {
-            if ($settings[$op] && field_collection_item_access($op == 'edit' ? 'update' : $op, $field_collection)) {
+            if ($settings[$op] && entity_access($op == 'edit' ? 'update' : $op, 'field_collection_item', $field_collection)) {
               $links['#links'][$op] = array(
                 'title' => entity_i18n_string("field:{$field['field_name']}:{$instance['bundle']}:setting_$op", $settings[$op]),
                 'href' => $field_collection->path() . '/' . $op,
@@ -972,7 +972,7 @@ function field_collection_field_formatter_links(&$element, $entity_type, $entity
     $field_collection_item = entity_create('field_collection_item', array('field_name' => $field['field_name']));
     $field_collection_item->setHostEntity($entity_type, $entity, $langcode, FALSE);
 
-    if (field_collection_item_access('create', $field_collection_item)) {
+    if (entity_access('create', 'field_collection_item', $field_collection_item)) {
       $allow_create_item = TRUE;
       $path = field_collection_field_get_path($field);
       list($id) = entity_extract_ids($entity_type, $entity);

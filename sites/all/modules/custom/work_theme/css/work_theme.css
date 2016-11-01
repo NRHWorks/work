@@ -672,17 +672,47 @@ th.blue-hover {
   margin-top: 25px;
 }
 
-#dashboard .row .item {
-  float: left;
-  width: 45%;
-  margin-right: 0%;
-  border: 1px solid #CCC;
-  background-color: white;
+#dashboard #dashboard-todo {
+  width: 33%;
+  margin-right: 3%;
 }
 
-#dashboard .row .item.first {
+#dashboard #dashboard-schedule {
+  width: 30%;
+  margin-right: 3%;
+}
+
+#dashboard #dashboard-time  {
+  width: 30%;
+  margin-right: 0%;
+}
+
+#dashboard #dashboard-stories {
+  width: 100%;
+}
+
+#dashboard #dashboard-stories .content {
+  padding: 0px;
+  margin-top: 0px;
+}
+
+#dashboard #dashboard-stories .content table {
+  margin: 0px;
+}
+
+#dashboard #dashboard-projects  {
+  width: 46%;
+  margin-right: 3%;
+}
+
+#dashboard #dashboard-sprints  {
   width: 50%;
-  margin-right: 4%;
+}
+
+#dashboard .row .item {
+  float: left;
+  border: 1px solid #CCC;
+  background-color: white;
 }
 
 #dashboard .title {
@@ -706,12 +736,18 @@ th.blue-hover {
   margin-top: -20px;
 }
 
+.page-sprints #backlog th,
+.page-sprints #backlog td {
+  white-space: nowrap;
+}
+
 .sprint-div.active {
   display: block;
 }
 
 .sprint-project {
   width: 20px;
+  white-space: normal !important;
 }
 
 .sprint-project a {
@@ -735,4 +771,14 @@ th.blue-hover {
   /* Internet Explorer */
   filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
 
+}
+
+#browser-test-add-page {
+  float: right;
+}
+
+.icon-resize-full {
+  top: 40px;
+  margin-left: 80px;
+  position: absolute;
 }

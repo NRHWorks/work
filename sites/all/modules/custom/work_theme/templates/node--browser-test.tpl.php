@@ -5,10 +5,10 @@
 </script>
 
 <div id="width-toggle">
-  <i class="demo-icon icon-resize-full" onclick="if (jQuery('#main').width() == 960) { jQuery('#main').width('100%'); } else { jQuery('#main').width('960'); }"></i> 
+  <i class="demo-icon icon-resize-full" onclick="if (jQuery('#main').css('max-width') == '1200px') { jQuery('#main').css('max-width', '96%'); } else { jQuery('#main').css('max-width', '1200px'); }"></i>
 </div>
 
-<?php 
+<?php
   $browsers = taxonomy_get_tree(3);
 
   $t = array();
@@ -30,9 +30,9 @@
   }
 ?>
 
-<?php 
+<?php
   $pages = array();
-  
+
   foreach($node->field_pages['und'] as $k => $p) {
     $entity = entity_load('field_collection_item', array($p['value']));
     $page = array_pop($entity);
@@ -40,6 +40,12 @@
     $pages[$k] = $page->field_page['und'][0]['value'];
   }
 ?>
+
+<form id="browser-test-add-page">
+  Add Page:
+  <input type="text" id="new-page" name="new-page" />
+  <input type='button' value='Add Page' style='margin-left: 15px;' onclick="window.location='/browser-test/add-page/<?php print $node->nid; ?>/' + jQuery('#new-page').val();" />
+</form>
 
 <?php drupal_add_js('misc/tableheader.js'); ?>
 
@@ -49,7 +55,7 @@
   <thead>
   <tr>
     <td style="width:260px;">&nbsp;</td>
-    <?php 
+    <?php
       foreach ($t as $k => $v) {
         print "<th colspan='" . count($v['resolutions']) . "'>{$v['browser']}</th>";
       }
@@ -57,7 +63,7 @@
   </tr>
   <tr>
     <td>&nbsp;</td>
-    <?php 
+    <?php
       $count = 0;
       foreach ($t as $k => $v) {
         foreach ($v['resolutions'] as $kk => $vv) {
@@ -68,12 +74,12 @@
     ?>
   </tr>
   </thead>
-  <?php 
+  <?php
     foreach ($pages as $k => $p) {
       $count = 0;
       print "<tr class='hover-color'>";
       print "<td><strong>$p</strong></td>";
-  
+
       foreach ($t as $k => $v) {
         foreach ($v['resolutions'] as $kk => $vv) {
 
@@ -83,11 +89,11 @@
           switch ($status) {
             case 'Passed' :
               print '<td class="pass browser_test col-'.$count.'" data-col="'.$count.'">
-                        <i  class="icon-ok-1"       
-                            data-nid="' . $node->nid . '" 
-                            data-page="' . $p . '" 
-                            data-browser="' . $k . '" 
-                            data-resolution="' . $kk . '" 
+                        <i  class="icon-ok-1"
+                            data-nid="' . $node->nid . '"
+                            data-page="' . $p . '"
+                            data-browser="' . $k . '"
+                            data-resolution="' . $kk . '"
                             data-status="Needs Tested">
                         </i>
                     </td>';
@@ -95,11 +101,11 @@
 
             case 'Failed' :
               print '<td class="fail browser_test col-'.$count.'" data-col="'.$count.'">
-                        <i  class="icon-cancel"     
-                            data-nid="' . $node->nid . '" 
-                            data-page="' . $p . '" 
-                            data-browser="' . $k . '" 
-                            data-resolution="' . $kk . '" 
+                        <i  class="icon-cancel"
+                            data-nid="' . $node->nid . '"
+                            data-page="' . $p . '"
+                            data-browser="' . $k . '"
+                            data-resolution="' . $kk . '"
                             data-status="Needs Tested">
                         </i>
                     </td>';
@@ -107,27 +113,27 @@
 
             case 'Needs Tested' :
               print '<td class="in-progress browser_test col-'.$count.'" data-col="'.$count.'">
-                        <i  class="icon-ok-circled"  
-                            data-nid="' . $node->nid . '" 
-                            data-page="' . $p . '" 
-                            data-browser="' . $k . '" 
-                            data-resolution="' . $kk . '" 
-                            data-status="Passed" 
+                        <i  class="icon-ok-circled"
+                            data-nid="' . $node->nid . '"
+                            data-page="' . $p . '"
+                            data-browser="' . $k . '"
+                            data-resolution="' . $kk . '"
+                            data-status="Passed"
                             style="color:green;" id="$k-$kk"></i><br />
-                        <i  class="icon-cancel-circled" 
-                            data-nid="' . $node->nid . '" 
-                            data-page="' . $p . '" 
-                            data-browser="' . $k . '" 
-                            data-resolution="' . $kk . '" 
-                            data-status="Failed" 
+                        <i  class="icon-cancel-circled"
+                            data-nid="' . $node->nid . '"
+                            data-page="' . $p . '"
+                            data-browser="' . $k . '"
+                            data-resolution="' . $kk . '"
+                            data-status="Failed"
                             style="color:red;">
                         </i><br />
-                        <i  class="icon-ticket" 
-                            data-nid="' . $node->nid . '" 
-                            data-page="' . $p . '" 
-                            data-browser="' . $k . '" 
-                            data-resolution="' . $kk . '" 
-                            data-status="Failed-Ticket" 
+                        <i  class="icon-ticket"
+                            data-nid="' . $node->nid . '"
+                            data-page="' . $p . '"
+                            data-browser="' . $k . '"
+                            data-resolution="' . $kk . '"
+                            data-status="Failed-Ticket"
                             style="color:blue;">
                         </i>
                       </td>';
@@ -135,27 +141,27 @@
 
             default:
               print '<td class="needs-tested browser_test col-'.$count.'" data-col="'.$count.'">
-                        <i  class="icon-ok-circled"  
-                            data-nid="' . $node->nid . '" 
-                            data-page="' . $p . '" 
-                            data-browser="' . $k . '" 
-                            data-resolution="' . $kk . '" 
-                            data-status="Passed" 
+                        <i  class="icon-ok-circled"
+                            data-nid="' . $node->nid . '"
+                            data-page="' . $p . '"
+                            data-browser="' . $k . '"
+                            data-resolution="' . $kk . '"
+                            data-status="Passed"
                             style="color:green;" id="$k-$kk"></i><br />
-                        <i  class="icon-cancel-circled" 
-                            data-nid="' . $node->nid . '" 
-                            data-page="' . $p . '" 
-                            data-browser="' . $k . '" 
-                            data-resolution="' . $kk . '" 
-                            data-status="Failed" 
+                        <i  class="icon-cancel-circled"
+                            data-nid="' . $node->nid . '"
+                            data-page="' . $p . '"
+                            data-browser="' . $k . '"
+                            data-resolution="' . $kk . '"
+                            data-status="Failed"
                             style="color:red;">
                         </i><br />
-                        <i  class="icon-ticket" 
-                            data-nid="' . $node->nid . '" 
-                            data-page="' . $p . '" 
-                            data-browser="' . $k . '" 
-                            data-resolution="' . $kk . '" 
-                            data-status="Failed-Ticket" 
+                        <i  class="icon-ticket"
+                            data-nid="' . $node->nid . '"
+                            data-page="' . $p . '"
+                            data-browser="' . $k . '"
+                            data-resolution="' . $kk . '"
+                            data-status="Failed-Ticket"
                             style="color:blue;">
                         </i>
                       </td>';

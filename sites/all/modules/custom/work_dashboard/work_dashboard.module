@@ -21,7 +21,7 @@ function work_dashboard_theme() {
       'messages' => null,
 			'todo' => null,
 			'schedule' => null,
-			'tickets' => null,
+			'stories' => null,
 			'sprints' => null,
 			'projets' => null,
 			'time' => null,),
@@ -48,17 +48,6 @@ function _work_dashboard_developer() {
   $todo = work_todo_page_user_dashboard($uid);
 
 	$schedule = work_schedule2_user_dashboard($uid);
-
-  // get stories without status closed assigned to the user
-  $result = db_query("SELECT s.entity_id as nid
-                      FROM {field_data_field_status} s
-                        INNER JOIN {field_data_field_assigned_to} u ON u.entity_id = s.entity_id
-                      WHERE s.field_status_tid != 7 AND u.field_Assigned_to_uid = :uid",
-                      array(':uid' => $uid));
-
-  foreach ($result as $r) {
-    $tickets[] = node_load($r->nid);
-  }
 
   $result = db_query("  SELECT n.nid
                         FROM {node} n
@@ -92,12 +81,36 @@ function _work_dashboard_developer() {
                         array(':team_nids' => $team_nids));
 
   $sprints = array();
+  $sprint_ids = array();
   foreach ($result as $r) {
     $sprints[] = node_load($r->nid);
+    $sprint_ids[] = $r->nid;
+  }
+
+  // get stories without status closed assigned to the user in an active sprint
+  $result = db_query("SELECT s.entity_id as nid
+                      FROM {field_data_field_status} s
+                        INNER JOIN {field_data_field_assigned_to} u ON u.entity_id = s.entity_id
+                        INNER JOIN {field_data_field_sprint} sp on sp.entity_id = s.entity_id
+                      WHERE s.field_status_tid != 7
+                        AND u.field_assigned_to_uid = :uid
+                        AND sp.field_sprint_nid IN (:spid)",
+                      array(':spid' => $sprint_ids, ':uid' => $uid));
+
+  $projects = array();
+  $stories = array();
+  foreach ($result as $r) {
+    $story = node_load($r->nid);
+
+    $stories[$story->field_sprint['und'][0]['nid']][$story->field_project['und'][0]['nid']][] = $story;
+
+    $projects[$story->field_project['und'][0]['nid']] = node_load($story->field_project['und'][0]['nid']);
   }
 
 
-	$projects = work_project_user_dashboard($uid);
+
+
+//	$projects = work_project_user_dashboard($uid);
 
 	$time = 'Data coming soon.';
 
@@ -106,7 +119,7 @@ function _work_dashboard_developer() {
                   'messages' => $messages,
                   'todo' => $todo,
                   'schedule' => $schedule,
-                  'tickets' => $tickets,
+                  'stories' => $stories,
                   'sprints' => $sprints,
                   'projects' => $projects,
                   'time' => $time,

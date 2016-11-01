@@ -170,19 +170,3 @@ function work_project_list_of_sprints($nid) {
 
   return $s;
 }
-
-function work_project_user_dashboard($uid) {
-  $result = db_query("SELECT n.nid
-                      FROM {node} n
-                      WHERE type = 'project' AND
-                      n.nid IN ( SELECT entity_id FROM {field_data_field_users} WHERE field_users_uid = :uid1) AND
-                      n.nid NOT IN ( SELECT entity_id FROM {field_data_field_archive} WHERE field_archive_value = 1)",
-                      array(':uid1' => $uid));
-
-  $projects = array();
-  foreach ($result as $r) {
-    $projects[] = node_load($r->nid);
-  }
-
-  return $projects;
-}
