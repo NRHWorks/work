@@ -458,13 +458,7 @@ function work_sprint_page($team = null, $sprint = null) {
   $content .= "
     <div id='active' class='sprint-div active'>" . _work_sprint_team_active($team, $sprint) . "</div>
     <div id='backlog' class='sprint-div'>" . _work_sprint_team_backlog($team) . "</div>
-    <div id='summary' class='sprint-div'>
-        In progress
-        <br /><br />
-        <br /><br />
-        <br /><br />
-        <br /><br />
-    </div>
+    <div id='summary' class='sprint-div'>" . _work_sprint_team_summary($team, $sprint)  . " </div>
   ";
 
 
@@ -845,6 +839,12 @@ function _work_sprint_team_backlog($team_nid) {
       }
     }
 
+    if (count($stories) == 0) {
+      $pct = 0;
+    } else {
+      $pct = ceil($progress / $stories);
+    }
+
     $rows[] = array(
       array(
         'data' => "Summary",
@@ -866,7 +866,7 @@ function _work_sprint_team_backlog($team_nid) {
         'style' => " font-weight: bold; font-size: 16px;",
       ),
       array(
-        'data' => ceil($progress / $stories) . "%",
+        'data' => $pct . "%",
         'colspan' => 3,
         'style' => " font-weight: bold; font-size: 16px;",
       ),
@@ -1062,6 +1062,195 @@ function _work_sprint_team_active($team, $sprint) {
 
   return $sprint_form . $content;
 
+}
+
+function _work_sprint_team_summary($team, $sprint = null) {
+
+  if (!isset($team)) {
+    $team = 6631 ;
+  }
+
+  $sprint_query = db_query("
+    SELECT n.nid, n.title
+    FROM {node} AS n
+      INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+      INNER JOIN {field_data_field_team} t ON t.entity_id = n.nid
+    WHERE n.type = 'sprint'
+      AND t.field_team_nid = :tnid
+    GROUP BY n.nid
+    ORDER BY n.title DESC
+    ", array(':tnid' => $team));
+
+  $sprint_form  = '<script>jQuery(document).ready(function() { if (window.location.hash == "#summary") { jQuery("#summary-link").click(); } });</script>';
+  $sprint_form .= '<form>';
+  $sprint_form .= '<select id="sprint-summary-select"> ';
+  $sprint_form .= '<option value="all">All</option>';
+
+  $sprints = array();
+  foreach ($sprint_query as $s) {
+    $sprints[] = node_load($s->nid);
+
+    $selected = '';
+
+    if ($s->nid == $sprint) {
+      $selected = ' selected="true"';
+    }
+
+    $sprint_form .= '<option value="' . $s->nid. '" ' . $selected . '>' . $s->title . '</option>';
+  }
+
+  $sprint_form .= '</select>';
+  $sprint_form .= "<input   type='button'
+                            value='Switch Sprint'
+                            style='margin-left: 15px;'
+                            onclick=\"window.location='/sprints/' + jQuery('#team-select').val() + '/' + jQuery('#sprint-summary-select').val() + '#summary';\" />";
+  $sprint_form .= '</form>';
+
+  $headers = array('Team Member', 'Stories', 'New', 'In Progress', 'Feedback', 'Resolved', 'QA', 'Closed', 'Estimated', 'Logged (not closed)', 'Logged');
+
+  $content = '';
+  foreach ($sprints as $spr) {
+
+    if (isset($sprint) && ($sprint != 'all') && ($sprint != $spr->nid)) {
+      continue;
+    }
+
+    $stories = db_query("SELECT entity_id FROM {field_data_field_sprint} WHERE field_sprint_nid = :snid", array(':snid' => $spr->nid));
+
+    $data = array();
+    $rows = array();
+    $totals = array();
+
+    $totals['stories'] = 0;
+    $totals['new'] = 0;
+    $totals['progress'] = 0;
+    $totals['feedback'] = 0;
+    $totals['resolved'] = 0;
+    $totals['qa'] = 0;
+    $totals['closed'] = 0;
+    $totals['estimated'] = 0;
+    $totals['logged-pending'] = 0;
+    $totals['logged'] = 0;
+
+    foreach ($stories as $s) {
+      $story = node_load($s->entity_id);
+
+      $su = user_load($story->field_owner['und'][0]['uid']);
+
+      if (!isset($data[$su->name])) {
+        $data[$su->name]['stories'] = 0;
+        $data[$su->name]['new'] = 0;
+        $data[$su->name]['progress'] = 0;
+        $data[$su->name]['feedback'] = 0;
+        $data[$su->name]['resolved'] = 0;
+        $data[$su->name]['qa'] = 0;
+        $data[$su->name]['closed'] = 0;
+        $data[$su->name]['estimated'] = 0;
+        $data[$su->name]['logged-pending'] = 0;
+        $data[$su->name]['logged'] = 0;
+      }
+
+      $data[$su->name]['stories'] += 1;
+      $totals['stories'] += 1;
+
+      if ($story->field_status['und'][0]['tid'] == 1) {
+        $data[$su->name]['new'] += 1;
+        $totals['new'] += 1;
+      }
+      if ($story->field_status['und'][0]['tid'] == 2) {
+        $data[$su->name]['progress'] += 1;
+        $totals['progress'] += 1;
+      }
+      if ($story->field_status['und'][0]['tid'] == 5) {
+        $data[$su->name]['feedback'] += 1;
+        $totals['feedback'] += 1;
+      }
+      if ($story->field_status['und'][0]['tid'] == 6) {
+        $data[$su->name]['resolved'] += 1;
+        $totals['resolved'] += 1;
+      }
+      if ($story->field_status['und'][0]['tid'] == 50) {
+        $data[$su->name]['qa'] += 1;
+        $totals['qa'] += 1;
+      }
+      if ($story->field_status['und'][0]['tid'] == 7) {
+        $data[$su->name]['closed'] += 1;
+        $totals['closed'] += 1;
+      }
+
+      $data[$su->name]['estimated'] += $story->field_estimate['und'][0]['value'];
+
+      if (isset($story->field_time['und'])) {
+        foreach ($story->field_time['und'] as $fc) {
+
+          $entity = entity_load('field_collection_item', array($fc['value']));
+          $e = array_pop($entity);
+
+          $time_user = user_load($e->field_user['und'][0]['uid']);
+
+          if (!isset($data[$time_user->name])) {
+            $data[$time_user->name]['stories'] = 0;
+            $data[$time_user->name]['new'] = 0;
+            $data[$time_user->name]['progress'] = 0;
+            $data[$time_user->name]['feedback'] = 0;
+            $data[$time_user->name]['resolved'] = 0;
+            $data[$time_user->name]['qa'] = 0;
+            $data[$time_user->name]['closed'] = 0;
+            $data[$time_user->name]['estimated'] = 0;
+            $data[$time_user->name]['logged-pending'] = 0;
+            $data[$time_user->name]['logged'] = 0;
+          }
+
+          if ($story->field_status['und'][0]['tid'] == 7) {
+            $data[$time_user->name]['logged'] += $e->field_hours['und'][0]['value'];
+            $totals['logged'] += $e->field_hours['und'][0]['value'];
+          } else {
+            $data[$time_user->name]['logged-pending'] += $e->field_hours['und'][0]['value'];
+            $totals['logged-pending'] += $e->field_hours['und'][0]['value'];
+          }
+        }
+      }
+    }
+
+    foreach ($data as $u => $d) {
+      $row = array(
+        $u,
+        $d['stories'] . ' stories',
+        $d['new'],
+        $d['progress'],
+        $d['feedback'],
+        $d['resolved'],
+        $d['qa'],
+        $d['closed'],
+        $d['estimated'],
+        $d['logged-pending'],
+        $d['logged'],
+      );
+
+      $rows[] = $row;
+    }
+
+    $rows[] = array(
+      '<strong>Totals</strong>',
+      $totals['stories'] . ' stories',
+      $totals['new'],
+      $totals['progress'],
+      $totals['feedback'],
+      $totals['resolved'],
+      $totals['qa'],
+      $totals['closed'],
+      $totals['estimated'],
+      $totals['logged-pending'],
+      $totals['logged'],
+    );
+
+    $status = taxonomy_term_load($spr->field_sprint_status['und'][0]['tid']);
+
+    $content .= "<h3>" . l($spr->title, 'node/' . $spr->nid) . " <span style='color:#999;'>(" . $status->name. ")</span></h3>";
+    $content .= theme('table', array('header' => $headers, 'rows' => $rows));
+  }
+
+  return $sprint_form . $content;
 }
 
 function work_sprint_add_story($sprint_nid, $story_nid) {

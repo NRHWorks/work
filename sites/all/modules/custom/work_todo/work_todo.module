@@ -326,7 +326,7 @@ function work_todo_do_today($nid) {
 
 function work_todo_cli($uid) {
   $count = 0;
-  $item_count = 32;
+  $item_count = 25;
 
   $result = db_query("  SELECT nid
                         FROM {node} n
