@@ -1179,7 +1179,7 @@ function _work_sprint_team_summary($team, $sprint = null) {
       }
 
       $data[$su->name]['estimated'] += $story->field_estimate['und'][0]['value'];
-
+      $totals['estimated']  += $story->field_estimate['und'][0]['value'];
       if (isset($story->field_time['und'])) {
         foreach ($story->field_time['und'] as $fc) {
 
