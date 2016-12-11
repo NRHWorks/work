@@ -33,6 +33,26 @@ function field_collection_form_alter(&$form, &$form_state) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter() for field_ui_field_overview_form().
+ *
+ * Make the names of the field collection fields into links to edit the fields
+ * for that field collection on the host's field edit page.
+ */
+function field_collection_form_field_ui_field_overview_form_alter(&$form, &$form_state) {
+  if (count($form['#fields'])) {
+    foreach($form['fields'] as $fieldname => $field) {
+      if (!isset($field['type']['#title'])) {
+        continue;
+      }
+      if ($field['type']['#title'] == 'Field collection') {
+        $form['fields'][$fieldname]['field_name']['#markup'] =
+          l($form['fields'][$fieldname]['field_name']['#markup'], 'admin/structure/field-collections/' . str_replace('_', '-', $fieldname) . '/fields');
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_ctools_plugin_directory().
  */
 function field_collection_ctools_plugin_directory($module, $plugin) {
@@ -790,13 +810,13 @@ function field_collection_field_formatter_settings_form($field, $instance, $view
       '#title' => t('Edit link title'),
       '#default_value' => $settings['edit'],
       '#description' => t('Leave the title empty, to hide the link.'),
-      '#access' => field_collection_item_is_translatable(),
     );
     $elements['translate'] = array(
       '#type' => 'textfield',
       '#title' => t('Translate link title'),
       '#default_value' => $settings['translate'],
       '#description' => t('Leave the title empty, to hide the link.'),
+      '#access' => field_collection_item_is_translatable(),
     );
     $elements['delete'] = array(
       '#type' => 'textfield',
