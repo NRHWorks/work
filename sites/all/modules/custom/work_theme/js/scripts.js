@@ -107,6 +107,12 @@ function reset_height() {
     function() {
       $('.col-' + $(this).data('col')).removeClass('blue-hover');
     });
+
+    var st = $.cookie("sprints_tabs");
+    if (st !== undefined) {
+      sprint.switch_tab(st);
+    }
+
   });
 
 }(jQuery));
@@ -215,6 +221,7 @@ var project = (function ($) {
 
       // Show the proper tab.
       var tab_cookie = $.cookie("project_sprint_tabs");
+
       project.switch_to(sprint_tabs == 0 ? 0 : (tab_cookie == null? 1 : tab_cookie));
     },
 
@@ -223,7 +230,7 @@ var project = (function ($) {
       $(".task-tab-content-" + index).addClass("active");
       $(".task-tab").removeClass("active");
       $(".task-tab-" + index).addClass("active");
-      $.cookie("project_sprint_tabs", index);
+      $.cookie("project_sprint_tabs", index, { path : "/" });
     }
   }
 }(jQuery));
@@ -236,6 +243,8 @@ var sprint = (function ($) {
 
       $('.tabs  a').removeClass('active');
       $('#' + index + '-link').addClass('active');
+      $.cookie("sprints_tabs", index);
+
     }
   }
 }(jQuery));
