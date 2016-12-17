@@ -816,7 +816,10 @@ function work_story_update_comment() {
   global $user;
   $fc['field_user']['und'][0]['uid'] = $user->uid;
 
+  // The value stored in the database has to be UTC so that it shows up correctly in story page.
+  date_default_timezone_set("UTC");
   $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');
+  date_default_timezone_set($user->timezone);
 
 
   if (isset($data['todo'])) {
