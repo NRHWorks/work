@@ -1225,7 +1225,9 @@ function work_story_add_comment($nid, $title, $body) {
   global $user;
   $fc['field_user']['und'][0]['uid'] = $user->uid;
 
+  date_default_timezone_set("UTC");
   $fc['field_date_time']['und'][0]['value'] = date('Y-m-d H:i:s');
+  date_default_timezone_set($user->timezone);
 
   $fc['field_title']['und'][0]['value'] = $title;
   $fc['field_comment_description']['und'][0]['value'] = $body;
