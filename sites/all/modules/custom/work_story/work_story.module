@@ -166,7 +166,7 @@ function work_story_add_story($form, $form_state, $project) {
   global $user;
 
   $uid = $user->uid;
-
+  $is_dev_admin = array_key_exists(3, $user->roles) || array_key_exists(5, $user->roles);
   $users = db_query("SELECT uid, name FROM {users} WHERE uid IN (SELECT uid FROM {users_roles} WHERE rid IN (3, 4, 5))");
 
   $assigned_to = array();
@@ -174,12 +174,19 @@ function work_story_add_story($form, $form_state, $project) {
     $assigned_to[$u->uid] = $u->name;
   }
 
+
+
   $form['assigned_to'] = array(
     '#title' => 'Assigned To',
     '#type' => 'select',
     '#options' => $assigned_to,
-    '#default_value' => $user->uid,
+    '#default_value' => $is_dev_admin? $user->uid : 27, // default assigned to nathan if this is a client.
   );
+
+  if (!$is_dev_admin) {
+    $form['assigned_to']['#prefix'] = "<div style='display:none'>";
+    $form['assigned_to']['#suffix'] = "</div>";
+  }
 
 
   $priority_terms = db_query("
@@ -235,12 +242,22 @@ function work_story_add_story($form, $form_state, $project) {
     '#default_value' => 0,
   );
 
+  if (!$is_dev_admin) {
+    $form['sprint']['#prefix'] = "<div style='display:none'>";
+    $form['sprint']['#suffix'] = "</div>";
+  }
+
   $form['due_date'] = array(
     '#type' => 'date_popup',
     '#date_format' => 'Y-m-d',
     '#date_year_range' => '-3:+3',
     '#title' => 'Due Date',
   );
+
+  if (!$is_dev_admin) {
+    $form['due_date']['#prefix'] = "<div style='display:none'>";
+    $form['due_date']['#suffix'] = "</div>";
+  }
 
   if (in_array('administrator', $user->roles)) {
     $form['estimate'] = array(
@@ -337,7 +354,8 @@ function work_story_add_story_submit($form, &$form_state) {
   }
 
   if (isset($v['estimate']) && ($v['estimate'] != '')) {
-    $node->field_estimate['und'][0]['value'] = $v['estimate'];
+    $est = array(1,2,4,8,12,16);
+    $node->field_estimate['und'][0]['value'] = $est[$v['estimate']];
   } else {
     $node->field_estimate['und'][0]['value'] = 0;
   }

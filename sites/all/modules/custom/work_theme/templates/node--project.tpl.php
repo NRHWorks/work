@@ -264,7 +264,16 @@
   <div class='task-tab-content task-tab-content-0 ' >
   </div>
   <div class='task-tab-content task-tab-content-1'>
-  <div><a href="/sprints/add/<?php print $node->nid;?>">Add Sprint</a> | <a href="/stories/add/<?php print $node->nid;?>">Add Task</a></div>
+  <div>
+    <?php global $user;?>
+    <?php if (array_key_exists(3, $user->roles) || array_key_exists(5, $user->roles) ):?>
+      <a href="/sprints/add/<?php print $node->nid;?>">Add Sprint</a> |
+    <?php endif;?>
+    <a href="/stories/add/<?php print $node->nid;?>">Add Story</a>
+    <?php if (array_key_exists(3, $user->roles) || array_key_exists(5, $user->roles) ):?>
+     | <a href="/stories/add-time/<?php print $node->nid;?>">Add Time</a>
+    <?php endif;?>
+  </div>
   </div>
   <div class='task-tab-content task-tab-content-2'>
   </div>
