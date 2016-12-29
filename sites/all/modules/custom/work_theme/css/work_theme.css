@@ -289,6 +289,13 @@ button {
   top: 35px;
 }
 
+body.node-type-project.page-node-edit .block-views,
+body.node-type-project.page-node-edit #block-work-sprint-work-sprint-project-backlog ,
+body.node-type-project.page-node-edit #block-block-1,
+body.page-node-add-project #block-block-1{
+	display:none;
+}
+
 #node-users-div a {
   width: 150px;
   display: block;
