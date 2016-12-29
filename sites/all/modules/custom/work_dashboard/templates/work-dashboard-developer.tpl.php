@@ -50,51 +50,72 @@
     <div id="dashboard-stories" class="item first">
       <div class="title">My Stories</div>
       <div class="content">
-        <?php
-          if (count($stories) > 0) {
+        <?php if (count($stories) > 0): ?>
+          <?php
+            // Build an array to look up weight and priority tid
+            $q = db_query("
+              SELECT * FROM {taxonomy_term_data}
+              WHERE vid = 6");
 
-            print "<table>
-                    <tr>
-                      <th></th>
-                      <th>Story</th>
-                      <th>Sprint</th>
-                      <th>Project</th>
-                      <th>Status</th>
-                      <th>Due Date</th>
-                    </tr>";
+            $pri_terms = array();
+            foreach($q as $r) {
+              $pri_terms[$r->tid] = array('weight' => $r->weight, 'name' => $r->name);
+            }
 
-            $count = 0;
+            // prepare an array for multi sort
+            $pri_sort = array();
+            $data = array();
             foreach ($stories as $spr => $pr) {
+
               $spr_obj = node_load($spr);
 
               foreach ($pr as $pnid => $str_arr) {
                 $prj_obj = node_load($pnid);
 
                 foreach ($str_arr as $s) {
-                  $count += 1;
-
-
                   $status = taxonomy_term_load($s->field_status['und'][0]['tid']);
-                  $due = date('D, M j', strtotime($s->field_due_date['und'][0]['value']));
-
-                  print " <tr>
-                            <td>$count. </td>
-                            <td>" . l($s->title, 'node/' . $s->nid) . "</td>
-                            <td>" . l($spr_obj->title, 'node/' . $spr_obj->nid) . "</td>
-                            <td>" . l($prj_obj->title, 'node/' . $prj_obj->nid) . "</td>
-                            <td>{$status->name}</td>
-                            <td>$due</td>
-                          </tr>";
+                  $data[] = array(
+                    'story' => l($s->title, 'node/' . $s->nid),
+                    'sprint' => l($spr_obj->title, 'node/' . $spr_obj->nid) ,
+                    'project' => l($prj_obj->title, 'node/' . $prj_obj->nid),
+                    'status' => $status->name,
+                    'due' => date('D, M j', strtotime($s->field_due_date['und'][0]['value'])),
+                    'priority' => $pri_terms[$s->field_task_priority['und'][0]['tid']]['name'],
+                  );
+                  $pri_sort[] = $pri_terms[$s->field_task_priority['und'][0]['tid']]['weight'];
                 }
               }
             }
+            array_multisort($pri_sort, $data);
+          ?>
 
-            print "</table>";
+          <table>
+            <tr>
+              <th></th>
+              <th>Story</th>
+              <th>Sprint</th>
+              <th>Project</th>
+              <th>Status</th>
+              <th>Due Date</th>
+              <th>Priority</th>
+            </tr>
+            <?php $count = 0;?>
+            <?php foreach ($data as $row):?>
+              <tr>
+                <td><?php print ++$count;?>.</td>
+                <td><?php print $row['story'];?></td>
+                <td><?php print $row['sprint'];?></td>
+                <td><?php print $row['project'];?></td>
+                <td><?php print $row['status'];?></td>
+                <td><?php print $row['due'];?></td>
+                <td><?php print $row['priority'];?></td>
+              </tr>
 
-          } else {
-            print "You have no stories assigned.";
-          }
-        ?>
+            <?php endforeach;?>
+          </table>
+        <?php else:?>
+          You have no stories assigned.
+        <?php endif;?>
       </div>
     </div>
   </div>
