@@ -840,7 +840,7 @@ function work_story_update_comment() {
   date_default_timezone_set($user->timezone);
 
 
-  if (isset($data['todo'])) {
+  if (isset($data['todo']) && $data['todo'] != "-- none --") {
     $fc['field_title']['und'][0]['value'] = 'Comment for To Do: #' . $data['todo'];
   } else {
     $fc['field_title']['und'][0]['value'] = 'Comment';
