@@ -1,4 +1,4 @@
-<?php 
+<?php
   if (isset($_GET['group']))     $group    = $_GET['group'];
   if (isset($_GET['invoiced']))  $invoiced = $_GET['invoiced'];
   if (isset($_GET['paid']))      $paid     = $_GET['paid'];
@@ -84,10 +84,10 @@
         <select  onchange="window.location=jQuery(this).val();">
           <option value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">-- select --</option>
           <?php $day = -1;
-                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
-                  $day += 1;        
+                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') :
+                  $day += 1;
           ?>
-                <option   <?php if (($filter == 'day') && ($start == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?> 
+                <option   <?php if (($filter == 'day') && ($start == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
                           value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=day&start=<?php print date('Y-m-d', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-m-d', (time() - (($day - 1) * 24 * 60 * 60))); ?>"><?php print date('M d Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
           <?php endwhile; ?>
         </select>
@@ -98,11 +98,11 @@
         <select  onchange="window.location=jQuery(this).val();">
           <option  value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">-- select --</option>
           <?php $day = -1;
-                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
-                  $day += 1;        
+                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') :
+                  $day += 1;
           ?>
                 <?php if (date('D', (time() - ($day * 24 * 60 * 60))) == 'Mon') : ?>
-                  <option <?php if (($filter == 'week') && ($start == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>  
+                  <option <?php if (($filter == 'week') && ($start == date('Y-m-d', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
                           value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=week&start=<?php print date('Y-m-d', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-m-d', (time() - (($day - 7) * 24 * 60 * 60))); ?>"><?php print date('M d', (time() - ($day * 24 * 60 * 60))) . ' - ' . date('M d Y', (time() - (($day - 6) * 24 * 60 * 60)));  ?></option>
                 <?php endif; ?>
           <?php endwhile; ?>
@@ -113,22 +113,22 @@
       <form>
         <select onchange="window.location=jQuery(this).val();">
           <option  value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">-- select --</option>
-          <?php 
+          <?php
                 $start_payday = strtotime('November 14 2015');
                 $next_payday = $start_payday;
-                
+
                 $paydays = array();
                 $paydays[] = date('M-d-Y', $start_payday);
 
-            
+
                 while ($next_payday < time()) {
                   $next_payday += (14 * 24 * 60 * 60);
-                  $paydays[] = date('M-d-Y', $next_payday);     
+                  $paydays[] = date('M-d-Y', $next_payday);
                 }
 
                 $day = -1;
-                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
-                  $day += 1;        
+                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') :
+                  $day += 1;
           ?>
 
             <?php if (in_array(date('M-d-Y', (time() - ($day * 24 * 60 * 60))), $paydays)) : ?>
@@ -145,12 +145,12 @@
         <select  onchange="window.location=jQuery(this).val();">
           <option  value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">- select -</option>
           <?php $day = -1;
-                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
-                  $day += 1;        
+                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') :
+                  $day += 1;
           ?>
             <?php if (date('j', (time() - ($day * 24 * 60 * 60))) == 1) : ?>
-                <option <?php if (($filter == 'month') && ($start == date('Y-m', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
-                        value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=month&start=<?php print date('Y-m', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-', (time() - (($day) * 24 * 60 * 60))) . sprintf("%02d",(date('m', (time() - (($day) * 24 * 60 * 60))) + 1)); ?>"><?php print date('M Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
+                <option <?php if (($filter == 'month') && ($start == date('Y-m-01', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
+                        value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=month&start=<?php print date('Y-m-01', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print date('Y-', (time() - (($day) * 24 * 60 * 60))) . sprintf("%02d",(date('m', (time() - (($day) * 24 * 60 * 60))) + 1)) . '-01'; ?>"><?php print date('M Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
             <?php endif; ?>
           <?php endwhile; ?>
         </select>
@@ -161,12 +161,12 @@
         <select  onchange="window.location=jQuery(this).val();">
           <option  value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=none&start=0&stop=9">- select -</option>
           <?php $day = -1;
-                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') : 
-                  $day += 1;        
+                while (date('Y-m-d', (time() - ($day * 24 * 60 * 60))) > '2015-11-01') :
+                  $day += 1;
           ?>
               <?php if (($day == 0) || (date('z', (time() - ($day * 24 * 60 * 60))) == 364)) : ?>
                 <option <?php if (($filter == 'year') && ($start == date('Y', (time() - ($day * 24 * 60 * 60))))) { print ' selected '; }  ?>
-                        value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=year&start=<?php print date('Y', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print (date('Y', (time() - (($day) * 24 * 60 * 60))) + 1); ?>"><?php print date('Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
+                        value="/timesheet/<?php print $version; ?>/?<?php print $get; ?>&filter=year&start=<?php print date('Y-01-01', (time() - ($day * 24 * 60 * 60))); ?>&stop=<?php print (date('Y-01-01', (time() - (($day) * 24 * 60 * 60))) + 1); ?>"><?php print date('Y', (time() - ($day * 24 * 60 * 60)));  ?></option>
               <?php endif; ?>
           <?php endwhile; ?>
         </select>
