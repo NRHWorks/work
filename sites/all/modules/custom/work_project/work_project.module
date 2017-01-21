@@ -170,3 +170,12 @@ function work_project_list_of_sprints($nid) {
 
   return $s;
 }
+
+
+function work_project_get_team_nid($project_nid) {
+  $t = db_query("
+    SELECT field_team_nid FROM {field_data_field_team}
+    WHERE bundle = 'project' AND entity_id = :nid",
+    array(":nid" => $project_nid));
+  return $t->rowCount() === 0 ? NULL : $t->fetchField();
+}

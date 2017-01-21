@@ -1104,6 +1104,18 @@ function work_story_update_status_ajax($nid, $new_status) {
   $creator  = &$node->field_creator['und'][0]['uid'];
   $owner    = &$node->field_owner['und'][0]['uid'];
 
+  $team_nid  = work_project_get_team_nid($node->field_project['und'][0]['nid']);
+  if ($team_nid === NULL) {
+    $team_pm = $creator;
+  }
+  else {
+    $team_pm = db_query("
+      SELECT field_project_manager_uid FROM {field_data_field_project_manager}
+      WHERE entity_id = :team_nid", array(":team_nid" => $team_nid));
+    $team_pm = $team_pm->rowCount() === 0 ? $creator : $team_pm->fetchField();
+  }
+
+
   switch ($status) {
     case 1:
       $status = 2;
@@ -1114,13 +1126,13 @@ function work_story_update_status_ajax($nid, $new_status) {
 
       if ($new_status == 'feedback') {
         $status = 5;
-        $assigned = $creator;
+        $assigned = $team_pm;
         work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Feedback Requested');
         work_story_add_comment($node->nid, 'Feedback Requested', $data['status-text']);
 
       } else {
         $status = 6;
-        $assigned = $creator;
+        $assigned = $team_pm;
         work_log_create_log_entry($node->nid, 'Status Updated: In Progress => Resolved');
 
         if (isset($data['status-text'])) {
