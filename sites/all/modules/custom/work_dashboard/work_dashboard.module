@@ -1,5 +1,13 @@
 <?php
 
+function work_dashboard_init() {
+  global $user;
+
+  if ((arg(0) == 'work-dashboard') && in_array($user->uid, array(81, 82))) {
+    drupal_goto('node/7656');
+  }
+}
+
 /**
  * Hook_menu.
  */
@@ -71,6 +79,8 @@ function _work_dashboard_developer() {
     $team_nids[] = $r->nid;
   }
 
+  $team_nids[] = -999;
+
   // get all the active sprints the user's team(s) are assigned to
   $result = db_query("  SELECT n.nid
                         FROM {node} n
@@ -86,6 +96,8 @@ function _work_dashboard_developer() {
     $sprints[] = node_load($r->nid);
     $sprint_ids[] = $r->nid;
   }
+
+  $sprint_ids[] = -999;
 
   // get stories without status closed assigned to the user in an active sprint
   $result = db_query("SELECT s.entity_id as nid
