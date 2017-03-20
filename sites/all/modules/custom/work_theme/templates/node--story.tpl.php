@@ -17,6 +17,38 @@
       ?>
     </div>
 
+    <div id="story-epic">
+      <strong>Epic:</strong>
+      <?php
+        if (isset($node->field_epic['und'])) {
+          $epic = taxonomy_term_load($node->field_epic['und'][0]['tid']);
+          print $epic->name;
+        }
+        else {
+          print "No Epic";
+        }
+
+      ?>
+    </div>
+
+    <br />
+
+    <div id="story-theme">
+      <strong>Theme:</strong>
+      <?php
+        if (isset($node->field_theme['und'])) {
+          $theme = taxonomy_term_load($node->field_theme['und'][0]['tid']);
+          print $theme->name;
+        }
+        else {
+          print "No Theme";
+        }
+
+      ?>
+    </div>
+
+    <br />
+
     <div id="story-sprint">
       <strong>Sprint:</strong>
       <?php

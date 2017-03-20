@@ -190,6 +190,11 @@ function work_theme_sort($data, $key, $type = 'string') {
 function work_theme_preprocess_page(&$vars) {
   if (isset($vars['page']['content']['system_main']['nodes']) && ($node = current($vars['page']['content']['system_main']['nodes']))) {
     if ($node['#node']->type == 'story') {
+      if (isset($node['#node']->field_theme['und'])) {
+        $theme = taxonomy_term_load($node['#node']->field_theme['und'][0]['tid']);
+        $vars['title'] = $theme->name . ': ' . $vars['title'];
+      }
+
 	    $vars['title'] .= " ({$node['#node']->nid})";
     }
   }

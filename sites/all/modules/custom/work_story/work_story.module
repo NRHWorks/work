@@ -99,6 +99,13 @@ function work_story_menu() {
     'access callback' => TRUE,
   );
 
+  $items['stories/add-group/%'] = array(
+    'title' => 'Add Story Group',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('work_story_add_story_group', 2),
+    'access callback' => TRUE,
+  );
+
   $items['stories/add-time/%'] = array(
     'title' => 'Add Time',
     'page callback' => 'drupal_get_form',
@@ -127,6 +134,11 @@ function work_story_menu() {
     'access callback' => TRUE,
   );
 
+  $items['stories/theme-autocomplete'] = array(
+    'title' => 'Custom Autocomplete',
+    'page callback' => 'work_story_theme_autocomplete',
+    'access callback' => TRUE,
+  );
 
   return $items;
 }
@@ -162,6 +174,33 @@ function work_story_add_story($form, $form_state, $project) {
     '#required' => TRUE
   );
 
+  $epics = array();
+  $result = db_select('taxonomy_term_data', 'ttd');
+  $result->fields('ttd', array('tid', 'name'));
+  $result->condition('vid', array(9), 'IN');
+  $result->orderBy('weight');
+  $query = $result->execute();
+
+  foreach ($query as $row) {
+    $epics[$row->tid] = $row->name;
+  }
+
+  $form['epic'] = array(
+    '#title' => 'Epic',
+    '#type' => 'select',
+    '#options' => $epics,
+    '#required' => FALSE,
+  );
+
+
+  $form['theme'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Theme'),
+    '#autocomplete_path' => 'stories/theme-autocomplete',
+    '#maxlength' => 60,
+    '#size' => 45,
+    '#required' => 0,
+  );
 
   global $user;
 
@@ -173,8 +212,6 @@ function work_story_add_story($form, $form_state, $project) {
   foreach ($users as $u) {
     $assigned_to[$u->uid] = $u->name;
   }
-
-
 
   $form['assigned_to'] = array(
     '#title' => 'Assigned To',
@@ -262,10 +299,10 @@ function work_story_add_story($form, $form_state, $project) {
   if (in_array('administrator', $user->roles)) {
     $form['estimate'] = array(
       '#prefix' => '<br>',
-      '#title' => 'Estimate',
+      '#title' => 'Estimate (hours)',
       '#description' => '<span style="padding-top:5px; padding-left:5px; display:block;">hours</span>',
       '#type' => 'select',
-      '#options' => array(1,2,4,8,12,16),
+      '#options' => array(0.25,0.5,1,2,4,8,12,16),
       '#required' => TRUE
     );
   }
@@ -321,6 +358,26 @@ function work_story_add_story($form, $form_state, $project) {
 function work_story_add_story_submit($form, &$form_state) {
   $v = $form_state['values'];
 
+  $theme_tid = null;
+
+  if (isset($v['theme']) && ($v['theme'] != '')) {
+    $theme = taxonomy_get_term_by_name($v['theme'], 'story_theme');
+
+    if (count($theme) == 0) {
+
+      $theme = new stdClass();
+      $theme->name = $v['theme'];
+      $theme->vid = 8;
+      taxonomy_term_save($theme);
+
+      $theme_tid = $theme->tid;
+
+    } else {
+      $term = array_pop($theme);
+      $theme_tid = $term->tid;
+    }
+  }
+
   global $user;
 
   $node = new stdClass();
@@ -339,6 +396,14 @@ function work_story_add_story_submit($form, &$form_state) {
   }
   $node->body['und'][0]['value'] = $v['description'];
 
+  if (isset($v['epic'])) {
+    $node->field_epic['und'][0]['tid'] = $v['epic'];
+  }
+
+  if (isset($theme_tid)) {
+    $node->field_theme['und'][0]['tid'] = $theme_tid;
+  }
+
   $node->field_project['und'][0]['nid'] = $v['project'];
 
   $node->field_creator['und'][0]['uid'] = $node->uid;
@@ -354,7 +419,7 @@ function work_story_add_story_submit($form, &$form_state) {
   }
 
   if (isset($v['estimate']) && ($v['estimate'] != '')) {
-    $est = array(1,2,4,8,12,16);
+    $est = array(0.25,0.5,1,2,4,8,12,16);
     $node->field_estimate['und'][0]['value'] = $est[$v['estimate']];
   } else {
     $node->field_estimate['und'][0]['value'] = 0;
@@ -1320,5 +1385,352 @@ function work_story_priority($nid, $tid) {
   print render($content['field_task_priority']);
 
   drupal_exit();
+}
 
+function work_story_theme_autocomplete($string) {
+  $matches = array();
+  $result = db_select('taxonomy_term_data', 'ttd');
+  $result->fields('ttd', array('tid', 'name'));
+  $result->condition('vid', array(8), 'IN');
+  $result->condition(db_or()->condition('ttd.name', '%' . db_like($string) . '%', 'LIKE'));
+  $query = $result->execute();
+
+  foreach ($query as $row) {
+    $matches[$row->name] = $row->name;
+  }
+
+  // Return the result to the form in json
+  drupal_json_output($matches);
+}
+
+
+
+function work_story_add_story_group($form, $form_state, $project) {
+  $form['#tree'] = TRUE;
+  $form['#attributes']['enctype'] = 'multipart/form-data';
+
+  $p = node_load($project);
+
+  $form['title'] = array(
+    '#type' => 'item',
+    '#markup' => "<h3>Adding Story for <strong>" . l($p->title, 'node/' . $p->nid) . "</strong></h3>",
+  );
+
+  $form['project'] = array(
+    '#type' => 'hidden',
+    '#value' => $project,
+  );
+
+  $story = null;
+
+  if (isset($_GET['story']) && ($_GET['task'] == 'Browser Test')) {
+    $browser = taxonomy_term_load($_GET['browser']);
+    $resolution = taxonomy_term_load($_GET['resolution']);
+    $story = "BROWSER TEST ({$browser->name} : {$resolution->name}) => {$_GET['page']}";
+  }
+
+  $form['story'] = array(
+    '#title' => 'Story',
+    '#type' => 'textfield',
+    '#default_value' => $story,
+    '#required' => TRUE
+  );
+
+  $epics = array();
+  $result = db_select('taxonomy_term_data', 'ttd');
+  $result->fields('ttd', array('tid', 'name'));
+  $result->condition('vid', array(9), 'IN');
+  $result->orderBy('weight');
+  $query = $result->execute();
+
+  foreach ($query as $row) {
+    $epics[$row->tid] = $row->name;
+  }
+
+  $form['epic'] = array(
+    '#title' => 'Epic',
+    '#type' => 'select',
+    '#options' => $epics,
+    '#required' => FALSE,
+  );
+
+  $form['theme'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Theme'),
+    '#autocomplete_path' => 'stories/theme-autocomplete',
+    '#maxlength' => 60,
+    '#size' => 45,
+    '#required' => 0,
+  );
+
+  global $user;
+
+  $uid = $user->uid;
+  $is_dev_admin = array_key_exists(3, $user->roles) || array_key_exists(5, $user->roles);
+  $users = db_query("SELECT uid, name FROM {users} WHERE uid IN (SELECT uid FROM {users_roles} WHERE rid IN (3, 4, 5))");
+
+  $assigned_to = array();
+  foreach ($users as $u) {
+    $assigned_to[$u->uid] = $u->name;
+  }
+
+  $form['assigned_to'] = array(
+    '#title' => 'Assigned To',
+    '#type' => 'select',
+    '#options' => $assigned_to,
+    '#default_value' => $is_dev_admin? $user->uid : 27, // default assigned to nathan if this is a client.
+  );
+
+  if (!$is_dev_admin) {
+    $form['assigned_to']['#prefix'] = "<div style='display:none'>";
+    $form['assigned_to']['#suffix'] = "</div>";
+  }
+
+
+  $priority_terms = db_query("
+    SELECT tid, name FROM {taxonomy_term_data}
+    WHERE vid = 6
+    ORDER BY weight ASC");
+
+  $priority_options = array();
+
+  foreach ($priority_terms as $p_term){
+    $priority_options[$p_term->tid] = $p_term->name;
+  }
+
+  $form['priority'] = array(
+    '#title' => 'Priority',
+    '#type' => 'select',
+    '#options' => $priority_options,
+    '#default_value' => 34,
+  );
+
+  $sprints = array("--NONE--");
+
+  $sprint_nodes = db_query("
+    SELECT n.nid, n.title
+    FROM {node} AS n
+      INNER JOIN {field_data_field_sprint_status} s ON s.entity_id = n.nid
+      INNER JOIN {field_data_field_team} t ON t.entity_id = n.nid
+    WHERE n.type ='sprint'
+      AND s.field_sprint_status_tid IN (47, 48)
+      AND t.field_team_nid IN (
+        SELECT entity_id FROM {field_data_field_team_lead} WHERE field_team_lead_uid = :uid1 UNION
+        SELECT entity_id FROM {field_data_field_project_manager} WHERE field_project_manager_uid = :uid2 UNION
+        SELECT entity_id FROM {field_data_field_backend_developer} WHERE field_backend_developer_uid = :uid3 UNION
+        SELECT entity_id FROM {field_data_field_frontend_developer} WHERE field_frontend_developer_uid = :uid4 UNION
+        SELECT entity_id FROM {field_data_field_sys_admin} WHERE field_sys_admin_uid = :uid5 UNION
+        SELECT entity_id FROM {field_data_field_quality_assurance_tester} WHERE field_quality_assurance_tester_uid = :uid6
+      )",
+      array(':uid1' => $uid,
+            ':uid2' => $uid,
+            ':uid3' => $uid,
+            ':uid4' => $uid,
+            ':uid5' => $uid,
+            ':uid6' => $uid));
+
+  foreach ($sprint_nodes as $s) {
+    $sprints[$s->nid] = $s->title;
+  }
+
+  $form['sprint'] = array(
+    '#title' => 'Sprint',
+    '#type' => 'select',
+    '#options' => $sprints,
+    '#default_value' => 0,
+  );
+
+  if (!$is_dev_admin) {
+    $form['sprint']['#prefix'] = "<div style='display:none'>";
+    $form['sprint']['#suffix'] = "</div>";
+  }
+
+  $form['due_date'] = array(
+    '#type' => 'date_popup',
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '-3:+3',
+    '#title' => 'Due Date',
+  );
+
+  if (!$is_dev_admin) {
+    $form['due_date']['#prefix'] = "<div style='display:none'>";
+    $form['due_date']['#suffix'] = "</div>";
+  }
+
+  if (in_array('administrator', $user->roles)) {
+    $form['estimate'] = array(
+      '#prefix' => '<br>',
+      '#title' => 'Estimate (hours)',
+      '#description' => '<span style="padding-top:5px; padding-left:5px; display:block;">hours</span>',
+      '#type' => 'select',
+      '#options' => array(0.25,0.5,1,2,4,8,12,16),
+      '#required' => TRUE
+    );
+  }
+
+  $form['description'] = array(
+    '#title' => 'Description',
+    '#type' => 'textarea',
+    '#description' => '<span style="padding-top:5px; padding-left:5px; display:block;">As a &lt;type of user&gt;, I want &lt;some goal&gt; so that &lt;some reason&gt;.</span>',
+  );
+
+  // --------------- Add more text box starts  ------------------------------
+
+  $form['action_items']['action_items_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Action Items'),
+    '#prefix' => '<div id="action-items-wrapper">',
+    '#suffix' => '</div>',
+  );
+
+  if (empty($form_state['num_items'])) {
+    $form_state['num_items'] = 1;
+  }
+
+  for ($i = 0; $i < $form_state['num_items']; $i++) {
+
+  $form['action_items']['action_items_fieldset']['items'][$i] = array(
+    '#type' => 'textfield',
+    '#maxlength' => 255,
+    '#attributes' => array('multiple' => 'multiple'),
+    );
+  }
+
+  $form['action_items']['action_items_fieldset']['add_action_item'] = array(
+      '#type' => 'submit',
+      '#value' => t('Add Action Item'),
+      '#submit' => array('action_add_one'),
+      '#ajax' => array(
+        'callback' => 'action_add_one_callback',
+        'wrapper' => 'action-items-wrapper',
+      ),
+  );
+
+
+  // ---------------  Add more text box ends ---------------------------------
+
+  $form['tokens'] = array(
+    '#title' => 'Tokens',
+    '#type' => 'textarea',
+    '#maxlength' => 255,
+  );
+
+  $form['example_entry']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+
+  return $form;
+}
+
+function work_story_add_story_group_submit($form, &$form_state) {
+  $v = $form_state['values'];
+
+  $theme_tid = null;
+
+  if (isset($v['theme']) && ($v['theme'] != '')) {
+    $theme = taxonomy_get_term_by_name($v['theme'], 'story_theme');
+
+    if (count($theme) == 0) {
+
+      $theme = new stdClass();
+      $theme->name = $v['theme'];
+      $theme->vid = 8;
+      taxonomy_term_save($theme);
+
+      $theme_tid = $theme->tid;
+
+    } else {
+      $term = array_pop($theme);
+      $theme_tid = $term->tid;
+    }
+  }
+
+  $tokens = explode("\n", $v['tokens']);
+
+  global $user;
+
+  foreach ($tokens as $t) {
+    if ($t == '') { continue; }
+
+    $node = new stdClass();
+    $node->title = str_replace('[token]', $t, $v['story']);
+    $node->type = 'story';
+    node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+    $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+    $node->uid = $user->uid;
+    $node->status = 1;
+    $node->promote = 0;
+    $node->comment = 0;
+
+    $node->field_status['und'][0]['tid'] = 1;
+    if ($v['sprint'] != 0) {
+      $node->field_sprint['und'][0]['nid'] = $v['sprint'];
+    }
+    $node->body['und'][0]['value'] = str_replace('[token]', $t, $v['description']);
+
+    if (isset($v['epic'])) {
+      $node->field_epic['und'][0]['tid'] = $v['epic'];
+    }
+
+    if (isset($theme_tid)) {
+      $node->field_theme['und'][0]['tid'] = $theme_tid;
+    }
+
+    $node->field_project['und'][0]['nid'] = $v['project'];
+
+    $node->field_creator['und'][0]['uid'] = $node->uid;
+
+    $node->field_owner['und'][0]['uid'] = $v['assigned_to'];
+
+    $node->field_assigned_to['und'][0]['uid'] = $v['assigned_to'];
+
+    $node->field_users['und'][0]['uid'] = $v['assigned_to'];
+
+    if ($user->uid != $v['assigned_to']) {
+      $node->field_users['und'][1]['uid'] = $user->uid;
+    }
+
+    if (isset($v['estimate']) && ($v['estimate'] != '')) {
+      $est = array(0.25,0.5,1,2,4,8,12,16);
+      $node->field_estimate['und'][0]['value'] = $est[$v['estimate']];
+    } else {
+      $node->field_estimate['und'][0]['value'] = 0;
+    }
+
+    $due_date = $v['due_date'] == "" ? date("Y-m-d", time() + 86400 * 7) : $v['due_date'];
+
+    $node->field_due_date['und'][0]['value'] = $due_date . ' 00:00:00';
+
+    $node->field_task_priority['und'][0]['tid'] = $v['priority'];
+
+    node_save($node);
+
+    module_load_include('inc', 'entity', 'includes/entity.controller');
+
+    foreach($v['action_items']['action_items_fieldset']['items'] as $i) {
+      if (isset($i) && ($i <> '')) {
+        $fc = array();
+
+        $fc['field_name'] = 'field_to_do';
+
+        $fc['field_description']['und'][0]['value'] = str_replace('[token]', $t, $i);
+
+        $entity = entity_create('field_collection_item', $fc);
+        $entity->setHostEntity('node', $node);
+        $entity->save();
+      }
+    }
+
+    node_save($node);
+
+    $project = node_load($v['project']);
+
+    work_log_create_log_entry($v['project'], "Task Added: " . l($node->title, 'node/' . $node->nid), "Task Added: " . l($node->title, 'node/' . $node->nid));
+    drupal_set_message("Task Added: " . l($node->title, 'node/' . $node->nid) . "<br />" . l ('Add Another Task', 'stories/add/' . $v['project']));
+
+    drupal_add_js('jQuery(document).ready(function () { window.open("/node/' . $node->nid . '/edit"); });', 'inline');
+  }
+
+  drupal_goto('node/' . $node->field_project['und'][0]['nid']);
 }

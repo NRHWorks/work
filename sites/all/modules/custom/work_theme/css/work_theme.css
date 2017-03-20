@@ -753,15 +753,13 @@ th.blue-hover {
 }
 
 .sprint-project {
+  padding: 4px 0px;
   width: 20px;
   white-space: normal !important;
 }
 
 .sprint-project a {
-  position: absolute;
-  left: 10px;
   display: block;
-  min-width: 100px;
 
   /* Safari */
   -webkit-transform: rotate(-90deg);
@@ -788,4 +786,21 @@ th.blue-hover {
   top: 40px;
   margin-left: 80px;
   position: absolute;
+}
+
+
+.form-item-theme,
+.form-item-field-theme-und {
+  position: relative;
+}
+
+#autocomplete {
+  top: 47px !important;
+}
+
+.page-node ul.action-links {
+  margin-top: -40px;
+  margin-left: 250px;
+  padding-top: 11px;
+  margin-bottom: -10px;
 }

@@ -252,6 +252,13 @@ function work_sprint_detail_by_sprint_id($sprint_nid) {
 
           $assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
 
+          $theme = 'General';
+
+          if (isset($node->field_theme['und'])) {
+            $term = taxonomy_term_load($node->field_theme['und'][0]['tid']);
+            $theme = $term->name;
+          }
+
           $pic = '<div></div>';
           if (isset($assigned_user->picture)) {
             $pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
@@ -271,14 +278,13 @@ function work_sprint_detail_by_sprint_id($sprint_nid) {
             }
           }
 
-          $data .= "<div style='border: 1px solid #999; background-color: #FFF; margin-bottom: 10px;'>
+          $data .= "<div class='theme-" . str_replace(' ', '-', $theme) . " user-" . $node->field_assigned_to['und'][0]['uid']. "' style='border: 1px solid #999; background-color: #FFF; margin-bottom: 10px;'>
           <div style='background-color:#999; font-size:24px; color: #EEE; padding:5px; overflow:auto; text-align:right;'> " . $pic . " #" . $task->nid . "</div>
           <div style='padding: 5px;'>
-            <a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $task->title . "</a> <br />
+            <a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $theme . ': ' . $task->title . "</a> <br />
             <span style='font-size:12px; letter-spacing:2px;'>" . $dots . "</span>
           </div>
           </div>";
-
 
         }
       }
@@ -352,6 +358,13 @@ function work_sprint_detail_by_project($sprint_nid, $project_nid) {
 
           $assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
 
+          $theme = 'General';
+
+          if (isset($node->field_theme['und'])) {
+            $term = taxonomy_term_load($node->field_theme['und'][0]['tid']);
+            $theme = $term->name;
+          }
+
           $pic = '<div></div>';
           if (isset($assigned_user->picture)) {
             $pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
@@ -371,10 +384,10 @@ function work_sprint_detail_by_project($sprint_nid, $project_nid) {
             }
           }
 
-          $data .= "<div style='border: 1px solid #999; background-color: #FFF; margin-bottom: 10px;'>
+          $data .= "<div class='theme-" . str_replace(' ', '-', $theme) . " user-" . $node->field_assigned_to['und'][0]['uid']. "' style='border: 1px solid #999; background-color: #FFF; margin-bottom: 10px;'>
           <div style='background-color:#999; font-size:24px; color: #EEE; padding:5px; overflow:auto; text-align:right;'> " . $pic . " #" . $task->nid . "</div>
           <div style='padding: 5px;'>
-            <a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $task->title . "</a> <br />
+            <a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $theme . ': ' . $task->title . "</a> <br />
             <span style='font-size:12px; letter-spacing:2px;'>" . $dots . "</span>
           </div>
           </div>";
@@ -519,6 +532,13 @@ function _work_sprint_backlog() {
     foreach ($result as $r) {
       $n = node_load($r->nid);
 
+      $theme = 'General';
+
+      if (isset($n->field_theme['und'])) {
+        $term = taxonomy_term_load($n->field_theme['und'][0]['tid']);
+        $theme = $term->name;
+      }
+
       if (isset($n->field_assigned_to['und'])) {
         $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
       } else {
@@ -533,7 +553,7 @@ function _work_sprint_backlog() {
 
       $row = array(
         $n->nid,
-        l($n->title, 'node/' . $n->nid),
+        l($theme . ': ' . $n->title, 'node/' . $n->nid),
         $assigned_to->name,
         $status->name,
         work_story_progress(arg(1)),
@@ -547,7 +567,7 @@ function _work_sprint_backlog() {
 
       $table = theme('table', array('header' => $headers, 'rows' => $rows));
 
-      $output .= "<h2>{$sprint->title} .....  <span style='color:#999; font-size:16px;'> ({$sprint_status->name})</span></h2>" . $table;
+      $output .= "<h2>{$sprint->title} <span style='color:#999; font-size:16px;'> ({$sprint_status->name})</span></h2>" . $table;
     }
   }
 
@@ -566,6 +586,13 @@ function _work_sprint_backlog() {
   foreach ($result as $r) {
     $n = node_load($r->nid);
 
+    $theme = 'General';
+
+    if (isset($n->field_theme['und'])) {
+      $term = taxonomy_term_load($n->field_theme['und'][0]['tid']);
+      $theme = $term->name;
+    }
+
     if (!isset($n->field_sprint['und'])) {
       if (isset($n->field_assigned_to['und'])) {
         $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
@@ -581,7 +608,7 @@ function _work_sprint_backlog() {
 
       $row = array(
         $n->nid,
-        l($n->title, 'node/' . $n->nid),
+        l($theme . ': ' . $n->title, 'node/' . $n->nid),
         $assigned_to->name,
         $status->name,
         work_story_progress(arg(1)),
@@ -652,6 +679,13 @@ function _work_sprint_team_backlog($team_nid) {
     foreach ($result as $r) {
       $n = node_load($r->nid);
 
+      $theme = 'General';
+
+      if (isset($n->field_theme['und'])) {
+        $term = taxonomy_term_load($n->field_theme['und'][0]['tid']);
+        $theme = $term->name;
+      }
+
       if (isset($n->field_assigned_to['und'])) {
         $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
       } else {
@@ -664,24 +698,28 @@ function _work_sprint_team_backlog($team_nid) {
         $status->name = 'Closed';
       }
 
-      $move_to = "<strong>Move to:</strong> ";
+      $move_to = null;
 
-      $count = 0;
-      foreach ($sprints_for_later as $k => $s) {
-        if ($s->nid != $sprint->nid) {
-          $count += 1;
-          if ($count != 1) { $move_to .= ' | '; }
-          $move_to .= "<a href='/sprints/add-story/{$s->nid}/{$n->nid}'>" . preg_replace('/Sprint| - Team.*/', '', $s->title) . "</a>";
+      if ($status->name <> 'Closed') {
+        $move_to = "<strong>Move to:</strong> ";
+
+        $count = 0;
+        foreach ($sprints_for_later as $k => $s) {
+          if ($s->nid != $sprint->nid) {
+            $count += 1;
+            if ($count != 1) { $move_to .= ' | '; }
+            $move_to .= "<a href='/sprints/add-story/{$s->nid}/{$n->nid}'>" . preg_replace('/Sprint| - Team.*/', '', $s->title) . "</a>";
+          }
         }
-      }
 
-      if ($count != 0) { $move_to .= ' | '; }
-      $move_to .= "<a href='/sprints/add-story/backlog/{$n->nid}'>Backlog</a>";
+        if ($count != 0) { $move_to .= ' | '; }
+        $move_to .= "<a href='/sprints/add-story/backlog/{$n->nid}'>Backlog</a>";
+      }
 
       $row = array(
         $n->nid,
         array(
-          'data' => l($n->title, 'node/' . $n->nid),
+          'data' => l($theme . ': ' .$n->title, 'node/' . $n->nid),
           'style' => 'white-space: normal;'
         ),
         $assigned_to->name,
@@ -692,9 +730,6 @@ function _work_sprint_team_backlog($team_nid) {
         date('D, M j', strtotime($n->field_due_date['und'][0]['value'])),
         $move_to,
       );
-
-
-
 
       $rows_project[$n->field_project['und'][0]['nid']][] = $row;
     }
@@ -714,7 +749,7 @@ function _work_sprint_team_backlog($team_nid) {
 
       $rows[] = array(
         array(
-          'data' => l($project->title, 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
+          'data' => l($project->field_code['und'][0]['value'], 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
           'rowspan' => count($items) + 2,
           'class' => 'sprint-project',
           'style' => "text-align:center; background-color: $hex;",
@@ -894,6 +929,13 @@ function _work_sprint_team_backlog($team_nid) {
   foreach ($result as $r) {
     $n = node_load($r->nid);
 
+    $theme = 'General';
+
+    if (isset($n->field_theme['und'])) {
+      $term = taxonomy_term_load($n->field_theme['und'][0]['tid']);
+      $theme = $term->name;
+    }
+
     if (!isset($n->field_sprint['und'])) {
       if (isset($n->field_assigned_to['und'])) {
         $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
@@ -917,7 +959,7 @@ function _work_sprint_team_backlog($team_nid) {
       $row = array(
         $n->nid,
         array(
-          'data' => l($n->title, 'node/' . $n->nid),
+          'data' => l($theme . ': ' . $n->title, 'node/' . $n->nid),
           'style' => 'white-space: normal;'
         ),
         $assigned_to->name,
@@ -942,7 +984,7 @@ function _work_sprint_team_backlog($team_nid) {
 
     $rows[] = array(
       array(
-        'data' => l($project->title, 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
+        'data' => l($project->field_code['und'][0]['value'], 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
         'rowspan' => count($items) + 2,
         'class' => 'sprint-project',
         'style' => "text-align:center; background-color: $hex;",
