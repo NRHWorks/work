@@ -90,7 +90,28 @@
       <div id="assigned-to-container"><?php print render($content['field_assigned_to']); ?></div><br />
       <div id="creator-container"><?php print render($content['field_creator']); ?></div><br />
       <div id="owner-container"><?php print render($content['field_owner']); ?></div><br />
+
+      <?php /* ?>
       <div id="users-container"><?php print render($content['field_users']); ?></div><br />
+      <?php */ ?>
+
+      <?php global $user; if (in_array('administrator', $user->roles)) : ?>
+        <div id="assign-to-container">
+          <strong>Assign To: </strong>
+            <?php
+              foreach ($project->field_users['und'] as $u) :
+                $project_user = user_load($u['uid']);
+
+                if (!in_array($project_user->uid, array($node->field_assigned_to['und'][0]['uid']))) :
+            ?>
+                &nbsp;&nbsp;<a href="#" onclick="jQuery('#users-container').html('<img src=\'/sites/all/modules/custom/work_theme/images/loading.gif\' style=\'width: 20px; height: auto;\' />'); jQuery('#users-container').load('/stories/update-assigned/<?php print $node->nid; ?>/<?php print $project_user->uid; ?>');  return false;"><?php print $project_user->name; ?></a>
+            <?php
+                endif;
+              endforeach;
+            ?>
+        </div>
+        <br />
+      <?php endif; ?>
 
       <?php global $user; if ($user->uid != $node->field_assigned_to['und'][0]['uid'] && !in_array('Client', $user->roles)) : ?>
         <div id="takeover-container"><a href="#" onclick="jQuery('#users-container').html('<img src=\'/sites/all/modules/custom/work_theme/images/loading.gif\' style=\'width: 20px; height: auto;\' />'); jQuery('#users-container').load('/stories/update-assigned/<?php print $node->nid; ?>/<?php print $user->uid; ?>');  return false;">Assign to Me</a></div><br />

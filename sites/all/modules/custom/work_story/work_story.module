@@ -792,6 +792,7 @@ function work_story_update_assigned($nid, $uid) {
   }
 
   $node->field_assigned_to['und'][0]['uid'] = $uid;
+  $node->field_owner['und'][0]['uid'] = $uid;
 
   node_save($node);
 
