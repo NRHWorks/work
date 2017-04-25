@@ -1,0 +1,8 @@
+name = "Work Contacts"
+description = "Handles all contact functionality."
+core = 7.x
+package = 'Work'
+project ='work_contacts'
+
+
+

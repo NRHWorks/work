@@ -1,0 +1,23 @@
+<?php
+function work_contacts_menu() {
+
+  $items['update-status/%/%'] = array (
+    'title' => 'Update this status.',
+    'description' => 'Change status of contact.',
+    'page callback' => 'contact_update_status',
+    'page arguments' => array(1,2),
+    'access callback' =>  TRUE,
+  );
+
+  return $items;
+}
+
+function contact_update_status($nid, $status) {
+  $node = node_load($nid);
+
+  $node->field_status['und'][0]['tid'] = $status;
+
+  node_save($node);
+  drupal_goto('contacts');
+}
+
