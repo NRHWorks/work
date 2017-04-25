@@ -15,7 +15,7 @@ function work_contacts_menu() {
 function contact_update_status($nid, $status) {
   $node = node_load($nid);
 
-  $node->field_status['und'][0]['tid'] = $status;
+  $node->field_contact_status['und'][0]['tid'] = $status;
 
   node_save($node);
   drupal_goto('contacts');
