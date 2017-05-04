@@ -61,10 +61,10 @@ function work_theme_theme($existing, $type, $theme, $path) {
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
 
-  $theme['node__invoice'] = array(
+  $theme['node__contact'] = array(
     'render element' => 'content',
     'base hook' => 'node',
-    'template' => 'node--invoice',
+    'template' => 'node--contact',
     'path' => drupal_get_path('module', 'work_theme') . '/templates',
    );
 
