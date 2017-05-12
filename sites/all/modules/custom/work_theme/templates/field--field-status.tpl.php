@@ -12,6 +12,22 @@
          if (($user->uid == $node->field_assigned_to['und'][0]['uid']) || ($user->uid == 27)) {
 
             switch ($items[0]['#markup']) {
+              case "Backlog" :
+                ?>
+                  <span class="status-link"> =>
+                    <a href="#" onclick="jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/queue', function() { work_log.update_log(<?php print $nid; ?>); }); ">Add to Queue</a>
+                  </span>
+                <?php
+                break;
+
+              case "In Queue" :
+                ?>
+                  <span class="status-link"> =>
+                    <a href="#" onclick="jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/review', function() { work_log.update_log(<?php print $nid; ?>); }); ">Review</a>
+                  </span>
+                <?php
+                break;
+
               case 'Reviewed' :
                 ?>
                   <span class="status-link"> =>

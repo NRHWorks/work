@@ -266,18 +266,19 @@
     <?php if (array_key_exists(3, $user->roles) || array_key_exists(5, $user->roles) ):?>
      | <a href="/stories/add-time/<?php print $node->nid;?>">Add Time</a>
     <?php endif;?>
+    <?php print _work_story_story($node);?>
   </div>
   <div class='task-tab-content task-tab-content-1'>
-    Backlog
+    <?php print _work_story_backlog($node);?>
   </div>
   <div class='task-tab-content task-tab-content-2'>
-    Closed
+    <?php print _work_story_closed($node);?>
   </div>
   <div class='task-tab-content task-tab-content-3'>
-    Summary
+    <?php print _work_story_summary($node);?>
+
   </div>
 </div>
-
 
 <?php
  // content of above elements are placed by the script below

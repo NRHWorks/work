@@ -147,10 +147,24 @@ function work_story_menu() {
     'access callback' => TRUE,
   );
 
+  $items['stories/add-to-queue/%/%'] = array(
+    'title' => 'Add to Queue',
+    'page callback' => 'work_story_add_queue',
+    'page arguments' => array(2,3),
+    'access callback' => TRUE,
+  );
+
   $items['stories/review/%'] = array(
     'title' => 'Review',
     'page callback' => 'work_story_review',
     'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/review/%/%'] = array(
+    'title' => 'Review',
+    'page callback' => 'work_story_review',
+    'page arguments' => array(2,3),
     'access callback' => TRUE,
   );
 
@@ -1212,6 +1226,16 @@ function work_story_update_status_ajax($nid, $new_status) {
 */
 
   switch ($status) {
+    case 1:
+      $status = 100;
+      work_log_create_log_entry($node->nid, 'Status Updated: Backlog => In Queue');
+      break;
+
+    case 100:
+      $status = 101;
+      work_log_create_log_entry($node->nid, 'Status Updated: In Queue => Reviewed');
+      break;
+
     case 101:
       $status = 2;
       work_log_create_log_entry($node->nid, 'Status Updated: Reviewed => In Progress');
@@ -1795,7 +1819,7 @@ function work_story_stories() {
   return $content;
 }
 
-function _work_story_story() {
+function _work_story_story($given_project = NULL) {
 
   $output = null;
 
@@ -1811,14 +1835,25 @@ function _work_story_story() {
     $table_header[] = $s->name;
   }
 
-  $tasks = db_query("
-    SELECT n.title, n.nid, pr.field_project_nid, st.field_status_tid FROM {node} AS n
-    INNER JOIN {field_data_field_status} AS st
-    ON n.nid = st.entity_id
-    INNER JOIN {field_data_field_project} AS pr
-    ON n.nid = pr.entity_id
-    WHERE st.field_status_tid NOT IN (1, 7, 100)")->fetchAll();
-
+  if($given_project === NULL ) {
+    $tasks = db_query("
+      SELECT n.title, n.nid, pr.field_project_nid, st.field_status_tid FROM {node} AS n
+      INNER JOIN {field_data_field_status} AS st
+      ON n.nid = st.entity_id
+      INNER JOIN {field_data_field_project} AS pr
+      ON n.nid = pr.entity_id
+      WHERE st.field_status_tid NOT IN (1, 7, 100)")->fetchAll();
+  }
+  else {
+    $tasks = db_query("
+      SELECT n.title, n.nid, pr.field_project_nid, st.field_status_tid FROM {node} AS n
+      INNER JOIN {field_data_field_status} AS st
+      ON n.nid = st.entity_id
+      INNER JOIN {field_data_field_project} AS pr
+      ON n.nid = pr.entity_id
+      WHERE st.field_status_tid NOT IN (1, 7, 100)
+      AND pr.field_project_nid = :pnid", array(":pnid" => $given_project->nid))->fetchAll();
+  }
   $tasks_arrange_by_status = array();
 
   foreach ($tasks as $t) {
@@ -1827,17 +1862,19 @@ function _work_story_story() {
 
   $rows = array();
 
-  foreach ($tasks_arrange_by_status as $project_nid => $tasks) {
 
+  foreach ($tasks_arrange_by_status as $project_nid => $tasks) {
     $project = node_load($project_nid);
 
-    $rows[] = array(
-                array(
-                  'data' => "<strong>" . l($project->title, 'node/' . $project->nid, array('attributes' => array('style' => 'color:#FFF;'))) . "</strong>",
-                  'colspan' => count($task_statuses_arr) + 1,
-                  'style' => "color: #FFF; font-weight: bold; background-color: {$project->field_color['und'][0]['value']}; text-align:center; padding:5px;",
-                )
-              );
+    if ($given_project === NULL) {
+      $rows[] = array(
+                  array(
+                    'data' => "<strong>" . l($project->title, 'node/' . $project->nid, array('attributes' => array('style' => 'color:#FFF;'))) . "</strong>",
+                    'colspan' => count($task_statuses_arr) + 1,
+                    'style' => "color: #FFF; font-weight: bold; background-color: {$project->field_color['und'][0]['value']}; text-align:center; padding:5px;",
+                  )
+                );
+    }
 
     $row = array();
 
@@ -1892,15 +1929,30 @@ function _work_story_story() {
   $task_table = theme('table', array('header' => $table_header, 'rows' => $rows, 'attributes' => array('class' => array('stories-workflow'))));
 
   // get all the stories that in the queue status
-  $result = db_query("
-              SELECT n.nid, p.field_project_nid
-              FROM {node} n
-                INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
-                INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
-              WHERE n.type = 'story'
-                AND s.field_status_tid = 100");
 
-  $headers = array('', '#', 'Story', 'Owner', 'Due Date.', 'Est.',  'Review');
+  if ($given_project === NULL) {
+    $result = db_query("
+                SELECT n.nid, p.field_project_nid
+                FROM {node} n
+                  INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
+                  INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+                WHERE n.type = 'story'
+                  AND s.field_status_tid = 100");
+
+    $headers = array('', '#', 'Story', 'Owner', 'Due Date.', 'Est.',  'Review');
+  }
+  else {
+    $result = db_query("
+                SELECT n.nid, p.field_project_nid
+                FROM {node} n
+                  INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
+                  INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+                WHERE n.type = 'story'
+                  AND s.field_status_tid = 100
+                  AND p.field_project_nid = :pnid", array(":pnid" => $given_project->nid));
+
+    $headers = array('#', 'Story', 'Owner', 'Due Date.', 'Est.',  'Review');
+  }
   $rows_project = array();
   foreach ($result as $r) {
     $n = node_load($r->nid);
@@ -1918,7 +1970,10 @@ function _work_story_story() {
         $status->name = 'Closed';
       }
 
-      $add_to = "<a href='/stories/review/{$n->nid}'>Review</a>";
+
+      $add_to = $given_project === NULL ?
+        "<a href='/stories/review/{$n->nid}'>Review</a>" :
+        "<a href='/stories/review/{$n->nid}/{$given_project->nid}'>Review</a>";
 
       $row = array(
         $n->nid,
@@ -1944,15 +1999,16 @@ function _work_story_story() {
 
     $hex = $project->field_color['und'][0]['value'];
     $rgba = hex2rgba($hex, '0.3');
-
-    $rows[] = array(
-      array(
-        'data' => l($project->field_code['und'][0]['value'], 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
-        'rowspan' => count($items) + 2,
-        'class' => 'sprint-project',
-        'style' => "text-align:center; background-color: $hex;",
-      ),
-    );
+    if ($given_project === NULL) {
+      $rows[] = array(
+        array(
+          'data' => l($project->field_code['und'][0]['value'], 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
+          'rowspan' => count($items) + 2,
+          'class' => 'sprint-project',
+          'style' => "text-align:center; background-color: $hex;",
+        ),
+      );
+    }
 
     $project_stories = 0;
     $project_estimate = 0;
@@ -1979,19 +2035,20 @@ function _work_story_story() {
       ),
     );
   }
-
-  $rows[] = array(
-    '',
-    array(
-      'data' => "Summary",
-      'style' => "font-weight: bold; font-size: 16px;",
-    ),
-    array(
-      'data' => "$stories stories / $estimate estimated hours",
-      'colspan' => 6,
-      'style' => "text-align:right; font-weight: bold; font-size: 16px;",
-    ),
-  );
+  if ($given_project === NULL) {
+    $rows[] = array(
+      '',
+      array(
+        'data' => "Summary",
+        'style' => "font-weight: bold; font-size: 16px;",
+      ),
+      array(
+        'data' => "$stories stories / $estimate estimated hours",
+        'colspan' => 6,
+        'style' => "text-align:right; font-weight: bold; font-size: 16px;",
+      ),
+    );
+  }
 
   if (count($rows) > 0) {
 
@@ -2003,19 +2060,30 @@ function _work_story_story() {
   return $task_table . $output;
 }
 
-function _work_story_backlog() {
+function _work_story_backlog($given_project = NULL) {
 
   $output = null;
 
   // get all the stories that are open and not assigned to a sprint
-  $result = db_query("
-              SELECT n.nid, p.field_project_nid
-              FROM {node} n
-                INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
-                INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
-              WHERE n.type = 'story'
-                AND s.field_status_tid = 1");
-
+  if ($given_project === NULL) {
+    $result = db_query("
+                SELECT n.nid, p.field_project_nid
+                FROM {node} n
+                  INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
+                  INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+                WHERE n.type = 'story'
+                  AND s.field_status_tid = 1");
+  }
+  else {
+    $result = db_query("
+                SELECT n.nid, p.field_project_nid
+                FROM {node} n
+                  INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
+                  INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+                WHERE n.type = 'story'
+                  AND s.field_status_tid = 1
+                  AND p.field_project_nid = :pnid", array(":pnid"=> $given_project->nid));
+  }
   $headers = array('', '#', 'Story', 'Due Date.', 'Est.',  'Add to Queue');
   $rows_project = array();
   foreach ($result as $r) {
@@ -2034,7 +2102,9 @@ function _work_story_backlog() {
         $status->name = 'Closed';
       }
 
-      $add_to = "<a href='/stories/add-to-queue/{$n->nid}'>Add to Queue</a>";
+      $add_to = $given_project === NULL ?
+        "<a href='/stories/add-to-queue/{$n->nid}'>Add to Queue</a>" :
+        "<a href='/stories/add-to-queue/{$n->nid}/{$given_project->nid}'>Add to Queue</a>" ;
 
       $row = array(
         $n->nid,
@@ -2118,15 +2188,31 @@ function _work_story_backlog() {
   return $output;
 }
 
-function _work_story_closed() {
-  $result = db_query("SELECT s.entity_id
-                      FROM  {field_data_field_status} s INNER JOIN {node} n on s.entity_id = n.nid
-                            INNER JOIN {field_data_field_project} p ON p.entity_id = s.entity_id
-                      WHERE field_status_tid = 7
-                      ORDER BY n.changed DESC limit 50");
+function _work_story_closed($given_project = NULL) {
 
+  if ($given_project === NULL) {
+    $result = db_query("
+      SELECT s.entity_id FROM {field_data_field_status} s
+      INNER JOIN {node} n ON s.entity_id = n.nid
+      INNER JOIN {field_data_field_project} p ON p.entity_id = s.entity_id
+      WHERE field_status_tid = 7
+      ORDER BY n.changed DESC limit 50");
 
-  $headers = array("ID", "Story", "Project", "Owner", "Closed");
+    $headers = array("ID", "Story", "Project", "Owner", "Closed");
+  }
+  else {
+    $result = db_query("
+      SELECT s.entity_id FROM {field_data_field_status} s
+      INNER JOIN {node} n ON s.entity_id = n.nid
+      INNER JOIN {field_data_field_project} p ON p.entity_id = s.entity_id
+      WHERE field_status_tid = 7
+        AND p.field_project_nid = :pnid
+      ORDER BY n.changed DESC",array(":pnid" => $given_project->nid));
+
+    $headers = array("ID", "Story", "Owner", "Closed");
+
+  }
+
 
   $rows = array();
 
@@ -2138,14 +2224,24 @@ function _work_story_closed() {
 
       $o = user_load($n->field_owner['und'][0]['uid']);
 
-      $row = array(
-        $n->nid,
-        l($n->title, 'node/' . $n->nid),
-        l($p->title, 'node/' . $n->nid),
-        $o->name,
-        date('M j, Y', $n->changed)
-      );
+      if ($given_project === NULL) {
+        $row = array(
+          $n->nid,
+          l($n->title, 'node/' . $n->nid),
+          l($p->title, 'node/' . $n->nid),
+          $o->name,
+          date('M j, Y', $n->changed)
+        );
+      }
+      else {
+        $row = array(
+          $n->nid,
+          l($n->title, 'node/' . $n->nid),
+          $o->name,
+          date('M j, Y', $n->changed)
+        );
 
+      }
       $rows[] = $row;
     }
   }
@@ -2153,11 +2249,11 @@ function _work_story_closed() {
   return theme('table', array('header' => $headers, 'rows' => $rows));;
 }
 
-function _work_story_summary() {
+function _work_story_summary($given_project = NULL) {
   return "summary";
 }
 
-function work_story_add_queue($nid) {
+function work_story_add_queue($nid, $redirect_nid = NULL) {
   $node = node_load($nid);
 
   $node->field_status['und'][0]['tid'] = 100;
@@ -2166,10 +2262,11 @@ function work_story_add_queue($nid) {
 
   drupal_set_message('Added ' . l($node->title, 'node/' . $node->nid) . ' to queue.');
 
-  drupal_goto('stories');
+  drupal_goto($redirect_nid === NULL ? 'stories' :
+    drupal_get_path_alias('node/'.$redirect_nid));
 }
 
-function work_story_review($nid) {
+function work_story_review($nid, $redirect_nid = NULL) {
   $node = node_load($nid);
 
   $node->field_status['und'][0]['tid'] = 101;
@@ -2178,7 +2275,9 @@ function work_story_review($nid) {
 
   drupal_set_message(l($node->title, 'node/' . $node->nid) . ' has been reviewed.');
 
-  drupal_goto('stories');
+  drupal_goto($redirect_nid === NULL ? 'stories':
+    drupal_get_path_alias('node/'.$redirect_nid)
+    );
 }
 
 function hex2rgba($color, $opacity = false) {
