@@ -99,6 +99,7 @@
         <div id="assign-to-container">
           <strong>Assign To: </strong>
             <?php
+              if (isset($project->field_users['und']))
               foreach ($project->field_users['und'] as $u) :
                 $project_user = user_load($u['uid']);
 

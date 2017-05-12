@@ -2,11 +2,9 @@
   // We hide the comments and links now so that we can render them later.
   hide($content['comments']);
   hide($content['links']);
-  $sprints = work_project_list_of_sprints($node->nid);
 ?>
 <script type="text/javascript">
   var project_nid = <?php print $node->nid;?>;
-  var sprint_tabs = <?php print count($sprints) > 0 ? "true" : "false";?>;
 </script>
 
 <div id="node-<?php print $node->nid; ?>" class="<?php print $classes; ?> clearfix"<?php print $attributes; ?> style="position:relative">
@@ -247,37 +245,40 @@
 
 <div class='task-tabs tabs'>
   <ul class='tabs primary'>
-  <li class='task-tab task-tab-0 tab ' onclick='project.switch_to(0);'>
-    <a>Stories</a>
-  </li>
-  <li class='task-tab task-tab-1 tab' onclick='project.switch_to(1);'>
-    <a>Backlog</a>
-  </li>
-  <?php if (count($sprints)) :?>
-    <li class='task-tab task-tab-2 tab' onclick='project.switch_to(2);'>
-      <a>Active Sprint(s)</a>
+    <li class='task-tab task-tab-0 tab active' onclick='project.switch_to(0);'>
+      <a>Stories</a>
     </li>
-  <?php endif;?>
+    <li class='task-tab task-tab-1 tab' onclick='project.switch_to(1);'>
+      <a>Backlog</a>
+    </li>
+    <li class='task-tab task-tab-2 tab' onclick='project.switch_to(2);'>
+      <a>Closed</a>
+    </li>
+    <li class='task-tab task-tab-3 tab' onclick='project.switch_to(3);'>
+      <a>Summary</a>
+    </li>
   </ul>
 </div>
 <div id='task-tab-content' style="padding:0 20px;">
-  <div class='task-tab-content task-tab-content-0 ' >
-  </div>
-  <div class='task-tab-content task-tab-content-1'>
-  <div>
+  <div class='task-tab-content task-tab-content-0 active' >
     <?php global $user;?>
-    <?php if (array_key_exists(3, $user->roles) || array_key_exists(5, $user->roles) ):?>
-      <a href="/sprints/add/<?php print $node->nid;?>">Add Sprint</a> |
-    <?php endif;?>
     <a href="/stories/add/<?php print $node->nid;?>">Add Story</a>
     <?php if (array_key_exists(3, $user->roles) || array_key_exists(5, $user->roles) ):?>
      | <a href="/stories/add-time/<?php print $node->nid;?>">Add Time</a>
     <?php endif;?>
   </div>
+  <div class='task-tab-content task-tab-content-1'>
+    Backlog
   </div>
   <div class='task-tab-content task-tab-content-2'>
+    Closed
+  </div>
+  <div class='task-tab-content task-tab-content-3'>
+    Summary
   </div>
 </div>
+
+
 <?php
  // content of above elements are placed by the script below
 ?>

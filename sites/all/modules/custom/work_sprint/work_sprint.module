@@ -1323,7 +1323,7 @@ function work_sprint_add_story($sprint_nid, $story_nid) {
 }
 
 
-function hex2rgba($color, $opacity = false) {
+function ___hex2rgba($color, $opacity = false) {
 
   $default = 'rgb(0,0,0)';
 

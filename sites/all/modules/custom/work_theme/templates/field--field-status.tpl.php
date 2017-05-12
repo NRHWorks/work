@@ -12,7 +12,7 @@
          if (($user->uid == $node->field_assigned_to['und'][0]['uid']) || ($user->uid == 27)) {
 
             switch ($items[0]['#markup']) {
-              case 'New' :
+              case 'Reviewed' :
                 ?>
                   <span class="status-link"> =>
                     <a href="#" onclick="jQuery('#status-row').load('/stories/status/<?php print $nid; ?>/progress', function() { work_log.update_log(<?php print $nid; ?>); }); ">get started</a>

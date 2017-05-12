@@ -733,6 +733,7 @@ th.blue-hover {
   padding: 10px 15px;
 }
 
+.stories-div,
 .sprint-div {
   display: none;
   background-color: white;
@@ -748,6 +749,7 @@ th.blue-hover {
   white-space: nowrap;
 }
 
+.stories-div.active,
 .sprint-div.active {
   display: block;
 }
@@ -799,8 +801,19 @@ th.blue-hover {
 }
 
 .page-node ul.action-links {
-  margin-top: -40px;
+  margin-top: -60px;
   margin-left: 250px;
   padding-top: 11px;
-  margin-bottom: -10px;
+  margin-bottom: 21px;
+}
+
+.node-type-story ul.action-links {
+  margin-top: -34px;
+  margin-left: 250px;
+  padding-top: 11px;
+  margin-bottom: -16px;
+}
+
+.stories-workflow th {
+  width: 25%;
 }

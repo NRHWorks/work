@@ -14,7 +14,7 @@ function work_notifications_node_presave($node) {
 function _new_project($client, $project) {
   $users = array();
 
-  if ($client->field_users)
+  if (isset($client->field_users))
   foreach ($client->field_users['und'] as $u) {
     $user = user_load($u['uid']);
     if (isset($user->field_receive_email_notification['und']) &&
@@ -22,15 +22,6 @@ function _new_project($client, $project) {
       $users[$user->name] = $user->mail;
     }
 
-  }
-
-  if ($client->field_admins)
-  foreach ($client->field_admins['und'] as $u) {
-    $user = user_load($u['uid']);
-    if (isset($user->field_receive_email_notification['und']) &&
-      $user->field_receive_email_notification['und'][0]['value'] == 1) {
-      $users[$user->name] = $user->mail;
-    }
   }
 
   $subject = "new project  => {$project->title}";

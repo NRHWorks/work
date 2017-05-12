@@ -153,6 +153,7 @@ function work_project_update_resources() {
   drupal_exit();
 }
 
+/*
 
 function work_project_list_of_sprints($nid) {
 
@@ -179,3 +180,5 @@ function work_project_get_team_nid($project_nid) {
     array(":nid" => $project_nid));
   return $t->rowCount() === 0 ? NULL : $t->fetchField();
 }
+
+*/

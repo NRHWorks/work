@@ -57,64 +57,20 @@ function _work_dashboard_developer() {
 
 	$schedule = work_schedule2_user_dashboard($uid);
 
-  $result = db_query("  SELECT n.nid
-                        FROM {node} n
-                        WHERE n.type = 'team'
-                        AND n.nid IN (
-                          SELECT entity_id FROM {field_data_field_team_lead} WHERE field_team_lead_uid = :uid1 UNION
-                          SELECT entity_id FROM {field_data_field_project_manager} WHERE field_project_manager_uid = :uid2 UNION
-                          SELECT entity_id FROM {field_data_field_backend_developer} WHERE field_backend_developer_uid = :uid3 UNION
-                          SELECT entity_id FROM {field_data_field_frontend_developer} WHERE field_frontend_developer_uid = :uid4 UNION
-                          SELECT entity_id FROM {field_data_field_sys_admin} WHERE field_sys_admin_uid = :uid5 UNION
-                          SELECT entity_id FROM {field_data_field_quality_assurance_tester} WHERE field_quality_assurance_tester_uid = :uid6
-                        )",
-                        array(':uid1' => $uid,
-                              ':uid2' => $uid,
-                              ':uid3' => $uid,
-                              ':uid4' => $uid,
-                              ':uid5' => $uid,
-                              ':uid6' => $uid));
-  $team_nids = array();
-  foreach ($result as $r) {
-    $team_nids[] = $r->nid;
-  }
-
-  $team_nids[] = -999;
-
-  // get all the active sprints the user's team(s) are assigned to
-  $result = db_query("  SELECT n.nid
-                        FROM {node} n
-                        WHERE n.type = 'sprint' AND
-                        n.nid IN (SELECT entity_id FROM field_data_field_team WHERE field_team_nid IN (:team_nids)) AND
-                        n.nid IN (SELECT entity_id FROM field_data_field_sprint_status WHERE field_sprint_status_tid IN (47, 48))
-                        ORDER BY n.title",
-                        array(':team_nids' => $team_nids));
-
-  $sprints = array();
-  $sprint_ids = array();
-  foreach ($result as $r) {
-    $sprints[] = node_load($r->nid);
-    $sprint_ids[] = $r->nid;
-  }
-
-  $sprint_ids[] = -999;
-
   // get stories without status closed assigned to the user in an active sprint
   $result = db_query("SELECT s.entity_id as nid
                       FROM {field_data_field_status} s
                         INNER JOIN {field_data_field_assigned_to} u ON u.entity_id = s.entity_id
-                        INNER JOIN {field_data_field_sprint} sp on sp.entity_id = s.entity_id
                       WHERE s.field_status_tid != 7
-                        AND u.field_assigned_to_uid = :uid
-                        AND sp.field_sprint_nid IN (:spid)",
-                      array(':spid' => $sprint_ids, ':uid' => $uid));
+                        AND u.field_assigned_to_uid = :uid",
+                      array(':uid' => $uid));
 
   $projects = array();
   $stories = array();
   foreach ($result as $r) {
     $story = node_load($r->nid);
 
-    $stories[$story->field_sprint['und'][0]['nid']][$story->field_project['und'][0]['nid']][] = $story;
+    $stories[][$story->field_project['und'][0]['nid']][] = $story;
 
     $projects[$story->field_project['und'][0]['nid']] = node_load($story->field_project['und'][0]['nid']);
   }
@@ -132,7 +88,6 @@ function _work_dashboard_developer() {
                   'todo' => $todo,
                   'schedule' => $schedule,
                   'stories' => $stories,
-                  'sprints' => $sprints,
                   'projects' => $projects,
                   'time' => $time,
                 )

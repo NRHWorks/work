@@ -140,6 +140,26 @@ function work_story_menu() {
     'access callback' => TRUE,
   );
 
+  $items['stories/add-to-queue/%'] = array(
+    'title' => 'Add to Queue',
+    'page callback' => 'work_story_add_queue',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+
+  $items['stories/review/%'] = array(
+    'title' => 'Review',
+    'page callback' => 'work_story_review',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+  );
+
+  $items['stories'] = array(
+    'title' => 'Stories',
+    'page callback' => 'work_story_stories',
+    'access callback' => TRUE,
+  );
+
   return $items;
 }
 
@@ -174,6 +194,7 @@ function work_story_add_story($form, $form_state, $project) {
     '#required' => TRUE
   );
 
+  /*
   $epics = array();
   $result = db_select('taxonomy_term_data', 'ttd');
   $result->fields('ttd', array('tid', 'name'));
@@ -201,6 +222,7 @@ function work_story_add_story($form, $form_state, $project) {
     '#size' => 45,
     '#required' => 0,
   );
+  */
 
   global $user;
 
@@ -244,6 +266,7 @@ function work_story_add_story($form, $form_state, $project) {
     '#default_value' => 34,
   );
 
+/*
   $sprints = array("--NONE--");
 
   $sprint_nodes = db_query("
@@ -278,6 +301,8 @@ function work_story_add_story($form, $form_state, $project) {
     '#options' => $sprints,
     '#default_value' => 0,
   );
+  */
+
 
   if (!$is_dev_admin) {
     $form['sprint']['#prefix'] = "<div style='display:none'>";
@@ -391,10 +416,12 @@ function work_story_add_story_submit($form, &$form_state) {
   $node->comment = 0;
 
   $node->field_status['und'][0]['tid'] = 1;
+  $node->body['und'][0]['value'] = $v['description'];
+
+/*
   if ($v['sprint'] != 0) {
     $node->field_sprint['und'][0]['nid'] = $v['sprint'];
   }
-  $node->body['und'][0]['value'] = $v['description'];
 
   if (isset($v['epic'])) {
     $node->field_epic['und'][0]['tid'] = $v['epic'];
@@ -403,6 +430,7 @@ function work_story_add_story_submit($form, &$form_state) {
   if (isset($theme_tid)) {
     $node->field_theme['und'][0]['tid'] = $theme_tid;
   }
+*/
 
   $node->field_project['und'][0]['nid'] = $v['project'];
 
@@ -1170,6 +1198,7 @@ function work_story_update_status_ajax($nid, $new_status) {
   $creator  = &$node->field_creator['und'][0]['uid'];
   $owner    = &$node->field_owner['und'][0]['uid'];
 
+/*
   $team_nid  = work_project_get_team_nid($node->field_project['und'][0]['nid']);
   if ($team_nid === NULL) {
     $team_pm = $creator;
@@ -1180,12 +1209,12 @@ function work_story_update_status_ajax($nid, $new_status) {
       WHERE entity_id = :team_nid", array(":team_nid" => $team_nid));
     $team_pm = $team_pm->rowCount() === 0 ? $creator : $team_pm->fetchField();
   }
-
+*/
 
   switch ($status) {
-    case 1:
+    case 101:
       $status = 2;
-      work_log_create_log_entry($node->nid, 'Status Updated: New => In Progress');
+      work_log_create_log_entry($node->nid, 'Status Updated: Reviewed => In Progress');
       break;
 
    case 2:
@@ -1734,4 +1763,458 @@ function work_story_add_story_group_submit($form, &$form_state) {
   }
 
   drupal_goto('node/' . $node->field_project['und'][0]['nid']);
+}
+
+function work_story_stories() {
+  $content =  "
+    <div class='tabs' style='margin-top: 25px;'>
+      <ul class='tabs primary'>
+        <li>
+          <a href='#' id='stories-link' class='active' onclick='story.switch_tab(\"stories\");'>Stories</a>
+        </li>
+        <li>
+          <a href='#' id='backlog-link' onclick='story.switch_tab(\"backlog\");' >Backlog</a>
+        </li>
+        <li>
+          <a href='#' id='closed-link' onclick='story.switch_tab(\"closed\");' >Closed</a>
+        </li>
+        <li>
+          <a href='#' id='summary-link' onclick='story.switch_tab(\"summary\");'>Summary</a>
+        </li>
+      </ul>
+    </div>";
+
+  $content .= "
+    <div id='stories' class='stories-div active'>" . _work_story_story() . "</div>
+    <div id='backlog' class='stories-div'>" . _work_story_backlog() . "</div>
+    <div id='closed' class='stories-div'>" . _work_story_closed() . "</div>
+    <div id='summary' class='stories-div'>" . _work_story_summary() . " </div>
+  ";
+
+
+  return $content;
+}
+
+function _work_story_story() {
+
+  $output = null;
+
+  $task_statuses = db_query("
+    SELECT * FROM {taxonomy_term_data}
+    WHERE vid = 2
+    AND tid NOT IN (1, 7, 100)
+    ORDER BY weight ASC");
+
+  $table_header = array();
+  foreach ($task_statuses as $s) {
+    $task_statuses_arr[] = $s;
+    $table_header[] = $s->name;
+  }
+
+  $tasks = db_query("
+    SELECT n.title, n.nid, pr.field_project_nid, st.field_status_tid FROM {node} AS n
+    INNER JOIN {field_data_field_status} AS st
+    ON n.nid = st.entity_id
+    INNER JOIN {field_data_field_project} AS pr
+    ON n.nid = pr.entity_id
+    WHERE st.field_status_tid NOT IN (1, 7, 100)")->fetchAll();
+
+  $tasks_arrange_by_status = array();
+
+  foreach ($tasks as $t) {
+    $tasks_arrange_by_status[$t->field_project_nid][$t->field_status_tid][] = $t;
+  }
+
+  $rows = array();
+
+  foreach ($tasks_arrange_by_status as $project_nid => $tasks) {
+
+    $project = node_load($project_nid);
+
+    $rows[] = array(
+                array(
+                  'data' => "<strong>" . l($project->title, 'node/' . $project->nid, array('attributes' => array('style' => 'color:#FFF;'))) . "</strong>",
+                  'colspan' => count($task_statuses_arr) + 1,
+                  'style' => "color: #FFF; font-weight: bold; background-color: {$project->field_color['und'][0]['value']}; text-align:center; padding:5px;",
+                )
+              );
+
+    $row = array();
+
+    foreach ($task_statuses_arr as $status) {
+      $data = "";
+
+      if (array_key_exists($status->tid, $tasks_arrange_by_status[$project_nid])) {
+
+
+        foreach($tasks_arrange_by_status[$project_nid][$status->tid] as $task) {
+
+          $node = node_load($task->nid);
+
+          $assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
+
+          $pic = '<div></div>';
+          if (isset($assigned_user->picture)) {
+            $pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
+            $pic = "<div style='height: 40px; margin:0px 5px 0px 0px; float:left;'>$pic</div>";
+          }
+
+          $dots = '';
+          if ($node->field_status['und'][0]['tid'] != 1 && $node->field_status['und'][0]['tid'] != 7) {
+            for($x=1; $x <= ((time() - $node->changed) / (60 * 60)); $x++) {
+              if ($x <= 24) {
+                $dots .= '.';
+
+                if (($x > 0) && ($x % 24 == 0)) {
+                  $dots .= '<br />';
+                }
+              }
+            }
+          }
+
+          $data .= "<div class='user-" . $node->field_assigned_to['und'][0]['uid']. "' style='border: 1px solid #999; background-color: #FFF; margin-bottom: 10px;'>
+          <div style='background-color:#999; font-size:24px; color: #EEE; padding:5px; overflow:auto; text-align:right;'> " . $pic . " #" . $task->nid . "</div>
+          <div style='padding: 5px;'>
+            <a href='/node/" . $task->nid . "' style='font-weight:bold; font-size: 14px;'>" . $task->title . "</a> <br />
+            <span style='font-size:12px; letter-spacing:2px;'>" . $dots . "</span>
+          </div>
+          </div>";
+
+        }
+      }
+
+      $row[] = $data;
+    }
+
+    $rows[] = $row;
+  }
+
+  $task_table = theme('table', array('header' => $table_header, 'rows' => $rows, 'attributes' => array('class' => array('stories-workflow'))));
+
+  // get all the stories that in the queue status
+  $result = db_query("
+              SELECT n.nid, p.field_project_nid
+              FROM {node} n
+                INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
+                INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+              WHERE n.type = 'story'
+                AND s.field_status_tid = 100");
+
+  $headers = array('', '#', 'Story', 'Owner', 'Due Date.', 'Est.',  'Review');
+  $rows_project = array();
+  foreach ($result as $r) {
+    $n = node_load($r->nid);
+
+    if (!isset($n->field_sprint['und'])) {
+      if (isset($n->field_assigned_to['und'])) {
+        $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
+      } else {
+        $assigned_to->name = 'Unassigned';
+      }
+
+      if (isset($n->field_status['und'])) {
+        $status = taxonomy_term_load($n->field_status['und'][0]['tid']);
+      } else {
+        $status->name = 'Closed';
+      }
+
+      $add_to = "<a href='/stories/review/{$n->nid}'>Review</a>";
+
+      $row = array(
+        $n->nid,
+        array(
+          'data' => l($n->title, 'node/' . $n->nid),
+          'style' => 'white-space: normal;'
+        ),
+        $assigned_to->name,
+        date('D, M j', strtotime($n->field_due_date['und'][0]['value'])),
+        $n->field_estimate['und'][0]['value'] . ' hours',
+        $add_to,
+      );
+
+      $rows_project[$r->field_project_nid][] = $row;
+    }
+  }
+
+  $stories = 0;
+  $estimate = 0;
+  $rows = array();
+  foreach ($rows_project as $project_nid => $items) {
+    $project = node_load($project_nid);
+
+    $hex = $project->field_color['und'][0]['value'];
+    $rgba = hex2rgba($hex, '0.3');
+
+    $rows[] = array(
+      array(
+        'data' => l($project->field_code['und'][0]['value'], 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
+        'rowspan' => count($items) + 2,
+        'class' => 'sprint-project',
+        'style' => "text-align:center; background-color: $hex;",
+      ),
+    );
+
+    $project_stories = 0;
+    $project_estimate = 0;
+
+    foreach ($items as $r) {
+      $project_stories += 1;
+      $project_estimate += str_replace(' hours','',$r[4]);
+
+      $stories += 1;
+      $estimate += str_replace(' hours','',$r[4]);
+
+      $rows[] = $r;
+    }
+
+    $rows[] = array(
+      array(
+        'data' => "Summary",
+        'style' => "color: #FFF; font-weight: bold; background-color: $rgba",
+      ),
+      array(
+        'data' => "$project_stories stories / $project_estimate estimated hours",
+        'colspan' => 6,
+        'style' => "text-align:right; color: #FFF; font-weight: bold; background-color: $rgba",
+      ),
+    );
+  }
+
+  $rows[] = array(
+    '',
+    array(
+      'data' => "Summary",
+      'style' => "font-weight: bold; font-size: 16px;",
+    ),
+    array(
+      'data' => "$stories stories / $estimate estimated hours",
+      'colspan' => 6,
+      'style' => "text-align:right; font-weight: bold; font-size: 16px;",
+    ),
+  );
+
+  if (count($rows) > 0) {
+
+    $table = theme('table', array('header' => $headers, 'rows' => $rows));
+
+    $output .= "<h2>Queue</h2>" . $table;
+  }
+
+  return $task_table . $output;
+}
+
+function _work_story_backlog() {
+
+  $output = null;
+
+  // get all the stories that are open and not assigned to a sprint
+  $result = db_query("
+              SELECT n.nid, p.field_project_nid
+              FROM {node} n
+                INNER JOIN {field_data_field_status} s ON s.entity_id = n.nid
+                INNER JOIN {field_data_field_project} p ON p.entity_id = n.nid
+              WHERE n.type = 'story'
+                AND s.field_status_tid = 1");
+
+  $headers = array('', '#', 'Story', 'Due Date.', 'Est.',  'Add to Queue');
+  $rows_project = array();
+  foreach ($result as $r) {
+    $n = node_load($r->nid);
+
+    if (!isset($n->field_sprint['und'])) {
+      if (isset($n->field_assigned_to['und'])) {
+        $assigned_to = user_load($n->field_assigned_to['und'][0]['uid']);
+      } else {
+        $assigned_to->name = 'Unassigned';
+      }
+
+      if (isset($n->field_status['und'])) {
+        $status = taxonomy_term_load($n->field_status['und'][0]['tid']);
+      } else {
+        $status->name = 'Closed';
+      }
+
+      $add_to = "<a href='/stories/add-to-queue/{$n->nid}'>Add to Queue</a>";
+
+      $row = array(
+        $n->nid,
+        array(
+          'data' => l($n->title, 'node/' . $n->nid),
+          'style' => 'white-space: normal;'
+        ),
+        date('D, M j', strtotime($n->field_due_date['und'][0]['value'])),
+        $n->field_estimate['und'][0]['value'] . ' hours',
+        $add_to,
+      );
+
+      $rows_project[$r->field_project_nid][] = $row;
+    }
+  }
+
+  $stories = 0;
+  $estimate = 0;
+  $rows = array();
+  foreach ($rows_project as $project_nid => $items) {
+    $project = node_load($project_nid);
+
+    $hex = $project->field_color['und'][0]['value'];
+    $rgba = hex2rgba($hex, '0.3');
+
+    $rows[] = array(
+      array(
+        'data' => l($project->field_code['und'][0]['value'], 'node/' . $project_nid, array('attributes' => array('style' => 'color:#FFF; font-weight:bold;'))),
+        'rowspan' => count($items) + 2,
+        'class' => 'sprint-project',
+        'style' => "text-align:center; background-color: $hex;",
+      ),
+    );
+
+    $project_stories = 0;
+    $project_estimate = 0;
+
+    foreach ($items as $r) {
+      $project_stories += 1;
+      $project_estimate += str_replace(' hours','',$r[3]);
+
+      $stories += 1;
+      $estimate += str_replace(' hours','',$r[3]);
+
+      $rows[] = $r;
+    }
+
+    $rows[] = array(
+      array(
+        'data' => "Summary",
+        'style' => "color: #FFF; font-weight: bold; background-color: $rgba",
+      ),
+      array(
+        'data' => "$project_stories stories / $project_estimate estimated hours",
+        'colspan' => 6,
+        'style' => "text-align:right; color: #FFF; font-weight: bold; background-color: $rgba",
+      ),
+    );
+  }
+
+  $rows[] = array(
+    '',
+    array(
+      'data' => "Summary",
+      'style' => "font-weight: bold; font-size: 16px;",
+    ),
+    array(
+      'data' => "$stories stories / $estimate estimated hours",
+      'colspan' => 6,
+      'style' => "text-align:right; font-weight: bold; font-size: 16px;",
+    ),
+  );
+
+  if (count($rows) > 0) {
+
+    $table = theme('table', array('header' => $headers, 'rows' => $rows));
+
+    $output .= "<h2>Backlog</h2>" . $table;
+  }
+
+  return $output;
+}
+
+function _work_story_closed() {
+  $result = db_query("SELECT s.entity_id
+                      FROM  {field_data_field_status} s INNER JOIN {node} n on s.entity_id = n.nid
+                            INNER JOIN {field_data_field_project} p ON p.entity_id = s.entity_id
+                      WHERE field_status_tid = 7
+                      ORDER BY n.changed DESC limit 50");
+
+
+  $headers = array("ID", "Story", "Project", "Owner", "Closed");
+
+  $rows = array();
+
+  foreach ($result as $r) {
+    $n = node_load($r->entity_id);
+
+    if (isset($n->field_project['und'])) {
+      $p = node_load($n->field_project['und'][0]['nid']);
+
+      $o = user_load($n->field_owner['und'][0]['uid']);
+
+      $row = array(
+        $n->nid,
+        l($n->title, 'node/' . $n->nid),
+        l($p->title, 'node/' . $n->nid),
+        $o->name,
+        date('M j, Y', $n->changed)
+      );
+
+      $rows[] = $row;
+    }
+  }
+
+  return theme('table', array('header' => $headers, 'rows' => $rows));;
+}
+
+function _work_story_summary() {
+  return "summary";
+}
+
+function work_story_add_queue($nid) {
+  $node = node_load($nid);
+
+  $node->field_status['und'][0]['tid'] = 100;
+
+  node_save($node);
+
+  drupal_set_message('Added ' . l($node->title, 'node/' . $node->nid) . ' to queue.');
+
+  drupal_goto('stories');
+}
+
+function work_story_review($nid) {
+  $node = node_load($nid);
+
+  $node->field_status['und'][0]['tid'] = 101;
+
+  node_save($node);
+
+  drupal_set_message(l($node->title, 'node/' . $node->nid) . ' has been reviewed.');
+
+  drupal_goto('stories');
+}
+
+function hex2rgba($color, $opacity = false) {
+
+  $default = 'rgb(0,0,0)';
+
+  //Return default if no color provided
+  if(empty($color))
+          return $default;
+
+        //Sanitize $color if "#" is provided
+        if ($color[0] == '#' ) {
+          $color = substr( $color, 1 );
+        }
+
+        //Check if color has 6 or 3 characters and get values
+        if (strlen($color) == 6) {
+                $hex = array( $color[0] . $color[1], $color[2] . $color[3], $color[4] . $color[5] );
+        } elseif ( strlen( $color ) == 3 ) {
+                $hex = array( $color[0] . $color[0], $color[1] . $color[1], $color[2] . $color[2] );
+        } else {
+                return $default;
+        }
+
+        //Convert hexadec to rgb
+        $rgb =  array_map('hexdec', $hex);
+
+        //Check if opacity is set(rgba or rgb)
+        if($opacity){
+          if(abs($opacity) > 1)
+            $opacity = 1.0;
+          $output = 'rgba('.implode(",",$rgb).','.$opacity.')';
+        } else {
+          $output = 'rgb('.implode(",",$rgb).')';
+        }
+
+        //Return rgb(a) color string
+        return $output;
 }

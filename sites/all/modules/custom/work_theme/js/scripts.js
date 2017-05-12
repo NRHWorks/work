@@ -113,6 +113,11 @@ function reset_height() {
       sprint.switch_tab(st);
     }
 
+    var st = $.cookie("stories_tabs");
+    if (st !== undefined) {
+      story.switch_tab(st);
+    }
+
   });
 
 }(jQuery));
@@ -244,6 +249,21 @@ var sprint = (function ($) {
       $('.tabs  a').removeClass('active');
       $('#' + index + '-link').addClass('active');
       $.cookie("sprints_tabs", index);
+
+    }
+  }
+}(jQuery));
+
+
+var story = (function ($) {
+  return {
+    switch_tab: function(index) {
+      $('.stories-div').hide();
+      $('#' + index).show();
+
+      $('.tabs  a').removeClass('active');
+      $('#' + index + '-link').addClass('active');
+      $.cookie("stories_tabs", index);
 
     }
   }

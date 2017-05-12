@@ -76,7 +76,6 @@
                   $status = taxonomy_term_load($s->field_status['und'][0]['tid']);
                   $data[] = array(
                     'story' => l($s->title, 'node/' . $s->nid),
-                    'sprint' => l($spr_obj->title, 'node/' . $spr_obj->nid) ,
                     'project' => l($prj_obj->title, 'node/' . $prj_obj->nid),
                     'status' => $status->name,
                     'due' => date('D, M j', strtotime($s->field_due_date['und'][0]['value'])),
@@ -93,7 +92,6 @@
             <tr>
               <th></th>
               <th>Story</th>
-              <th>Sprint</th>
               <th>Project</th>
               <th>Status</th>
               <th>Due Date</th>
@@ -104,7 +102,6 @@
               <tr>
                 <td><?php print ++$count;?>.</td>
                 <td><?php print $row['story'];?></td>
-                <td><?php print $row['sprint'];?></td>
                 <td><?php print $row['project'];?></td>
                 <td><?php print $row['status'];?></td>
                 <td><?php print $row['due'];?></td>
