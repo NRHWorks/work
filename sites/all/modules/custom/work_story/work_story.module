@@ -1867,11 +1867,14 @@ function _work_story_story($given_project = NULL) {
     $project = node_load($project_nid);
 
     if ($given_project === NULL) {
+
+      $background_color = isset($project->field_color['und']) ?
+        "background-color: {$project->field_color['und'][0]['value']}; " :"";
       $rows[] = array(
                   array(
                     'data' => "<strong>" . l($project->title, 'node/' . $project->nid, array('attributes' => array('style' => 'color:#FFF;'))) . "</strong>",
                     'colspan' => count($task_statuses_arr) + 1,
-                    'style' => "color: #FFF; font-weight: bold; background-color: {$project->field_color['und'][0]['value']}; text-align:center; padding:5px;",
+                    'style' => "color: #FFF; font-weight: bold; text-align:center; padding:5px; {$background_color}",
                   )
                 );
     }
@@ -1888,12 +1891,15 @@ function _work_story_story($given_project = NULL) {
 
           $node = node_load($task->nid);
 
-          $assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
+          $pic = "";
+          if (isset($node->field_assigned_to['und']) && $node->field_assigned_to['und'][0]['uid'] != "") {
+            $assigned_user = user_load($node->field_assigned_to['und'][0]['uid']);
 
-          $pic = '<div></div>';
-          if (isset($assigned_user->picture)) {
-            $pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
-            $pic = "<div style='height: 40px; margin:0px 5px 0px 0px; float:left;'>$pic</div>";
+            $pic = '<div></div>';
+            if (isset($assigned_user->picture)) {
+              $pic = theme_image_style(array('style_name' => 'icon', 'path' => $assigned_user->picture->uri, 'width' => null, 'height' => null));
+              $pic = "<div style='height: 40px; margin:0px 5px 0px 0px; float:left;'>$pic</div>";
+            }
           }
 
           $dots = '';
