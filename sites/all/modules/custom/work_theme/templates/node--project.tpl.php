@@ -18,7 +18,7 @@
     ?>
     </div><br />
 
-    <div id="team-container"><?php print render($content['field_team']); ?></div><br />
+    <div id="team-container"><?php print render($content['field_team']); ?></div><br /><br />
 
     <div id="users-container"><?php print render($content['field_users']); ?></div><br />
 
